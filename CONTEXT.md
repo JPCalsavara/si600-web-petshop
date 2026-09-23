@@ -1,6 +1,6 @@
 # SI600 Web Petshop — Context & Ubiquitous Language
 
-## Overview
+## 1. Visão Geral do Sistema
 
 O **SI600 Web Petshop** é um sistema web integrado para gerenciamento operacional e comercial de um pet shop com atendimento clínico e estético. A plataforma atende dois públicos principais:
 1. **Clientes (Tutores)**: Navegam pelos serviços oferecidos, cadastram seus animais de estimação, realizam e acompanham agendamentos (banho, tosa, consultas veterinárias) e visualizam histórico.
@@ -8,7 +8,7 @@ O **SI600 Web Petshop** é um sistema web integrado para gerenciamento operacion
 
 ---
 
-## Linguagem Ubíqua (Domain Vocabulary)
+## 2. Linguagem Ubíqua (Domain Vocabulary)
 
 Termo | Definição | Sinônimos Evitados
 :--- | :--- | :---
@@ -22,7 +22,7 @@ Termo | Definição | Sinônimos Evitados
 
 ---
 
-## Invariantes e Regras de Negócio Fundamentais
+## 3. Invariantes e Regras de Negócio Fundamentais
 
 1. **Unicidade de Agendamento por Profissional/Recurso**: Não é permitido criar ou confirmar dois agendamentos no mesmo intervalo de tempo para o mesmo profissional ou para a mesma baia/mesa de atendimento.
 2. **Pertença do Pet**: Um `Agendamento` só pode ser solicitado para um `Pet` cujo tutor corresponda ao `Cliente` autenticado (exceto em operações realizadas por administradores/atendentes).
@@ -34,20 +34,46 @@ Termo | Definição | Sinônimos Evitados
 
 ---
 
-## Diretrizes de Engenharia e Testes
+## 4. Stack Tecnológica Oficial & Padrões de Desenvolvimento
 
-Conforme estabelecido nas Decisões Arquiteturais:
-- **[ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md)**: Adotamos **exclusivamente Testes de Integração e Testes End-to-End (E2E)**. Não implementamos testes unitários isolados com mocks artificiais de banco de dados ou serviços.
-- **[ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)**: Toda funcionalidade possui cobertura mandatória de **Casos Bons (Happy Path)**, **Casos Ruins (Sad Path / Regras de Negócio)** e **Casos Incompletos (Payloads Parciais / Limites de Borda)**.
-- **Respostas de Erro**: A API adota o padrão estruturado RFC 7807 (*Problem Details for HTTP APIs*), garantindo diagnósticos uniformes de falhas para clientes e suítes de teste.
+Camada | Tecnologia | Detalhes & Padrões
+:--- | :--- | :---
+**Backend** | **Java 21 / Spring Boot** | REST API sob `/api/...`, Spring Data JPA, Hibernate, Bean Validation (`@Valid`), Problem Details (RFC 7807 via `@RestControllerAdvice`). Arquitetura em camadas desacopladas (`controller`, `service`, `repository`, `entity`, `dto`, `exception`).
+**Frontend** | **React 18+ (Vite) + TS** | SPA moderna construída com Vite, componentes funcionais modulares, tipagem TypeScript estrita e cliente HTTP centralizado consumindo o backend.
+**Banco de Dados** | **PostgreSQL 16** | Gerenciado via `docker-compose.yml` (`localhost:5432`, base `petshop_db`, usuário `petshop_user`, senha `petshop_pass`).
+**Testes E2E & Componente** | **Cypress** | Suíte de testes ponta a ponta simulando jornadas completas no navegador e validando a comunicação real com a API.
+**Qualidade Estática** | **SonarCloud** | Análise estática contínua de código, cobertura, duplicações, bugs e vulnerabilidades.
+**AI Gatekeeper Reviewer** | **LangGraph + Google Gemini** | Avaliador inteligente executado no CI/CD e localmente, validando diffs, conformidade com ADRs e aderência aos padrões de projeto.
 
 ---
 
-## Stack Tecnológica Oficial
+## 5. Diretrizes Mandatórias de Teste
 
-Camada | Tecnologia | Detalhes & Práticas
-:--- | :--- | :---
-**Backend** | **Java 21 / Spring Boot** | REST API, Spring Data JPA, Bean Validation, Problem Details (RFC 7807). Testes de integração na borda HTTP contra banco real/Testcontainers.
-**Frontend** | **React + TypeScript (Vite)** | SPA moderna construída com Vite, componentes modulares e comunicação REST tipada com o backend.
-**Testes E2E & Componentes** | **Cypress** | Suíte de testes ponta a ponta (E2E) simulando jornadas reais de tutores e atendentes, com suporte a testes de componentes isolados.
+Conforme estabelecido nas Decisões Arquiteturais:
+* **[ADR 0001](docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md)**: Adotamos **exclusivamente Testes de Integração e Testes End-to-End (E2E)**. Não implementamos testes unitários isolados com mocks artificiais de banco de dados ou serviços internos.
+* **[ADR 0002](docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)**: Toda funcionalidade possui cobertura mandatória de:
+  1. **Casos Bons (Happy Path)**: Valida fluxos corretos, HTTP 200/201, persistência de dados e respostas íntegras.
+  2. **Casos Ruins (Sad Path / Regras de Negócio)**: Violações de regras, HTTP 401/403/404/409/422, garantindo rollback de transação e zero escritas espúrias no banco.
+  3. **Casos Incompletos (Payloads Parciais / Limites de Borda)**: Campos ausentes, strings vazias, valores nulos, payloads malformados, garantindo HTTP 400 Bad Request com matriz de erros estruturada (RFC 7807) e zero erros 500.
 
+---
+
+## 6. Política Oficial de Branches e Merge Requests
+
+* **Hierarquia de Branches**:
+  * `main`: Produção estável. Protegida contra push direto.
+  * `dev`: Integração contínua da equipe. Protegida contra push direto.
+  * `member/<slug>`: Branch pessoal de cada integrante (`member/joao-calsavara`, `member/felipe-moreira`, `member/gabriel-santos`, `member/julyo-silva`, `member/lorenzo-pugina`, `member/samuel-souza`, `member/samuel-martins`).
+* **Fluxo Obrigatório**:
+  * Desenvolvimento individual sempre em `member/<slug>`.
+  * Integração para `dev` realizada **exclusivamente via Merge Request**.
+  * **Regra de 2 Aprovações**: Nenhum MR em `dev` ou `main` pode ser mesclado sem no mínimo **2 aprovações humanas** de outros integrantes do time.
+  * Promoção de release: MR de `dev` para `main` com 2 aprovações requeridas.
+
+---
+
+## 7. Pipeline Padrão de CI/CD (GitHub Actions + GitLab Bridge)
+
+* Disparado a cada `push` nas branches `main`, `dev` e `member/*` via dual push no remote `origin`.
+* Executa build do Spring Boot e React, testes de integração, verificação de qualidade com SonarCloud e revisão semântica com o AI Gatekeeper Reviewer.
+* O script `gitlab_reporter.py` publica o veredito técnico diretamente na timeline do Merge Request e atualiza o commit status no GitLab Unicamp.
