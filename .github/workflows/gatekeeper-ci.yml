@@ -31,7 +31,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'maven'
 
       - name: Set up Node.js 20 (React, Vite & Cypress)
         uses: actions/setup-node@v4
