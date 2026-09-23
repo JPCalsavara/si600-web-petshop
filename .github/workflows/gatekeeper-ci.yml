@@ -26,7 +26,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.11
+      - name: Set up Java 21 (Spring Boot)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Set up Node.js 20 (React, Vite & Cypress)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python 3.11 (Gatekeeper & Harness)
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -38,21 +50,46 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r docs/gatekeeper/requirements-gatekeeper.txt
 
-      - name: Run Test Suite (Integration & E2E)
+      - name: Run Test Suite (Spring Boot, React & Cypress)
         id: run-tests
         run: |
           echo "=== Step 1: Running Tests ==="
-          if [ -f "package.json" ]; then
-            echo "Node.js project detected."
-            npm install || true
-            npm test > tests.log 2>&1 || true
-          elif [ -f "pytest.ini" ] || [ -d "tests" ]; then
-            echo "Python project detected."
-            pytest > tests.log 2>&1 || true
-          else
-            echo "No test runner configuration detected. Creating empty test log."
-            touch tests.log
+          touch tests.log
+
+          # 1.1 Java Spring Boot Backend
+          if [ -f "pom.xml" ] || [ -f "backend/pom.xml" ]; then
+            POM_DIR="."
+            [ -f "backend/pom.xml" ] && POM_DIR="backend"
+            echo "Running Java Spring Boot tests in $POM_DIR..."
+            if [ -x "$POM_DIR/mvnw" ]; then
+              "$POM_DIR/mvnw" -f "$POM_DIR/pom.xml" test >> tests.log 2>&1 || true
+            else
+              mvn -f "$POM_DIR/pom.xml" test >> tests.log 2>&1 || true
+            fi
+          elif [ -f "gradlew" ] || [ -f "build.gradle" ] || [ -f "backend/build.gradle" ]; then
+            GRADLE_DIR="."
+            [ -f "backend/build.gradle" ] && GRADLE_DIR="backend"
+            echo "Running Gradle tests in $GRADLE_DIR..."
+            if [ -x "$GRADLE_DIR/gradlew" ]; then
+              "$GRADLE_DIR/gradlew" -p "$GRADLE_DIR" test >> tests.log 2>&1 || true
+            else
+              gradle -p "$GRADLE_DIR" test >> tests.log 2>&1 || true
+            fi
           fi
+
+          # 1.2 React / Vite / Cypress Frontend
+          if [ -f "package.json" ] || [ -f "frontend/package.json" ]; then
+            PKG_DIR="."
+            [ -f "frontend/package.json" ] && PKG_DIR="frontend"
+            echo "Running React / Vite tests in $PKG_DIR..."
+            npm --prefix "$PKG_DIR" install || true
+            npm --prefix "$PKG_DIR" test >> tests.log 2>&1 || true
+            if [ -d "$PKG_DIR/cypress" ]; then
+              echo "Running Cypress E2E tests in $PKG_DIR..."
+              npx --prefix "$PKG_DIR" cypress run >> tests.log 2>&1 || true
+            fi
+          fi
+
           echo "Tests log lines: $(wc -l < tests.log)"
 
       - name: Extract Git Diff

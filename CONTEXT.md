@@ -40,3 +40,14 @@ Conforme estabelecido nas Decisões Arquiteturais:
 - **[ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md)**: Adotamos **exclusivamente Testes de Integração e Testes End-to-End (E2E)**. Não implementamos testes unitários isolados com mocks artificiais de banco de dados ou serviços.
 - **[ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)**: Toda funcionalidade possui cobertura mandatória de **Casos Bons (Happy Path)**, **Casos Ruins (Sad Path / Regras de Negócio)** e **Casos Incompletos (Payloads Parciais / Limites de Borda)**.
 - **Respostas de Erro**: A API adota o padrão estruturado RFC 7807 (*Problem Details for HTTP APIs*), garantindo diagnósticos uniformes de falhas para clientes e suítes de teste.
+
+---
+
+## Stack Tecnológica Oficial
+
+Camada | Tecnologia | Detalhes & Práticas
+:--- | :--- | :---
+**Backend** | **Java 21 / Spring Boot** | REST API, Spring Data JPA, Bean Validation, Problem Details (RFC 7807). Testes de integração na borda HTTP contra banco real/Testcontainers.
+**Frontend** | **React + TypeScript (Vite)** | SPA moderna construída com Vite, componentes modulares e comunicação REST tipada com o backend.
+**Testes E2E & Componentes** | **Cypress** | Suíte de testes ponta a ponta (E2E) simulando jornadas reais de tutores e atendentes, com suporte a testes de componentes isolados.
+
