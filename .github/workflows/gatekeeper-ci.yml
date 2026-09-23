@@ -31,12 +31,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'maven'
 
       - name: Set up Node.js 20 (React, Vite & Cypress)
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.18.0'
 
       - name: Set up Python 3.11 (Gatekeeper & Harness)
         uses: actions/setup-python@v5
@@ -82,7 +81,7 @@ jobs:
             PKG_DIR="."
             [ -f "frontend/package.json" ] && PKG_DIR="frontend"
             echo "Running React / Vite tests in $PKG_DIR..."
-            npm --prefix "$PKG_DIR" install || true
+            npm --prefix "$PKG_DIR" install --ignore-scripts || true
             npm --prefix "$PKG_DIR" test >> tests.log 2>&1 || true
             if [ -d "$PKG_DIR/cypress" ]; then
               echo "Running Cypress E2E tests in $PKG_DIR..."

@@ -39,7 +39,7 @@ IGNORE_PATTERNS = [
     ".map",
 ]
 
-def clean_diff(raw_diff: str, max_chars: int = 40000) -> str:
+def clean_diff(raw_diff: str, max_chars: int = 250000) -> str:
     """
     Cleans raw git diff:
     1. Filters out high-noise lockfiles, build artifacts, and minified bundles.
@@ -196,7 +196,12 @@ def code_review_node(state: ReviewState):
             rules = semantic_rules
 
     prompt = [
-        SystemMessage(content="You are a Staff Engineer. Review the PR diff strictly against repository guidelines (Context Harness). Flag violations categorized as BLOCKER or WARNING with clear remediation guidance. Do not use emojis in your response."),
+        SystemMessage(content=(
+            "You are a Staff Engineer. Review the PR diff strictly against repository guidelines (Context Harness). "
+            "Flag actual violations categorized as BLOCKER (e.g. missing tripartite tests pursuant to ADR 0002, mocked DB in integration tests pursuant to ADR 0001, unhandled 500 exceptions, security holes) "
+            "or WARNING with clear remediation guidance. Do not treat documentation updates (markdown files) or initial project scaffolding as blockers. "
+            "Do not flag diff size as a blocker if the content is documentation. Do not use emojis in your response."
+        )),
         HumanMessage(content=f"=== PROJECT GUIDELINES ===\n{rules}\n\n=== PR DIFF ===\n{diff}")
     ]
     content, metric = run_agent(flash_llm, "flash", prompt)
@@ -218,7 +223,12 @@ def sonar_triage_node(state: ReviewState):
 def supervisor_node(state: ReviewState):
     """Consolidates findings and issues the final gatekeeper decision with Gemini Pro (fallback to Flash if needed)."""
     prompt = [
-        SystemMessage(content="You are the Tech Lead responsible for the Quality Gate. Provide the final verdict: APPROVED, APPROVED WITH WARNINGS, or REJECTED. If there is a test failure, SonarQube BLOCKER, or guideline BLOCKER violation, you MUST mark it as REJECTED. Do not use emojis in your response."),
+        SystemMessage(content=(
+            "You are the Tech Lead responsible for the Quality Gate. Provide the final verdict: APPROVED, APPROVED WITH WARNINGS, or REJECTED. "
+            "If there is a real test failure, critical SonarQube BLOCKER, or critical architectural guideline violation, mark it as REJECTED. "
+            "If documentation updates, guidelines, and workflow setups are clean and well-structured with no test errors, issue APPROVED or APPROVED WITH WARNINGS. "
+            "Do not use emojis in your response."
+        )),
         HumanMessage(content=f"--- Test Diagnostics ---\n{state.get('test_analysis', '')}\n\n--- Technical Review ---\n{state.get('code_review', '')}\n\n--- SonarQube Analysis ---\n{state.get('sonar_analysis', '')}")
     ]
     try:

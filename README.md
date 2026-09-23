@@ -1,93 +1,185 @@
-# si600-web-petshop
+# SI600 - Web Petshop (Turma A - Grupo B)
 
+Sistema de gestão e comércio eletrônico para petshop desenvolvido na disciplina SI600 da Faculdade de Tecnologia da UNICAMP (FT/UNICAMP).
 
+---
 
-## Getting started
+## 1. Visão Geral da Arquitetura
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+O sistema é construído sobre uma arquitetura cliente-servidor desacoplada com persistência relacional:
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+* **Backend:** Java 21, Spring Boot (Spring Web, Spring Data JPA, Bean Validation).
+* **Frontend:** React 18+ com Vite e TypeScript / JavaScript.
+* **Banco de Dados:** PostgreSQL 16 (executado via Docker Compose).
+* **Testes:**
+  * Backend: Testes de integração com `@SpringBootTest` e `Testcontainers` / banco real (conforme ADR 0001 e ADR 0002).
+  * Frontend / E2E: Cypress cobrindo jornadas de ponta a ponta e integração com o backend.
+* **Qualidade e Governança:**
+  * SonarCloud (Análise Estática de Código).
+  * AI Gatekeeper Reviewer (Orquestrador LangGraph com Google Gemini).
+  * CI/CD via GitHub Actions espelhado com GitLab Unicamp.
 
-## Add your files
+---
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## 2. Pré-requisitos de Desenvolvimento
 
+Para executar e contribuir com o projeto, instale:
+
+* **Java Development Kit (JDK):** Versão 21 LTS (ex: Eclipse Temurin).
+* **Node.js:** Versão 20 LTS ou superior e gerenciador `npm`.
+* **Docker e Docker Compose:** Para subir o banco PostgreSQL e serviços auxiliares.
+* **Git:** Para versionamento e fluxo de branches.
+
+---
+
+## 3. Estrutura do Repositório
+
+```text
+si600-web-petshop/
+├── .agents/                    # Skills e automações de engenharia e revisão de IA
+├── .github/workflows/          # Pipelines de CI/CD (AI Gatekeeper, SonarCloud, Testes)
+├── backend/                    # Aplicação Spring Boot (Java 21)
+├── frontend/                   # Aplicação Web React (Vite)
+├── cypress/                    # Testes End-to-End (E2E)
+├── docs/                       # Documentação técnica e governança
+│   ├── adr/                    # Architecture Decision Records (ADRs)
+│   ├── rfc/                    # Request for Comments / Especificações técnicas
+│   ├── gatekeeper/             # Código-fonte do AI Gatekeeper Reviewer
+│   ├── branching-strategy.md   # Política de branches e aprovações
+│   └── ci-cd-gitlab-github-bridge.md # Arquitetura do pipeline espelhado
+├── docker-compose.yml          # Definição do PostgreSQL local
+├── CONTEXT.md                  # Glossário ubíquo e visão de domínio do projeto
+├── AGENTS.md                   # Diretrizes para assistentes de IA e desenvolvedores
+└── README.md                   # Guia de início rápido e execução
 ```
-cd existing_repo
-git remote add origin https://gitlab.unicamp.br/si600-2026/turma-a/grupo-b/si600-web-petshop.git
-git branch -M main
-git push -uf origin main
+
+---
+
+## 4. Como Executar o Ambiente Localmente
+
+### Passo 1: Subir o Banco de Dados (PostgreSQL)
+
+Na raiz do repositório, execute:
+
+```bash
+docker compose up -d postgres
 ```
 
-## Integrate with your tools
+O PostgreSQL estará disponível em `localhost:5432` com as credenciais padrão:
+* **Database:** `petshop_db`
+* **Username:** `petshop_user`
+* **Password:** `petshop_pass`
 
-* [Set up project integrations](https://gitlab.unicamp.br/si600-2026/turma-a/grupo-b/si600-web-petshop/-/settings/integrations)
+---
 
-## Collaborate with your team
+### Passo 2: Executar o Backend (Spring Boot)
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+Acesse a pasta do backend e inicie a aplicação com o Maven Wrapper:
 
-## Test and Deploy
+```bash
+cd backend
+./mvnw spring-boot:run
+```
 
-Use the built-in continuous integration in GitLab.
+A API estará acessível em `http://localhost:8080/api`.
+* Endpoint de verificação de integridade (Health Check): `GET http://localhost:8080/api/health`
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+---
 
-***
+### Passo 3: Executar o Frontend (React + Vite)
 
-# Editing this README
+Em outro terminal, acesse a pasta do frontend, instale as dependências e inicie o servidor de desenvolvimento:
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Suggestions for a good README
+A aplicação web estará acessível em `http://localhost:5173`.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+---
 
-## Name
-Choose a self-explaining name for your project.
+### Passo 4: Executar os Testes
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+#### Testes de Integração do Backend
+```bash
+cd backend
+./mvnw test
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+#### Testes End-to-End com Cypress
+```bash
+cd frontend
+# Modo interativo com interface gráfica:
+npx cypress open
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+# Modo headless (linha de comando / CI):
+npx cypress run
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+---
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## 5. Diretrizes de Qualidade e Testes
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+O projeto segue duas Decisões Arquiteturais obrigatórias:
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+1. **Apenas Testes de Integração e E2E ([ADR 0001](docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md)):**
+   * É proibida a escrita de testes unitários isolados com mocks de banco de dados ou services internos.
+   * Todos os testes devem validar o comportamento nas costuras públicas (endpoints HTTP, persistência real no banco de dados e fluxos no navegador).
+2. **Cobertura Tripartite de Cenários ([ADR 0002](docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)):**
+   Cada funcionalidade deve contemplar:
+   * **Casos Bons (Happy Path):** Entradas válidas, HTTP 200/201, persistência confirmada.
+   * **Casos Ruins (Sad Path / Erros de Negócio):** Violação de regras de negócio, HTTP 401/403/404/409/422 sem escrita suja no banco.
+   * **Casos Incompletos (Payloads malformados ou incompletos):** Campos obrigatórios ausentes, tipos inválidos, limites ultrapassados, garantindo HTTP 400 Bad Request e zero erros 500 não tratados.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+---
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## 6. Fluxo de Trabalho Git e Contribuição
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### Estrutura de Branches
+* `main`: Produção / release estável. Protegida contra push direto.
+* `dev`: Integração contínua da equipe. Protegida contra push direto.
+* `member/<nome-sobrenome>`: Branch pessoal de cada integrante para desenvolvimento de features.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+### Fluxo Obrigatório de Merge Requests
+1. O desenvolvedor implementa a funcionalidade em sua branch `member/<nome-sobrenome>`.
+2. Executa a validação local do Gatekeeper:
+   ```bash
+   bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
+   ```
+3. Realiza o push para a sua branch pessoal:
+   ```bash
+   git push origin member/<nome-sobrenome>
+   ```
+4. Abre um Merge Request para a branch `dev`.
+5. **Aprovação Obrigatória:** O MR requer no mínimo **2 aprovações** de outros membros da equipe antes do merge.
+6. A cada fechamento de Sprint/Release, é aberto um MR de `dev` para `main` com 2 aprovações requeridas.
 
-## License
-For open source projects, say how it is licensed.
+Consulte os detalhes em [docs/branching-strategy.md](docs/branching-strategy.md).
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+---
+
+## 7. Pipeline de CI/CD e Governança
+
+Devido a restrições de runners compartilhados no GitLab da Unicamp, o projeto opera um pipeline híbrido espelhado:
+* Todo `git push` no remote `origin` atualiza simultaneamente o GitLab Unicamp e o repositório espelho no GitHub.
+* O GitHub Actions dispara o pipeline de validação contendo:
+  * Análise estática no **SonarCloud**.
+  * Execução dos testes automatizados.
+  * Análise semântica e arquitetural com o **AI Gatekeeper Reviewer** (Google Gemini).
+  * Envio automático do status e relatório de revisão para o GitLab Unicamp.
+
+Consulte os detalhes em [docs/ci-cd-gitlab-github-bridge.md](docs/ci-cd-gitlab-github-bridge.md).
+
+---
+
+## 8. Equipe do Projeto (Grupo B)
+
+* Felipe Ferreira Moreira (`member/felipe-moreira`)
+* Gabriel da Silva Santos (`member/gabriel-santos`)
+* João Pedro Leite Calsavara (`member/joao-calsavara`)
+* Julyo Cesar Silva dos Santos (`member/julyo-silva`)
+* Lorenzo de Oliveira Pugina (`member/lorenzo-pugina`)
+* Samuel Alcantara de Souza (`member/samuel-souza`)
+* Samuel Martins dos Santos (`member/samuel-martins`)
