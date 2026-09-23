@@ -1,0 +1,142 @@
+name: AI Gatekeeper Quality Gate (GitLab Bridge)
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - 'member/**'
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gatekeeper-review:
+    name: AI Quality Gatekeeper & SonarQube
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'docs/gatekeeper/requirements-gatekeeper.txt'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/gatekeeper/requirements-gatekeeper.txt
+
+      - name: Run Test Suite (Integration & E2E)
+        id: run-tests
+        run: |
+          echo "=== Step 1: Running Tests ==="
+          if [ -f "package.json" ]; then
+            echo "Node.js project detected."
+            npm install || true
+            npm test > tests.log 2>&1 || true
+          elif [ -f "pytest.ini" ] || [ -d "tests" ]; then
+            echo "Python project detected."
+            pytest > tests.log 2>&1 || true
+          else
+            echo "No test runner configuration detected. Creating empty test log."
+            touch tests.log
+          fi
+          echo "Tests log lines: $(wc -l < tests.log)"
+
+      - name: Extract Git Diff
+        id: extract-diff
+        run: |
+          echo "=== Step 2: Extracting Diff ==="
+          BASE_TARGET="dev"
+          if [ "${{ github.ref_name }}" = "dev" ] || [ "${{ github.base_ref }}" = "main" ]; then
+            BASE_TARGET="main"
+          fi
+
+          git fetch origin "$BASE_TARGET" || true
+          
+          if [ -n "${{ github.base_ref }}" ]; then
+            echo "Pull request diff against ${{ github.base_ref }}..."
+            git diff "origin/${{ github.base_ref }}...HEAD" > diff.txt || true
+          else
+            echo "Push diff against origin/${BASE_TARGET}..."
+            git diff "origin/${BASE_TARGET}...HEAD" > diff.txt || true
+          fi
+
+          if [ ! -s diff.txt ]; then
+            echo "Diff against ${BASE_TARGET} is empty; falling back to HEAD~1..."
+            git diff HEAD~1 > diff.txt || true
+          fi
+
+          echo "Diff extracted: $(wc -l < diff.txt) lines."
+
+      - name: Fetch SonarQube / SonarCloud Issues
+        id: run-sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+        run: |
+          echo "=== Step 3: SonarQube / SonarCloud Analysis ==="
+          bash .agents/skills/sonarqube-runner/scripts/run_sonar.sh --target . --api || true
+
+      - name: Build Context Harness Vector Index
+        run: |
+          echo "=== Step 4: Context Harness ==="
+          python docs/gatekeeper/build_harness.py --docs docs README.md CONTEXT.md --output context_harness.json || true
+
+      - name: Run AI Gatekeeper Supervisor
+        id: gatekeeper
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'gemini' }}
+        run: |
+          echo "=== Step 5: AI Gatekeeper Multi-Agent Review ==="
+          python docs/gatekeeper/gatekeeper.py --target . || true
+
+      - name: Publish GitHub Summary
+        if: always()
+        run: |
+          if [ -f "report.md" ]; then
+            cat report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Report Back to GitLab (Unicamp)
+        if: always()
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_PROJECT_ID: ${{ secrets.GITLAB_PROJECT_ID }}
+          GITLAB_URL: ${{ secrets.GITLAB_URL || 'https://gitlab.unicamp.br' }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_RUN_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          echo "=== Step 6: Reporting to GitLab Merge Request ==="
+          python docs/gatekeeper/gitlab_reporter.py \
+            --report report.md \
+            --sha "$GITHUB_SHA" \
+            --branch "$GITHUB_REF_NAME" \
+            --target-url "$GITHUB_RUN_URL" || true
+
+      - name: Enforce Gatekeeper Quality Gate
+        run: |
+          if [ -f "report.md" ]; then
+            if grep -Eqi "(REJECTED|REPROVADO)" report.md; then
+              echo "[ERROR] AI Gatekeeper REJECTED the changes. Blocking CI pipeline."
+              exit 1
+            fi
+            echo "[SUCCESS] AI Gatekeeper APPROVED the changes."
+          fi

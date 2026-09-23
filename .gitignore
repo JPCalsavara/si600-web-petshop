@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# Environment and secrets
+.env
+.env.local
+*.key
+*.pem
+
+# Test & Review Artifacts
+tests.log
+diff.txt
+report.md
+context_harness.json
+coverage/
+.nyc_output/
+.pytest_cache/
+
+# OS and Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build outputs
+dist/
+build/
+.next/
+out/
