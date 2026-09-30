@@ -21,8 +21,8 @@ Com base na composição do Grupo B (Turma A):
 | Integrante | RA / Usuário | Branch Dedicada |
 | :--- | :--- | :--- |
 | **Felipe Ferreira Moreira** | `@237124` | `member/felipe-moreira` |
-| **Gabriela Santos Januário** | `@247850` | `member/gabriela-santos` |
-| **Gabriel Matheus Pereira Dos Santos** | `@281416` | `member/gabriel-matheus` |
+| **Gabriela Santos Januário** | `@247850` | `member/gabriela-januario` |
+| **Gabriel Matheus Pereira Dos Santos** | `@281416` | `member/gabriel-santos` |
 | **João Pedro Leite Calsavara** | `@197837` | `member/joao-calsavara` |
 | **Julyo Elias Hidalgo Da Silva** | `@185720` | `member/julio-hidalgo` |
 | **Lorenzo De Oliveira Pugina** | `@234073` | `member/lorenzo-pugina` |

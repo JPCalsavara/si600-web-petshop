@@ -177,8 +177,8 @@ Consulte os detalhes em [docs/ci-cd-gitlab-github-bridge.md](docs/ci-cd-gitlab-g
 ## 8. Equipe do Projeto (Grupo B)
 
 * Felipe Ferreira Moreira (`member/felipe-moreira`)
-* Gabriela Santos Januário (`member/gabriela-santos`)
-* Gabriel Matheus Pereira Dos Santos (`member/gabriel-matheus`)
+* Gabriela Santos Januário (`member/gabriela-januario`)
+* Gabriel Matheus Pereira Dos Santos (`member/gabriel-santos`)
 * João Pedro Leite Calsavara (`member/joao-calsavara`)
 * Julyo Elias Hidalgo Da Silva (`member/julio-hidalgo`)
 * Lorenzo De Oliveira Pugina (`member/lorenzo-pugina`)

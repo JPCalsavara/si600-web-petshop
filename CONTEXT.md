@@ -63,7 +63,7 @@ Conforme estabelecido nas Decisões Arquiteturais:
 * **Hierarquia de Branches**:
   * `main`: Produção estável. Protegida contra push direto.
   * `dev`: Integração contínua da equipe. Protegida contra push direto.
-  * `member/<slug>`: Branch pessoal de cada integrante (`member/joao-calsavara`, `member/felipe-moreira`, `member/gabriela-santos`, `member/gabriel-matheus`, `member/julio-hidalgo`, `member/lorenzo-pugina`, `member/samuel-calegnan`, `member/samuel-lima`).
+  * `member/<slug>`: Branch pessoal de cada integrante (`member/joao-calsavara`, `member/felipe-moreira`, `member/gabriela-januario`, `member/gabriel-santos`, `member/julio-hidalgo`, `member/lorenzo-pugina`, `member/samuel-calegnan`, `member/samuel-lima`).
 * **Fluxo Obrigatório**:
   * Desenvolvimento individual sempre em `member/<slug>`.
   * Integração para `dev` realizada **exclusivamente via Merge Request**.
