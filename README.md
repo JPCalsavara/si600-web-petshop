@@ -1,6 +1,6 @@
 # SI600 - Web Petshop (Turma A - Grupo B)
 
-Sistema de gestão e comércio eletrônico para petshop desenvolvido na disciplina SI600 da Faculdade de Tecnologia da UNICAMP (FT/UNICAMP).
+Um sistema de automação para pré-cotação/cotação do aluguel de estandes em eventos desenvolvido na disciplina SI600 da Faculdade de Tecnologia da UNICAMP (FT/UNICAMP).
 
 ---
 
