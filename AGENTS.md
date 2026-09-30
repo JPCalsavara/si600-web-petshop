@@ -60,7 +60,7 @@ Due to runner constraints on `gitlab.unicamp.br`, the repository employs a cloud
 ### Branch Hierarchy
 * **`main`**: Production / final stable release. Protected branch. Direct push is strictly blocked.
 * **`dev`**: Active integration branch for the entire team. Protected branch. Direct push is strictly blocked.
-* **`member/<slug>`**: Dedicated development branch for each team member (e.g., `member/joao-calsavara`, `member/felipe-moreira`, `member/gabriel-santos`, `member/julyo-silva`, `member/lorenzo-pugina`, `member/samuel-souza`, `member/samuel-martins`).
+* **`member/<slug>`**: Dedicated development branch for each team member (e.g., `member/joao-calsavara`, `member/felipe-moreira`, `member/gabriela-santos`, `member/gabriel-matheus`, `member/julio-hidalgo`, `member/lorenzo-pugina`, `member/samuel-calegnan`, `member/samuel-lima`).
 
 ### Mandatory Workflow
 1. Integrant checks out `dev`, pulls latest changes, and merges into their `member/<slug>`.
