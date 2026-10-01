@@ -1,0 +1,19 @@
+@use '../../styles/variables' as *;
+
+.header {
+  text-align: center;
+  margin-bottom: $sp-8;
+}
+
+.title {
+  margin: 0;
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.subtitle {
+  color: $color-gray-600;
+  font-size: $font-size-md;
+  margin-top: $sp-2;
+}

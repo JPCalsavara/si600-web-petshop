@@ -1,0 +1,15 @@
+@use '../../styles/variables' as *;
+
+.page {
+  max-width: 760px;
+  width: 100%;
+  margin: $sp-10 auto;
+  padding: 0 $sp-5;
+}
+
+.footer {
+  text-align: center;
+  margin-top: $sp-10;
+  color: $color-gray-400;
+  font-size: $font-size-xs;
+}
