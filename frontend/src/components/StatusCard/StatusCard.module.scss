@@ -1,0 +1,87 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.card {
+  @include card-surface;
+}
+
+.cardTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-gray-800;
+  margin-bottom: $sp-5;
+  border-bottom: 2px solid $color-gray-100;
+  padding-bottom: $sp-3;
+}
+
+.statusBox {
+  padding: $sp-4;
+  border-radius: $radius-md;
+  margin-bottom: $sp-5;
+
+  &.online {
+    background-color: $color-success-bg;
+    border: 1px solid $color-success-border;
+  }
+
+  &.offline {
+    background-color: $color-danger-bg;
+    border: 1px solid $color-danger-border;
+  }
+
+  &.loading {
+    background-color: $color-info-bg;
+    border: 1px solid $color-info-border;
+    color: $color-info;
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: $sp-1 $sp-3;
+  border-radius: $radius-pill;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-xs;
+  margin-bottom: $sp-3;
+
+  &.success {
+    background-color: $color-success;
+    color: $color-white;
+  }
+
+  &.danger {
+    background-color: $color-danger;
+    color: $color-white;
+  }
+}
+
+.infoRow {
+  margin-top: $sp-2;
+  font-size: $font-size-sm;
+
+  strong {
+    color: $color-gray-800;
+  }
+}
+
+.errorText {
+  color: $color-danger;
+  font-weight: $font-weight-medium;
+  font-size: $font-size-sm;
+}
+
+.helpText {
+  color: $color-gray-500;
+  font-size: $font-size-xs;
+  margin-top: $sp-2;
+}
+
+.button {
+  @include button-base;
+  background-color: $color-primary-light;
+  color: $color-white;
+
+  &:hover:not(:disabled) {
+    background-color: $color-primary;
+  }
+}

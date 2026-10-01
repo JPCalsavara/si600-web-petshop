@@ -33,5 +33,9 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+target/
+*.class
+*.jar
+*.war
 .next/
 out/
