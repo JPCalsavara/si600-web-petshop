@@ -13,7 +13,7 @@ flowchart TD
     B --> C["3. Entrevista Relentless /grill-me\n(Rodadas na Fronteira de Decisões)"]
     C --> D["4. Geração da RFC de Execução\n(docs/rfc/rfc-NN-slug.md)"]
     D --> E["5. Atualização da Issue GitLab\n(Comentário + label ready-for-agent)"]
-    E --> F["6. Execução na Branch do Membro\n(member/<slug> originada de dev)"]
+    E --> F["6. Execução na Branch do Membro\n(<tipo>/<ID-da-issue>-<titulo> originada de dev)"]
     F --> G["7. Gatekeeper Obrigatório Pré-MR\n(git-flow: MR para dev)"]
 ```
 
@@ -91,7 +91,7 @@ O documento de RFC torna-se o contrato executável para implementação:
      ```bash
      git checkout dev
      git pull origin dev
-     git checkout member/<slug>
+     git checkout <tipo>/<ID-da-issue>-<titulo>
      git merge dev
      ```
 2. **Ciclo TDD**:
@@ -106,5 +106,5 @@ O documento de RFC torna-se o contrato executável para implementação:
 4. **Abertura do Merge Request Obrigatório**:
    - Apenas com a aprovação explícita do desenvolvedor:
      ```bash
-     glab mr create --source member/<slug> --target dev --title "feat(<escopo>): <título da issue>" --description "Ref: #<id>\nRFC: docs/rfc/rfc-<NN>-<slug>.md"
+     glab mr create --source <tipo>/<ID-da-issue>-<titulo> --target dev --title "feat(<escopo>): <título da issue>" --description "Ref: #<id>\nRFC: docs/rfc/rfc-<NN>-<slug>.md"
      ```

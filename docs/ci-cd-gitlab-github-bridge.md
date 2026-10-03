@@ -126,8 +126,8 @@ Se o GitLab da Unicamp tiver a opção habilitada:
 
 ## 7. Como Funciona no Dia a Dia da Equipe
 
-1. O integrante desenvolve na sua branch: `member/joao-calsavara`.
-2. Executa `git push origin member/joao-calsavara` e abre o MR para a branch `dev` no GitLab Unicamp.
+1. O integrante desenvolve na sua branch: `feat/US-04-envio-pdf-estande`.
+2. Executa `git push origin feat/US-04-envio-pdf-estande` e abre o MR para a branch `dev` no GitLab Unicamp.
 3. O código é sincronizado com o GitHub, que dispara o workflow `.github/workflows/gatekeeper-ci.yml`.
 4. O GitHub Actions na nuvem:
    - Roda os testes de integração.
