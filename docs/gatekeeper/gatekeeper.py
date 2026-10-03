@@ -39,6 +39,13 @@ IGNORE_PATTERNS = [
     ".map",
 ]
 
+def validate_safe_path(target_path: str, base_dir: str = ".") -> str:
+    abs_base = os.path.abspath(base_dir)
+    abs_target = os.path.abspath(os.path.join(abs_base, target_path))
+    if not abs_target.startswith(abs_base):
+        raise ValueError(f"Path traversal detected: {target_path}")
+    return abs_target
+
 def clean_diff(raw_diff: str, max_chars: int = 250000) -> str:
     """
     Cleans raw git diff:
@@ -65,10 +72,8 @@ def clean_diff(raw_diff: str, max_chars: int = 250000) -> str:
         file_chunks.append((current_file, "".join(current_chunk)))
 
     kept_chunks = []
-    filtered_count = 0
     for filename, chunk in file_chunks:
         if any(pattern in filename for pattern in IGNORE_PATTERNS):
-            filtered_count += 1
             kept_chunks.append(f"# [IGNORED NOISY FILE: {filename}]\n")
         else:
             kept_chunks.append(chunk)
@@ -319,13 +324,14 @@ def main():
     parser.add_argument("--apply-patch", action="store_true", help="Automatically apply remediation patch to workspace if available")
 
     args = parser.parse_args()
-    target_path = Path(args.target).resolve()
+    target_path = Path(validate_safe_path(args.target)).resolve()
+    target_str = str(target_path)
 
-    diff_path = Path(args.diff) if args.diff else target_path / "diff.txt"
-    tests_path = Path(args.tests) if args.tests else target_path / "tests.log"
-    guidelines_path = Path(args.guidelines) if args.guidelines else target_path / "docs" / "guidelines.md"
-    harness_path = Path(args.harness) if args.harness else target_path / "context_harness.json"
-    report_path = Path(args.output) if args.output else target_path / "report.md"
+    diff_path = Path(validate_safe_path(args.diff, target_str)) if args.diff else target_path / "diff.txt"
+    tests_path = Path(validate_safe_path(args.tests, target_str)) if args.tests else target_path / "tests.log"
+    guidelines_path = Path(validate_safe_path(args.guidelines, target_str)) if args.guidelines else target_path / "docs" / "guidelines.md"
+    harness_path = Path(validate_safe_path(args.harness, target_str)) if args.harness else target_path / "context_harness.json"
+    report_path = Path(validate_safe_path(args.output, target_str)) if args.output else target_path / "report.md"
 
     raw_diff = diff_path.read_text(encoding="utf-8") if diff_path.exists() else ""
     diff = clean_diff(raw_diff)
