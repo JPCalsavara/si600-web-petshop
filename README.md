@@ -140,23 +140,27 @@ O projeto segue duas Decisões Arquiteturais obrigatórias:
 ### Estrutura de Branches
 * `main`: Produção / release estável. Protegida contra push direto.
 * `dev`: Integração contínua da equipe. Protegida contra push direto.
-* `member/<nome-sobrenome>`: Branch pessoal de cada integrante para desenvolvimento de features.
+* `<tipo>/<ID-da-issue>-<titulo>`: Branch baseada na issue em que o integrante está trabalhando. Tipos válidos: `feat`, `fix`, `docs`, `chore`.
+
+### Padrão de Commits
+O padrão de commits segue o formato Conventional Commits adaptado com a issue:
+`<tipo>(<ID-da-issue>): <descrição curta no imperativo>`
 
 ### Fluxo Obrigatório de Merge Requests
-1. O desenvolvedor implementa a funcionalidade em sua branch `member/<nome-sobrenome>`.
+1. O desenvolvedor cria e implementa a funcionalidade em sua branch `<tipo>/<ID-da-issue>-<titulo>`.
 2. Executa a validação local do Gatekeeper:
    ```bash
    bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
    ```
 3. Realiza o push para a sua branch pessoal:
    ```bash
-   git push origin member/<nome-sobrenome>
+   git push origin <tipo>/<ID-da-issue>-<titulo>
    ```
-4. Abre um Merge Request para a branch `dev`.
-5. **Aprovação Obrigatória:** O MR requer no mínimo **2 aprovações** de outros membros da equipe antes do merge.
-6. A cada fechamento de Sprint/Release, é aberto um MR de `dev` para `main` com 2 aprovações requeridas.
+4. Abre um Merge Request para a branch `dev` e marca para realizar *Squash and Merge*.
+5. **Aprovação Obrigatória:** O MR requer no mínimo **1 aprovação** de outro membro da equipe antes do merge.
+6. A cada fechamento de Sprint/Release, é aberto um MR de `dev` para `main`.
 
-Consulte os detalhes em [docs/branching-strategy.md](docs/branching-strategy.md).
+Consulte os detalhes em [docs/branching-strategy.md](docs/branching-strategy.md) e [docs/adr/0003-squash-and-merge.md](docs/adr/0003-squash-and-merge.md).
 
 ---
 
@@ -176,11 +180,11 @@ Consulte os detalhes em [docs/ci-cd-gitlab-github-bridge.md](docs/ci-cd-gitlab-g
 
 ## 8. Equipe do Projeto (Grupo B)
 
-* Felipe Ferreira Moreira (`member/felipe-moreira`)
-* Gabriela Santos Januário (`member/gabriela-januario`)
-* Gabriel Matheus Pereira Dos Santos (`member/gabriel-santos`)
-* João Pedro Leite Calsavara (`member/joao-calsavara`)
-* Julyo Elias Hidalgo Da Silva (`member/julio-hidalgo`)
-* Lorenzo De Oliveira Pugina (`member/lorenzo-pugina`)
-* Samuel Calegnan dos Santos Souza (`member/samuel-calegnan`)
-* Samuel Lima Martins (`member/samuel-lima`)
+* Felipe Ferreira Moreira
+* Gabriela Santos Januário
+* Gabriel Matheus Pereira Dos Santos
+* João Pedro Leite Calsavara
+* Julyo Elias Hidalgo Da Silva
+* Lorenzo De Oliveira Pugina
+* Samuel Calegnan dos Santos Souza
+* Samuel Lima Martins
