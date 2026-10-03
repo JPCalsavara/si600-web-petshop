@@ -1,0 +1,23 @@
+@use 'variables' as *;
+@use 'reset';
+
+body {
+  font-family: $font-family-base;
+  background-color: $color-background;
+  color: $color-text-main;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+code {
+  font-family: $font-family-mono;
+  font-size: 0.9em;
+  background-color: $color-gray-100;
+  padding: 0.15rem 0.35rem;
+  border-radius: $radius-sm;
+  color: $color-primary;
+}
