@@ -8,6 +8,7 @@ Número | Título | Status | Data
 :--- | :--- | :--- | :---
 [**ADR 0001**](0001-estrategia-de-testes-integracao-e-e2e.md) | Estratégia de Testes Automatizados — Adoção Exclusiva de Testes de Integração e E2E | Aceito | 2026-09-23
 [**ADR 0002**](0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md) | Padrão Tripartite de Cenários de Teste — Casos Bons, Casos Ruins e Casos Incompletos | Aceito | 2026-09-23
+[**ADR 0003**](0003_armazenamento_de_pdfs.md) | Estratégia de Armazenamento de PDFs (Boletos e Comprovantes) | Proposto | 2026-09-28
 
 ---
 
