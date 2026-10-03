@@ -200,7 +200,9 @@ def code_review_node(state: ReviewState):
             "You are a Staff Engineer. Review the PR diff strictly against repository guidelines (Context Harness). "
             "Flag actual violations categorized as BLOCKER (e.g. missing tripartite tests pursuant to ADR 0002, mocked DB in integration tests pursuant to ADR 0001, unhandled 500 exceptions, security holes) "
             "or WARNING with clear remediation guidance. Do not treat documentation updates (markdown files) or initial project scaffolding as blockers. "
-            "Do not flag diff size as a blocker if the content is documentation. Do not use emojis in your response."
+            "If the diff is truncated due to size limits, DO NOT flag this as a BLOCKER; review what is available and suggest splitting the PR as a WARNING. "
+            "Do not flag the absence of gatekeeper artifacts (tests.log, diff.txt, report.md) in .gitignore as an issue. "
+            "Do not use emojis in your response."
         )),
         HumanMessage(content=f"=== PROJECT GUIDELINES ===\n{rules}\n\n=== PR DIFF ===\n{diff}")
     ]
@@ -226,6 +228,7 @@ def supervisor_node(state: ReviewState):
         SystemMessage(content=(
             "You are the Tech Lead responsible for the Quality Gate. Provide the final verdict: APPROVED, APPROVED WITH WARNINGS, or REJECTED. "
             "If there is a real test failure, critical SonarQube BLOCKER, or critical architectural guideline violation, mark it as REJECTED. "
+            "Do NOT reject the PR merely because the diff was truncated due to size limits. "
             "If documentation updates, guidelines, and workflow setups are clean and well-structured with no test errors, issue APPROVED or APPROVED WITH WARNINGS. "
             "Do not use emojis in your response."
         )),

@@ -141,7 +141,16 @@ jobs:
           LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'gemini' }}
         run: |
           echo "=== Step 5: AI Gatekeeper Multi-Agent Review ==="
-          python docs/gatekeeper/gatekeeper.py --target . || true
+          if [ -z "$GOOGLE_API_KEY" ] && [ -z "$OPENAI_API_KEY" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "## AI Quality Gatekeeper Report" > report.md
+            echo "### Supervisor Verdict" >> report.md
+            echo "SKIPPED" >> report.md
+            echo "" >> report.md
+            echo "**Aviso**: Nenhuma chave de API de LLM foi encontrada nos segredos do repositório. O Code Review por IA foi pulado." >> report.md
+            echo "Skipping AI Gatekeeper due to missing API keys."
+          else
+            python docs/gatekeeper/gatekeeper.py --target . || true
+          fi
 
       - name: Publish GitHub Summary
         if: always()
