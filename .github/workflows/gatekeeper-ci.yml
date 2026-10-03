@@ -5,7 +5,10 @@ on:
     branches:
       - main
       - dev
-      - 'member/**'
+      - 'feat/**'
+      - 'fix/**'
+      - 'docs/**'
+      - 'chore/**'
   pull_request:
     branches:
       - main
