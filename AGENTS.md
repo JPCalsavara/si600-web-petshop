@@ -60,23 +60,25 @@ Due to runner constraints on `gitlab.unicamp.br`, the repository employs a cloud
 ### Branch Hierarchy
 * **`main`**: Production / final stable release. Protected branch. Direct push is strictly blocked.
 * **`dev`**: Active integration branch for the entire team. Protected branch. Direct push is strictly blocked.
-* **`member/<slug>`**: Dedicated development branch for each team member (e.g., `member/joao-calsavara`, `member/felipe-moreira`, `member/gabriela-januario`, `member/gabriel-santos`, `member/julio-hidalgo`, `member/lorenzo-pugina`, `member/samuel-calegnan`, `member/samuel-lima`).
+* **`<tipo>/<ID-da-issue>-<titulo>`**: Feature/fix/docs/chore branch tied to a specific issue (e.g., `feat/US-04-envio-pdf-estande`, `fix/US-06-quantidade-negativa`).
 
 ### Mandatory Workflow
-1. Integrant checks out `dev`, pulls latest changes, and merges into their `member/<slug>`.
-2. All feature work is implemented in `member/<slug>`.
-3. Before pushing, the developer runs the local Gatekeeper check:
+1. Integrant checks out `dev`, pulls latest changes, and creates a new branch `<tipo>/<ID-da-issue>-<titulo>`.
+2. All feature work is implemented in this branch.
+3. Commits must follow the adapted Conventional Commits pattern: `<tipo>(<ID-da-issue>): <descrição no imperativo>`.
+4. Before pushing, the developer runs the local Gatekeeper check:
    ```bash
    bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
    ```
-4. Push to remote:
+5. Push to remote:
    ```bash
-   git push origin member/<slug>
+   git push origin <nome-da-branch>
    ```
    *(Pushes simultaneously to GitLab Unicamp and GitHub mirror).*
-5. Open a Merge Request on GitLab Unicamp from `member/<slug>` targeting `dev`.
-6. **Mandatory 2-Approval Rule**: The MR requires at least **2 approvals from different team members** before merging. Author self-approval is forbidden.
-7. Sprint / Milestone Release: Open an MR from `dev` to `main`, requiring at least 2 approvals and a passing CI Quality Gate.
+6. Open a Merge Request on GitLab Unicamp from `<nome-da-branch>` targeting `dev`. The MR title must match the main commit (e.g. `feat(US-08): geração de pagamento por taxa`) and description must link the issue and explain testing.
+7. **Mandatory 1-Approval Rule**: The MR requires at least **1 approval from a different team member** before merging. Author self-approval is forbidden.
+8. **Squash and Merge**: Merge requests to `dev` must be squashed into a single commit to keep the main branch history clean.
+9. Sprint / Milestone Release: Open an MR from `dev` to `main`, requiring at least 1 approval and a passing CI Quality Gate.
 
 See full specification in [docs/branching-strategy.md](docs/branching-strategy.md).
 
