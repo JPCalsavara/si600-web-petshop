@@ -166,7 +166,7 @@ jobs:
         if: always()
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
-          GITLAB_PROJECT_ID: ${{ secrets.GITLAB_PROJECT_ID }}
+          GITLAB_PROJECT_ID: '6372'
           GITLAB_URL: ${{ secrets.GITLAB_URL || 'https://gitlab.unicamp.br' }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
