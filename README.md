@@ -1,4 +1,4 @@
-# SI600 - Web Petshop (Turma A - Grupo B)
+# SI600 - Sistema de Eventos (Turma A - Grupo B)
 
 Um sistema de automação para pré-cotação/cotação do aluguel de estandes em eventos desenvolvido na disciplina SI600 da Faculdade de Tecnologia da UNICAMP (FT/UNICAMP).
 

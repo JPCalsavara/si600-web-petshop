@@ -202,6 +202,7 @@ def code_review_node(state: ReviewState):
             "or WARNING with clear remediation guidance. Do not treat documentation updates (markdown files) or initial project scaffolding as blockers. "
             "If the diff is truncated due to size limits, DO NOT flag this as a BLOCKER; review what is available and suggest splitting the PR as a WARNING. "
             "Do not flag the absence of gatekeeper artifacts (tests.log, diff.txt, report.md) in .gitignore as an issue. "
+            "Do not flag diff size as a blocker if the content is documentation. "
             "Do not use emojis in your response."
         )),
         HumanMessage(content=f"=== PROJECT GUIDELINES ===\n{rules}\n\n=== PR DIFF ===\n{diff}")

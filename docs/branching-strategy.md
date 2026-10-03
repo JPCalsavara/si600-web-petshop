@@ -104,6 +104,17 @@ sequenceDiagram
 4. **MR Obrigatório de Release (`dev` -> `main`)**:
    - A promoção para `main` ocorre por MR, consolidando uma release/sprint.
 
+5. **Pushes Diretos Proibidos**:
+   - Ninguém pode realizar `git push origin dev` ou `git push origin main` diretamente.
+
+### Configuração no GitLab (`gitlab.unicamp.br`):
+1. Acesse o projeto no GitLab -> **Settings** -> **Merge requests**.
+2. Na seção **Merge request approvals**:
+   - Em *Approval rules*, configure a regra com **Approvals required = 1**.
+   - Marque a opção: **Prevent approval by author**.
+   - Marque a opção: **Prevent approvals by users who add commits**.
+   - Marque a opção: **Remove all approvals when new commits are added**.
+
 ---
 
 ## 4. Comandos de Referência (`git` e `glab`)
@@ -127,4 +138,13 @@ glab mr create \
   --target dev \
   --title "feat(<ID-da-issue>): <resumo da entrega>" \
   --description "Closes #<ID-da-issue>. <Instruções de teste / dependências>"
+```
+
+### Abrir o MR de release para `main`:
+```bash
+glab mr create \
+  --source dev \
+  --target main \
+  --title "release: Consolidação de entrega da sprint/etapa" \
+  --description "Merge da branch dev para main contendo as funcionalidades validadas."
 ```
