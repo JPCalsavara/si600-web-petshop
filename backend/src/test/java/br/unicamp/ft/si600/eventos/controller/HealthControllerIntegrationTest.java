@@ -1,6 +1,7 @@
 package br.unicamp.ft.si600.eventos.controller;
 
 import br.unicamp.ft.si600.eventos.dto.HealthResponse;
+import br.unicamp.ft.si600.eventos.project.TestStorageConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,8 @@ import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "storage.b2.enabled=false")
+@org.springframework.context.annotation.Import(TestStorageConfig.class)
 class HealthControllerIntegrationTest {
 
     @Autowired
