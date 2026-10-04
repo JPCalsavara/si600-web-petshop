@@ -34,3 +34,12 @@ storage:
     bucket: ${B2_BUCKET:}
     key-id: ${B2_KEY_ID:}
     application-key: ${B2_APPLICATION_KEY:}
+
+notification:
+  gmail:
+    # Desligado por padrão: em dev nenhum e-mail é enviado. Ver docs/us-08-notificacao-email-gmail.md.
+    enabled: ${GMAIL_ENABLED:false}
+    sender: ${GMAIL_SENDER:}
+    client-id: ${GMAIL_CLIENT_ID:}
+    client-secret: ${GMAIL_CLIENT_SECRET:}
+    refresh-token: ${GMAIL_REFRESH_TOKEN:}
