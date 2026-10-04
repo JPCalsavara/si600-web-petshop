@@ -1,5 +1,6 @@
 package br.unicamp.ft.si600.eventos.controller;
 
+import br.unicamp.ft.si600.eventos.dto.CreateProjectRequest;
 import br.unicamp.ft.si600.eventos.dto.DecisionRequest;
 import br.unicamp.ft.si600.eventos.dto.DownloadUrlResponse;
 import br.unicamp.ft.si600.eventos.dto.ProjectResponse;
@@ -7,6 +8,9 @@ import br.unicamp.ft.si600.eventos.entity.ProjectStatus;
 import br.unicamp.ft.si600.eventos.security.Actor;
 import br.unicamp.ft.si600.eventos.security.ActorResolver;
 import br.unicamp.ft.si600.eventos.service.ProjectPdfService;
+import br.unicamp.ft.si600.eventos.service.ProjectService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -22,11 +26,21 @@ import java.util.UUID;
 @RequestMapping("/projects")
 public class ProjectPdfController {
     private final ProjectPdfService service;
+    private final ProjectService projectService;
     private final ActorResolver actorResolver;
 
-    public ProjectPdfController(ProjectPdfService service, ActorResolver actorResolver) {
+    public ProjectPdfController(ProjectPdfService service, ProjectService projectService,
+                                ActorResolver actorResolver) {
         this.service = service;
+        this.projectService = projectService;
         this.actorResolver = actorResolver;
+    }
+
+    @PostMapping
+    public ResponseEntity<ProjectResponse> createProject(
+            @Valid @RequestBody CreateProjectRequest body, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(projectService.create(body, actorResolver.resolve(request)));
     }
 
     @GetMapping("/{projectId}")
