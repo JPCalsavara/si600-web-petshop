@@ -1,6 +1,6 @@
 # Estratégia de Branches & Fluxo Obrigatório de Merge Requests
 
-Este documento define a política oficial de branches, colaboração e controle de qualidade para o repositório **SI600 Web Petshop** (`si600-2026/turma-a/grupo-b/si600-web-petshop`).
+Este documento define a política oficial de branches, colaboração e controle de qualidade para o repositório **SI600 Web Eventos** (`si600-2026/turma-a/grupo-b/si600-web-eventos`).
 
 ---
 

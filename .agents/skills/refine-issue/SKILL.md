@@ -5,7 +5,7 @@ description: "Refine a GitLab issue into an authoritative implementation RFC usi
 
 # Skill: Refinamento de Issues com Grill-me e Modelo RFC
 
-A skill `refine-issue` conduz o refinamento aprofundado de uma demanda (issue do GitLab), eliminando ambiguidades por meio de uma entrevista técnica implacável (`/grill-me`) e gerando um documento base formal (`docs/rfc/rfc-<NN>-<slug>.md`) baseado no [rfc-modelo.md](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/rfc/rfc-modelo.md), pronto para execução via TDD e validação pré-MR pelo [git-flow](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/.agents/skills/git-flow/SKILL.md).
+A skill `refine-issue` conduz o refinamento aprofundado de uma demanda (issue do GitLab), eliminando ambiguidades por meio de uma entrevista técnica implacável (`/grill-me`) e gerando um documento base formal (`docs/rfc/rfc-<NN>-<slug>.md`) baseado no [rfc-modelo.md](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/rfc/rfc-modelo.md), pronto para execução via TDD e validação pré-MR pelo [git-flow](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/.agents/skills/git-flow/SKILL.md).
 
 ```mermaid
 flowchart TD
@@ -34,8 +34,8 @@ flowchart TD
 ### Passo 2: Investigação Autônoma de Fatos (Agent's Job)
 
 Antes de questionar o usuário, o agente deve investigar o repositório por conta própria:
-1. **Vocabulário de Domínio**: Consulte [CONTEXT.md](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/CONTEXT.md) para garantir termos ubíquos (`Cliente`, `Pet`, `Servico`, `Profissional`, `Agendamento`, etc.).
-2. **Decisões Arquiteturais**: Revise [ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md) (apenas testes de integração/E2E reais) e [ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md) (cenários tripartite: bons, ruins, incompletos).
+1. **Vocabulário de Domínio**: Consulte [CONTEXT.md](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/CONTEXT.md) para garantir termos ubíquos (`Cliente`, `Pet`, `Servico`, `Profissional`, `Agendamento`, etc.).
+2. **Decisões Arquiteturais**: Revise [ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md) (apenas testes de integração/E2E reais) e [ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md) (cenários tripartite: bons, ruins, incompletos).
 3. **Seams Existentes**: Verifique se já existem rotas, modelos de banco ou middlewares relacionados à demanda.
 4. *Nunca pergunte ao usuário nada que possa ser inspecionado diretamente no código ou na documentação.*
 
@@ -65,7 +65,7 @@ Conduza a entrevista técnica seguindo o modelo do **`grilling`**:
 ### Passo 4: Geração da RFC de Execução
 
 Após a confirmação e encerramento da fronteira de perguntas:
-1. Crie o arquivo `docs/rfc/rfc-<NN>-<slug>.md` utilizando a estrutura do [docs/rfc/rfc-modelo.md](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/rfc/rfc-modelo.md).
+1. Crie o arquivo `docs/rfc/rfc-<NN>-<slug>.md` utilizando a estrutura do [docs/rfc/rfc-modelo.md](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/rfc/rfc-modelo.md).
 2. Preencha integralmente todas as seções obrigatórias:
    - Metadados (`Status: Em Refinamento` ou `Aprovada`, Autor, Data, Versão).
    - Contextualização (Entendendo o problema, Solução macro, Alternativas descartadas).
@@ -98,7 +98,7 @@ O documento de RFC torna-se o contrato executável para implementação:
    - Implementação dos testes de integração primeiro nos seams públicos (cobrindo a matriz tripartite).
    - Implementação do código até que todos os testes passem (Red $\rightarrow$ Green).
 3. **Padrão Pré-MR (`git-flow`)**:
-   - Antes de abrir qualquer Merge Request, o agente/desenvolvedor deve executar rigorosamente o pipeline [git-flow](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/.agents/skills/git-flow/SKILL.md):
+   - Antes de abrir qualquer Merge Request, o agente/desenvolvedor deve executar rigorosamente o pipeline [git-flow](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/.agents/skills/git-flow/SKILL.md):
      - Inspeção de diff.
      - Gate determinístico: 100% dos testes de integração passando.
      - Gate semântico: `bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .` com veredito `APPROVED`.

@@ -1,6 +1,6 @@
 # Guia de Desenvolvimento e Padrões de Engenharia
 
-Este guia serve como especificação oficial para os desenvolvedores e assistentes de IA que implementarão e manterão a base de código do **SI600 Web Petshop**.
+Este guia serve como especificação oficial para os desenvolvedores e assistentes de IA que implementarão e manterão a base de código do **SI600 Web Eventos**.
 
 ---
 
@@ -9,11 +9,11 @@ Este guia serve como especificação oficial para os desenvolvedores e assistent
 O projeto adota uma estrutura desacoplada em monorepo simplificado:
 
 ```text
-si600-web-petshop/
+si600-web-eventos/
 ├── backend/                       # Aplicação Spring Boot (Java 21)
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── java/br/unicamp/ft/si600/petshop/
+│   │   │   ├── java/br/unicamp/ft/si600/eventos/
 │   │   │   │   ├── controller/    # Endpoints REST (@RestController)
 │   │   │   │   ├── service/       # Lógica de negócio e transações (@Service, @Transactional)
 │   │   │   │   ├── repository/    # Repositórios Spring Data JPA (@Repository)
@@ -59,18 +59,18 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: petshop_postgres
+    container_name: eventos_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: petshop_db
-      POSTGRES_USER: petshop_user
-      POSTGRES_PASSWORD: petshop_pass
+      POSTGRES_DB: eventos_db
+      POSTGRES_USER: eventos_user
+      POSTGRES_PASSWORD: eventos_pass
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U petshop_user -d petshop_db"]
+      test: ["CMD-SHELL", "pg_isready -U eventos_user -d eventos_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -104,9 +104,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/petshop_db
-    username: petshop_user
-    password: petshop_pass
+    url: jdbc:postgresql://localhost:5432/eventos_db
+    username: eventos_user
+    password: eventos_pass
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

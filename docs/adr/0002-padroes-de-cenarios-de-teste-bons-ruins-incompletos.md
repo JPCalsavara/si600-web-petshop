@@ -45,7 +45,7 @@ flowchart TD
   - Corpo da resposta condizente com o contrato da API (JSON schema validado).
   - Persistência efetiva verificada diretamente no banco de dados (ex: registro gravado com chave estrangeira correta, data de criação e status inicial esperado).
   - Emissão de eventos de domínio colaterais esperados (quando aplicável).
-- **Exemplos no Petshop**:
+- **Exemplos no Eventos**:
   - Cadastro de novo `Pet` com dados completos vinculados a um `Cliente` existente.
   - Agendamento de serviço de `Banho e Tosa` em data e horário disponíveis para um profissional livre.
   - Finalização de atendimento com transição de status para `CONCLUIDO`.

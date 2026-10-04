@@ -86,9 +86,9 @@ O repositório adota a estrutura hierárquica estrita:
    bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
    ```
 2. O Gatekeeper valida a aderência estrita às diretrizes do projeto:
-   - **[ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md)**: Apenas testes de integração e E2E reais nos seams públicos (zero mocks de banco ou serviços internos).
-   - **[ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)**: Cobertura tripartite obrigatória para cada fluxo (Casos Bons, Casos Ruins e Casos Incompletos com HTTP 400 e RFC 7807).
-   - **[CONTEXT.md](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/CONTEXT.md)**: Vocabulário ubíquo (`Cliente`, `Pet`, `Servico`, `Profissional`, `Agendamento`) e invariantes de negócio.
+   - **[ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md)**: Apenas testes de integração e E2E reais nos seams públicos (zero mocks de banco ou serviços internos).
+   - **[ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)**: Cobertura tripartite obrigatória para cada fluxo (Casos Bons, Casos Ruins e Casos Incompletos com HTTP 400 e RFC 7807).
+   - **[CONTEXT.md](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/CONTEXT.md)**: Vocabulário ubíquo (`Cliente`, `Pet`, `Servico`, `Profissional`, `Agendamento`) e invariantes de negócio.
 3. Se o veredito for `REJECTED`, emita uma **Checklist Fechada** e proceda para o Passo 4.
 
 ### Passo 4: Remediação com `/tdd`
