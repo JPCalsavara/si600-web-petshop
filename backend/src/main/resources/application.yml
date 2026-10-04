@@ -7,11 +7,12 @@ spring:
   application:
     name: eventos-backend
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/petshop_db}
-    username: ${SPRING_DATASOURCE_USERNAME:petshop_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:petshop_pass}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/eventos_db}
+    username: ${SPRING_DATASOURCE_USERNAME:eventos_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:eventos_pass}
     driver-class-name: org.postgresql.Driver
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
     show-sql: false
@@ -19,3 +20,17 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+
+storage:
+  b2:
+    enabled: ${B2_ENABLED:false}
+    endpoint: ${B2_ENDPOINT:https://s3.us-east-005.backblazeb2.com}
+    region: ${B2_REGION:us-east-005}
+    bucket: ${B2_BUCKET:}
+    key-id: ${B2_KEY_ID:}
+    application-key: ${B2_APPLICATION_KEY:}

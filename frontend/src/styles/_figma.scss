@@ -1,0 +1,47 @@
+@use 'variables' as *;
+
+// Elementos recorrentes das telas do Figma (SI600 - 2026).
+
+$figma-green: #2cc653;
+$figma-orange: #ff8a1f;
+$figma-row-bg: #f4f4f4;
+
+@mixin figma-title {
+  margin: 0 0 $sp-4;
+  color: #777;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-medium;
+}
+
+@mixin figma-panel {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 24px;
+  padding: 12px;
+}
+
+@mixin figma-pill-button($bg: $figma-green) {
+  border: 0;
+  border-radius: $radius-pill;
+  padding: $sp-3 $sp-8;
+  background: $bg;
+  color: $color-white;
+  font: inherit;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+@mixin figma-input {
+  border: 1px solid $color-gray-300;
+  border-radius: $radius-pill;
+  background: $color-white;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: $font-size-sm;
+  min-width: 0;
+
+  &:focus { outline: none; border-color: $color-secondary; }
+  &:disabled { background: $figma-row-bg; color: $color-text-muted; }
+}
