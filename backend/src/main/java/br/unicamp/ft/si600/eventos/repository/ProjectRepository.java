@@ -10,5 +10,7 @@ import java.util.UUID;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
     Optional<Project> findByIdAndOwnerId(UUID id, String ownerId);
+    boolean existsByDocumentDigits(String documentDigits);
+    boolean existsByContactEmail(String contactEmail);
     List<Project> findAllByStatusOrderByPdfUploadedAtAsc(ProjectStatus status);
 }

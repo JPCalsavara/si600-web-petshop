@@ -34,6 +34,26 @@ public class Project {
     @Column(name = "pdf_deadline", nullable = false)
     private OffsetDateTime pdfDeadline;
 
+    // Campos da US-03. Nullable no banco para não quebrar linhas anteriores (ddl-auto=update);
+    // a obrigatoriedade é garantida na criação (ProjectService).
+    @Column(name = "address", length = 300)
+    private String address;
+
+    @Column(name = "contact_email", length = 254, unique = true)
+    private String contactEmail;
+
+    @Column(name = "document_digits", length = 14, unique = true)
+    private String documentDigits;
+
+    @Column(name = "payment_deadline")
+    private OffsetDateTime paymentDeadline;
+
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+
+    @Column(name = "created_at")
+    private OffsetDateTime createdAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
     private ProjectStatus status = ProjectStatus.AGUARDANDO_PDF;
@@ -77,7 +97,32 @@ public class Project {
         this.pdfDeadline = pdfDeadline;
     }
 
+    public static Project create(String ownerId, String companyName, String document, String documentDigits,
+                                 String representativeName, String category, String address,
+                                 String contactEmail, OffsetDateTime pdfDeadline,
+                                 OffsetDateTime paymentDeadline, String createdBy, OffsetDateTime createdAt) {
+        Project p = new Project(ownerId, companyName, document, representativeName, category, pdfDeadline);
+        p.documentDigits = documentDigits;
+        p.address = address;
+        p.contactEmail = contactEmail;
+        p.paymentDeadline = paymentDeadline;
+        p.createdBy = createdBy;
+        p.createdAt = createdAt;
+        return p;
+    }
+
+    public void updateDeadlines(OffsetDateTime pdfDeadline, OffsetDateTime paymentDeadline) {
+        this.pdfDeadline = pdfDeadline;
+        this.paymentDeadline = paymentDeadline;
+    }
+
     public UUID getId() { return id; }
+    public String getAddress() { return address; }
+    public String getContactEmail() { return contactEmail; }
+    public String getDocumentDigits() { return documentDigits; }
+    public OffsetDateTime getPaymentDeadline() { return paymentDeadline; }
+    public String getCreatedBy() { return createdBy; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
     public String getOwnerId() { return ownerId; }
     public String getCompanyName() { return companyName; }
     public String getDocument() { return document; }

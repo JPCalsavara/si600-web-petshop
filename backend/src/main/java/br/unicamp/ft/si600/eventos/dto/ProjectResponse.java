@@ -20,13 +20,17 @@ public record ProjectResponse(
         OffsetDateTime pdfUploadedAt,
         String decisionBy,
         OffsetDateTime decisionAt,
-        String rejectionJustification
+        String rejectionJustification,
+        String address,
+        String contactEmail,
+        OffsetDateTime paymentDeadline
 ) {
     public static ProjectResponse from(Project p) {
         return new ProjectResponse(p.getId(), p.getCompanyName(), p.getDocument(),
                 p.getRepresentativeName(), p.getCategory(), p.getPdfDeadline(),
                 p.getStatus(), p.getBoothAreaM2(), p.getPdfOriginalFilename(),
                 p.getPdfSizeBytes(), p.getPdfUploadedAt(), p.getDecisionBy(),
-                p.getDecisionAt(), p.getRejectionJustification());
+                p.getDecisionAt(), p.getRejectionJustification(),
+                p.getAddress(), p.getContactEmail(), p.getPaymentDeadline());
     }
 }
