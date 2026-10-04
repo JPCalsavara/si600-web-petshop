@@ -1,0 +1,19 @@
+@use '../../styles/variables' as *;
+@use '../../styles/figma' as *;
+
+.page { width: 100%; }
+.header { display: flex; justify-content: space-between; align-items: center; gap: $sp-4; margin-bottom: $sp-4; flex-wrap: wrap; h1 { @include figma-title; margin: 0; } }
+.tools { display: flex; align-items: center; gap: $sp-3; select { @include figma-input; } }
+.link { border: 0; background: transparent; color: $color-secondary; font: inherit; font-size: $font-size-sm; cursor: pointer; text-decoration: underline; }
+.panel { @include figma-panel; }
+.tableWrap { overflow-x: auto; }
+table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+th, td { padding: 10px 14px; text-align: left; white-space: nowrap; font-size: 11px; background: $figma-row-bg; }
+th { color: #222; }
+th:first-child, td:first-child { border-radius: 18px 0 0 18px; }
+th:last-child, td:last-child { border-radius: 0 18px 18px 0; }
+.status { display: inline-block; padding: 4px 10px; border-radius: $radius-pill; background: #fff7d6; color: #8b6a00; }
+.edit { border: 0; border-radius: $radius-pill; padding: 4px 12px; background: $color-gray-200; cursor: pointer; font: inherit; font-size: 11px; }
+.empty { padding: $sp-8; text-align: center; color: $color-text-muted; }
+.footer { display: flex; justify-content: flex-end; margin-top: $sp-4; }
+.add { @include figma-pill-button; }

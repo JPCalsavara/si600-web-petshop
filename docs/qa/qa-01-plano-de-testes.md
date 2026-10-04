@@ -101,7 +101,7 @@ Uma história de usuário (US-XX) só poderá ser fechada e considerada `Done` q
 
 ## 6. Ambiente e Infraestrutura de Teste
 
-1. **Banco de Dados de Testes**: PostgreSQL 16 provisionado via `docker-compose.yml` (`localhost:5432`, base `petshop_db`, isolamento por transações ou limpeza por fixture).
+1. **Banco de Dados de Testes**: PostgreSQL 16 provisionado via `docker-compose.yml` (`localhost:5432`, base `eventos_db`, isolamento por transações ou limpeza por fixture).
 2. **Servidor Backend**: Spring Boot operando em perfil `test` com propriedades alinhadas à porta do PostgreSQL local.
 3. **Servidor Frontend**: Aplicação Vite rodando em `http://localhost:5173`.
 4. **Executor Local**:

@@ -1,6 +1,6 @@
 # Architectural Decision Records (ADRs)
 
-Este diretório contém os registros formais de decisões arquiteturais do projeto **SI600 Web Petshop**.
+Este diretório contém os registros formais de decisões arquiteturais do projeto **SI600 Web Eventos**.
 
 ## Catálogo de Decisões
 
