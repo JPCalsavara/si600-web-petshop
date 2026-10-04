@@ -37,10 +37,12 @@ public class ProjectPdfService {
 
     private final ProjectRepository repository;
     private final ObjectStorage storage;
+    private final PdfDecisionNotifier notifier;
 
-    public ProjectPdfService(ProjectRepository repository, ObjectStorage storage) {
+    public ProjectPdfService(ProjectRepository repository, ObjectStorage storage, PdfDecisionNotifier notifier) {
         this.repository = repository;
         this.storage = storage;
+        this.notifier = notifier;
     }
 
     @Transactional
@@ -122,7 +124,9 @@ public class ProjectPdfService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
         requireStatusForDecision(project);
         project.approve(actor.id(), OffsetDateTime.now());
-        return ProjectResponse.from(repository.save(project));
+        Project saved = repository.save(project);
+        notifier.notifyApproved(saved);
+        return ProjectResponse.from(saved);
     }
 
     @Transactional
@@ -136,7 +140,9 @@ public class ProjectPdfService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "A justificativa é obrigatória.");
         }
         project.reject(actor.id(), OffsetDateTime.now(), justification);
-        return ProjectResponse.from(repository.save(project));
+        Project saved = repository.save(project);
+        notifier.notifyRejected(saved);
+        return ProjectResponse.from(saved);
     }
 
     /**
