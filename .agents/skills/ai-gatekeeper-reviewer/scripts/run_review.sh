@@ -57,19 +57,46 @@ echo "[INFO] Gatekeeper System: ${GATEKEEPER_ROOT}"
 # 1. Run Tests (if not skipped)
 if [[ "$SKIP_TESTS" == false ]]; then
   echo "[STEP 1/5] Running project test suite..."
-  if [[ -f "${TARGET_DIR}/package.json" ]]; then
-    echo "[INFO] Detected Node.js / TypeScript project."
-    npm --prefix "$TARGET_DIR" test > "${TARGET_DIR}/tests.log" 2>&1 || true
+  # 1.1 Java Spring Boot (Maven / Gradle)
+  if [[ -f "${TARGET_DIR}/pom.xml" || -f "${TARGET_DIR}/backend/pom.xml" ]]; then
+    POM_DIR="${TARGET_DIR}"
+    [[ -f "${TARGET_DIR}/backend/pom.xml" ]] && POM_DIR="${TARGET_DIR}/backend"
+    echo "[INFO] Detected Java / Spring Boot (Maven) in ${POM_DIR}."
+    if [[ -x "${POM_DIR}/mvnw" ]]; then
+      "${POM_DIR}/mvnw" -f "${POM_DIR}/pom.xml" test > "${TARGET_DIR}/tests.log" 2>&1 || true
+    elif command -v mvn &>/dev/null; then
+      mvn -f "${POM_DIR}/pom.xml" test > "${TARGET_DIR}/tests.log" 2>&1 || true
+    fi
+  elif [[ -f "${TARGET_DIR}/gradlew" || -f "${TARGET_DIR}/build.gradle" || -f "${TARGET_DIR}/backend/build.gradle" ]]; then
+    GRADLE_DIR="${TARGET_DIR}"
+    [[ -f "${TARGET_DIR}/backend/build.gradle" ]] && GRADLE_DIR="${TARGET_DIR}/backend"
+    echo "[INFO] Detected Java / Spring Boot (Gradle) in ${GRADLE_DIR}."
+    if [[ -x "${GRADLE_DIR}/gradlew" ]]; then
+      "${GRADLE_DIR}/gradlew" -p "${GRADLE_DIR}" test > "${TARGET_DIR}/tests.log" 2>&1 || true
+    elif command -v gradle &>/dev/null; then
+      gradle -p "${GRADLE_DIR}" test > "${TARGET_DIR}/tests.log" 2>&1 || true
+    fi
+  fi
+
+  # 1.2 Node.js / React / Vite / Cypress
+  if [[ -f "${TARGET_DIR}/package.json" || -f "${TARGET_DIR}/frontend/package.json" ]]; then
+    PKG_DIR="${TARGET_DIR}"
+    [[ -f "${TARGET_DIR}/frontend/package.json" ]] && PKG_DIR="${TARGET_DIR}/frontend"
+    echo "[INFO] Detected Node.js / React project in ${PKG_DIR}."
+    npm --prefix "$PKG_DIR" test >> "${TARGET_DIR}/tests.log" 2>&1 || true
+    if [[ -d "${PKG_DIR}/cypress" ]] && grep -q "cypress" "${PKG_DIR}/package.json"; then
+      echo "[INFO] Running Cypress tests in ${PKG_DIR}..."
+      npx --prefix "$PKG_DIR" cypress run >> "${TARGET_DIR}/tests.log" 2>&1 || true
+    fi
   elif [[ -f "${TARGET_DIR}/pytest.ini" || -d "${TARGET_DIR}/tests" ]]; then
     echo "[INFO] Detected Python project."
-    pytest "$TARGET_DIR" > "${TARGET_DIR}/tests.log" 2>&1 || true
+    pytest "$TARGET_DIR" >> "${TARGET_DIR}/tests.log" 2>&1 || true
   elif [[ -f "${TARGET_DIR}/go.mod" ]]; then
     echo "[INFO] Detected Go project."
-    (cd "$TARGET_DIR" && go test ./... > "tests.log" 2>&1 || true)
-  elif [[ -f "${TARGET_DIR}/Cargo.toml" ]]; then
-    echo "[INFO] Detected Rust project."
-    (cd "$TARGET_DIR" && cargo test > "tests.log" 2>&1 || true)
-  else
+    (cd "$TARGET_DIR" && go test ./... >> "tests.log" 2>&1 || true)
+  fi
+
+  if [[ ! -f "${TARGET_DIR}/tests.log" ]]; then
     echo "[INFO] No recognized test runner found. Recording empty test logs."
     touch "${TARGET_DIR}/tests.log"
   fi
