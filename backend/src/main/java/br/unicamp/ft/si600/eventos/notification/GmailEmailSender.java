@@ -141,7 +141,8 @@ public class GmailEmailSender implements EmailSender {
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
                 throw new EmailDeliveryException(
-                        "Falha ao obter token OAuth do Google (HTTP " + response.statusCode() + ").");
+                        "Falha ao obter token OAuth do Google (HTTP " + response.statusCode() + ")"
+                                + oauthErrorDetail(response.body()) + ".");
             }
             JsonNode json = mapper.readTree(response.body());
             String token = json.path("access_token").asText("");
@@ -157,6 +158,19 @@ public class GmailEmailSender implements EmailSender {
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new EmailDeliveryException("Envio de e-mail interrompido.", ex);
+        }
+    }
+
+    /** Acrescenta o motivo informado pelo Google (ex.: invalid_client, invalid_grant), sem expor segredos. */
+    private String oauthErrorDetail(String body) {
+        try {
+            JsonNode json = mapper.readTree(body);
+            String error = json.path("error").asText("");
+            String description = json.path("error_description").asText("");
+            if (error.isBlank()) return "";
+            return ": " + error + (description.isBlank() ? "" : " - " + description);
+        } catch (IOException | RuntimeException ex) {
+            return "";
         }
     }
 
