@@ -252,9 +252,8 @@ class AgendamentoIntegrationTest {
 git checkout dev
 git pull origin dev
 
-# 2. Ir para a sua branch individual
-git checkout member/<seu-slug>
-git merge dev
+# 2. Criar sua branch individual baseada na issue
+git checkout -b <tipo>/<ID-da-issue>-<titulo>
 
 # 3. Implementar o código e os testes tripartite
 # ...
@@ -264,10 +263,10 @@ bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
 
 # 5. Fazer o push da sua branch (vai simultaneamente para GitLab e GitHub)
 git add .
-git commit -m "feat(ambiente): scaffold inicial do backend e frontend com postgres"
-git push origin member/<seu-slug>
+git commit -m "feat(US-XX): scaffold inicial do backend e frontend com postgres"
+git push origin <tipo>/<ID-da-issue>-<titulo>
 
 # 6. Abrir Merge Request no GitLab Unicamp
-# Origem: member/<seu-slug> -> Destino: dev
-# Solicitar 2 aprovações dos colegas de equipe.
+# Origem: <tipo>/<ID-da-issue>-<titulo> -> Destino: dev
+# Solicitar 1 aprovação dos colegas de equipe.
 ```
