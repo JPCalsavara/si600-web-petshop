@@ -18,6 +18,7 @@ tests.log
 diff.txt
 report.md
 context_harness.json
+sonar-report.json
 coverage/
 .nyc_output/
 .pytest_cache/

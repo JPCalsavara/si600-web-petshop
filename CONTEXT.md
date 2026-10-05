@@ -2,9 +2,9 @@
 
 ## 1. Visão Geral do Sistema
 
-O **SI600 Web Eventos** é um sistema web integrado para gerenciamento operacional e comercial de um pet shop com atendimento clínico e estético. A plataforma atende dois públicos principais:
-1. **Clientes (Tutores)**: Navegam pelos serviços oferecidos, cadastram seus animais de estimação, realizam e acompanham agendamentos (banho, tosa, consultas veterinárias) e visualizam histórico.
-2. **Administradores e Colaboradores (Atendentes, Tosadores, Veterinários)**: Gerenciam a agenda, controlam o fluxo de atendimento, atualizam status das ordens de serviço e administram o catálogo de serviços e clientes.
+O **SI600 Sistema de Eventos** é um sistema web integrado para gerenciamento operacional e comercial focado no aluguel de estandes em eventos. A plataforma atende dois públicos principais:
+1. **Clientes (Expositores)**: Submetem projetos arquitetônicos de seus estandes, gerenciam configurações do projeto e realizam pagamentos de taxas e aluguéis referentes aos estandes aprovados.
+2. **Administradores**: Gerenciam a aprovação e análise das plantas (inserindo também as metragens oficiais), controlam o catálogo de taxas do evento e supervisionam os status de faturamento de cada projeto.
 
 ---
 
@@ -12,25 +12,22 @@ O **SI600 Web Eventos** é um sistema web integrado para gerenciamento operacion
 
 Termo | Definição | Sinônimos Evitados
 :--- | :--- | :---
-**`Cliente`** | Pessoa física titular do cadastro, proprietária de um ou mais pets. Possui identificador único, nome, e-mail, telefone e documento. | *Usuário comum*, *Consumidor*
-**`Pet`** | Animal sob tutela de um `Cliente`. Contém nome, espécie (ex: canino, felino), porte (pequeno, médio, grande), raça, idade e observações comportamentais ou restrições de saúde. | *Bicho*, *Animalzinho*
-**`Servico`** | Procedimento ofertado pelo pet shop (ex: Banho e Tosa Higiênica, Tosa Bebê, Consulta Clínica Geral, Vacinação V10). Possui preço, duração estimada em minutos e restrições de porte/espécie. | *Produto*, *Procedimento*
-**`Profissional`** | Membro da equipe responsável pela execução técnica do serviço (ex: médico veterinário com CRMV, tosador qualificado). | *Funcionário genérico*, *Operador*
-**`Agendamento`** | Reserva formal de um horário em que um ou mais `Servico`s serão prestados a um `Pet` específico, alocando recursos e eventualmente um `Profissional`. | *Marcação*, *Ticket de horário*
-**`StatusAgendamento`** | Máquina de estados do agendamento: `PENDENTE`, `CONFIRMADO`, `EM_ANDAMENTO`, `CONCLUIDO`, `CANCELADO`. | *Estado*, *Situação*
-**`OrdemDeServico`** | Registro da execução real do serviço após o check-in do pet na unidade, incluindo anotações clínicas/estéticas e fechamento financeiro. | *Comanda*, *OS genérica*
+**`Cliente`** | Pessoa física ou jurídica (expositor) que contrata o aluguel de um estande no evento. | *Usuário comum*, *Consumidor*
+**`Projeto`** | Agrupamento lógico das informações do cliente para a montagem de seu estande, incluindo a planta e as taxas associadas. | *Reserva*, *Inscrição*
+**`Planta`** | O projeto arquitetônico do estande enviado pelo Cliente (comumente em formato PDF). Contém atributos como a **área em m²** (obrigatoriamente preenchida pelo Administrador após conferência) e o status atual. | *PDF do estande*, *Documento*
+**`StatusPlanta`** | Enumeração que dita o ciclo de vida da Planta e, consequentemente, a exibição das taxas: `AGUARDANDO`, `EM_ANALISE`, `APROVADA`, `REPROVADA`. | *Status do Projeto*, *Estado do PDF*
+**`Taxa`** | Valores cobrados do cliente relacionados ao projeto. Podem ser Fixas, Por Metragem (baseado na área m² preenchida pelo Admin) ou Variáveis (com entrada de quantidade salva pelo próprio Cliente via botão). | *Cobrança*, *Custo*
+**`Pagamento`** | Geração da guia financeira (Boleto/PIX) a partir das taxas calculadas de uma Planta Aprovada. Se pagamentos já foram gerados, a Planta não pode voltar para status Reprovada. | *Fatura*, *Transação*
 
 ---
 
 ## 3. Invariantes e Regras de Negócio Fundamentais
 
-1. **Unicidade de Agendamento por Profissional/Recurso**: Não é permitido criar ou confirmar dois agendamentos no mesmo intervalo de tempo para o mesmo profissional ou para a mesma baia/mesa de atendimento.
-2. **Pertença do Pet**: Um `Agendamento` só pode ser solicitado para um `Pet` cujo tutor corresponda ao `Cliente` autenticado (exceto em operações realizadas por administradores/atendentes).
-3. **Imutabilidade e Transições de Estado**:
-   - Agendamentos com status `CONCLUIDO` ou `CANCELADO` são finais e não permitem alteração de data, serviço ou valor.
-   - Cancelamento só é autorizado se o status for `PENDENTE` ou `CONFIRMADO` e antes do início do horário agendado.
-4. **Validação de Entrada Rigorosa**:
-   - Payloads incompletos, ausência de campos obrigatórios (`clienteId`, `petId`, `servicoId`, `dataHoraInicio`) ou valores inválidos (datas no passado, preços negativos) devem ser barrados imediatamente com HTTP 400/422.
+1. **Visualização de Taxas**: Um cliente só pode visualizar e pagar as taxas referentes a um projeto se o status da `Planta` for igual a `APROVADA`.
+2. **Imutabilidade Condicional da Planta**: Uma `Planta` não pode ser marcada como `REPROVADA` se o projeto já tiver qualquer registro de `Pagamento` gerado e atrelado a ele. O administrador ficará bloqueado de fazer essa transição (HTTP 409 Conflict).
+3. **Pertença do Projeto**: Um cliente autenticado só tem acesso aos seus próprios `Projeto`s e respectivas plantas e taxas, garantindo o isolamento.
+4. **Dependência de Metragem**: As taxas do tipo "Por Metragem" só podem ser calculadas se o atributo de área da Planta (m²) estiver preenchido de forma estrita (> 0) pelo Administrador no ato da aprovação.
+5. **Ação Explícita de Taxas Variáveis**: As taxas do tipo "Variável" dependem do preenchimento da "quantidade" por parte do Cliente. Esse valor deve ser persistido via acionamento explícito de um botão "Salvar", desencadeando uma única transação no backend antes de se permitir a emissão da cobrança.
 
 ---
 
