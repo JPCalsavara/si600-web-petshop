@@ -63,6 +63,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(problem);
     }
 
+    @ExceptionHandler(FieldValidationException.class)
+    public ResponseEntity<ProblemDetail> handleFieldValidation(FieldValidationException ex) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setTitle("Dados de requisição inválidos");
+        problem.setDetail(ex.getMessage());
+        problem.setType(URI.create("https://api.eventos.unicamp.br/errors/bad-request"));
+        problem.setProperty("timestamp", Instant.now());
+        problem.setProperty("invalidFields", ex.getInvalidFields());
+        return ResponseEntity.badRequest().body(problem);
+    }
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ProblemDetail> handleApi(ApiException ex) {
         ProblemDetail problem = ProblemDetail.forStatus(ex.getStatus());

@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 import { getCurrentActorRole } from '../../services/api';
 import styles from './AppShell.module.scss';
 
-interface Props { active: 'resumo' | 'projetos' | 'pagamentos' | 'usuarios'; children: ReactNode; }
+interface Props { active: 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas'; children: ReactNode; onNavigate?: (section: 'projetos' | 'taxas') => void; }
 
-export function AppShell({ active, children }: Props) {
+export function AppShell({ active, children, onNavigate }: Props) {
   const role = getCurrentActorRole();
   const admin = role === 'ADMIN';
   const name = admin ? 'Rosângela' : 'Fabiana S. T.';
@@ -21,7 +21,8 @@ export function AppShell({ active, children }: Props) {
             </div>
             <nav>
               {admin && <NavItem label="Resumo" active={active === 'resumo'} />}
-              <NavItem label="Projetos" active={active === 'projetos'} />
+              <NavItem label="Projetos" active={active === 'projetos'} onClick={admin && onNavigate ? () => onNavigate('projetos') : undefined} />
+              {admin && <NavItem label="Catálogo de Taxas" active={active === 'taxas'} onClick={onNavigate ? () => onNavigate('taxas') : undefined} />}
               {admin && <NavItem label="Pagamentos" active={active === 'pagamentos'} />}
               {admin && <NavItem label="Usuários" active={active === 'usuarios'} />}
             </nav>
@@ -37,6 +38,7 @@ export function AppShell({ active, children }: Props) {
   );
 }
 
-function NavItem({ label, active }: { label: string; active: boolean }) {
+function NavItem({ label, active, onClick }: { label: string; active: boolean; onClick?: () => void }) {
+  if (onClick) return <button type="button" onClick={onClick} aria-current={active ? 'page' : undefined} className={`${styles.navItem} ${active ? styles.active : ''}`}><span>{label}</span><span>›</span></button>;
   return <div className={`${styles.navItem} ${active ? styles.active : ''}`}><span>{label}</span><span>›</span></div>;
 }

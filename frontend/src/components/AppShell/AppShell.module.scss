@@ -16,3 +16,5 @@
 .brand span { color: #3971ed; }
 .content { background: rgba(255,255,255,.52); border-radius: 38px; min-height: calc(90vh - 100px); padding: 30px 36px; }
 @media (max-width: 900px) { .viewport { padding: 0; } .shell { border-radius: 0; grid-template-columns: 1fr; } .sidebar { order: 2; } .contentArea { padding: 20px; } .content { padding: 20px; border-radius: 24px; } .brand { justify-content: center; } }
+
+button.navItem { width: 100%; border: 0; background: transparent; font-family: inherit; text-align: left; cursor: pointer; &.active { background: #f6f7f8; } &:focus-visible { outline: 2px solid $color-primary; outline-offset: -2px; } }
