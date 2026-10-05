@@ -29,6 +29,7 @@ import java.util.UUID;
 
 @Service
 public class ProjectPdfService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ProjectPdfService.class);
     public static final long MAX_PDF_SIZE = 10L * 1024 * 1024;
     private static final String PDF_CONTENT_TYPE = "application/pdf";
     private static final int MAX_FILENAME_LENGTH = 255;
@@ -72,6 +73,7 @@ public class ProjectPdfService {
         try {
             storage.upload(key, file.getInputStream(), file.getSize(), PDF_CONTENT_TYPE);
         } catch (IOException ex) {
+            log.error("Falha ao enviar PDF do projeto {} ao object storage (key={})", projectId, key, ex);
             throw new ApiException(HttpStatus.BAD_GATEWAY, "Não foi possível armazenar o PDF.");
         }
 
