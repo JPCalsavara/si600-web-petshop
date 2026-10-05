@@ -6,15 +6,15 @@ services:
     container_name: eventos_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: petshop_db
-      POSTGRES_USER: petshop_user
-      POSTGRES_PASSWORD: petshop_pass
+      POSTGRES_DB: eventos_db
+      POSTGRES_USER: eventos_user
+      POSTGRES_PASSWORD: eventos_pass
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U petshop_user -d petshop_db"]
+      test: ["CMD-SHELL", "pg_isready -U eventos_user -d eventos_db"]
       interval: 5s
       timeout: 5s
       retries: 5

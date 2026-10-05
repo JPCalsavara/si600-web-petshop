@@ -8,14 +8,14 @@ Aceito (Accepted)
 
 ## Contexto
 
-No desenvolvimento do **SI600 Web Petshop**, a confiabilidade da aplicação é crítica. O sistema lida com operações transacionais fundamentais, incluindo alocação de horários, regras de concorrência de agenda, integridade relacional entre tutores (`Cliente`), animais (`Pet`), `Servico`s e atendimentos, além de permissões de acesso e validações de dados.
+No desenvolvimento do **SI600 Web Eventos**, a confiabilidade da aplicação é crítica. O sistema lida com operações transacionais fundamentais, incluindo alocação de horários, regras de concorrência de agenda, integridade relacional entre tutores (`Cliente`), animais (`Pet`), `Servico`s e atendimentos, além de permissões de acesso e validações de dados.
 
 Historicamente, a adoção dogmática da pirâmide de testes tradicional foca a maior parte dos esforços em testes unitários isolados com uso massivo de *mocks* e *stubs* (mockando banco de dados, ORM, repositórios e middlewares). No ecossistema de aplicações web orientadas a dados e APIs, essa abordagem apresenta severas patologias:
 1. **Falsos Positivos e Falsa Sensação de Segurança**: Suítes com 100% de cobertura unitária passam com sucesso, mas a aplicação falha miseravelmente em produção devido a *constraints* relacionais do banco (chaves estrangeiras, violação de unicidade), erros de serialização JSON, divergências de tipos em tempo de execução, falhas em migrations e comportamento de middlewares.
 2. **Acoplamento a Detalhes de Implementação**: Testes unitários com mocks monitoram chamadas a métodos privados ou nomes de variáveis internas. Qualquer refatoração de código que mantenha o comportamento externo idêntico quebra centenas de testes unitários, desestimulando a evolução saudável da arquitetura.
 3. **Testes Tautológicos**: O teste pré-programa o mock para retornar um valor arbitrário e em seguida valida se o método retornou o mesmo valor arbitrário, testando apenas a configuração do mock e não o comportamento real do software.
 
-Diante disso, a equipe de engenharia do SI600 Web Petshop precisa de uma estratégia de testes com **alto retorno sobre investimento (ROI)**, que valide comportamentos reais observáveis nas costuras públicas (*public seams*), garantindo a robustez do software com baixo custo de manutenção perante refatorações.
+Diante disso, a equipe de engenharia do SI600 Web Eventos precisa de uma estratégia de testes com **alto retorno sobre investimento (ROI)**, que valide comportamentos reais observáveis nas costuras públicas (*public seams*), garantindo a robustez do software com baixo custo de manutenção perante refatorações.
 
 ---
 

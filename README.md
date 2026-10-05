@@ -35,7 +35,7 @@ Para executar e contribuir com o projeto, instale:
 ## 3. Estrutura do Repositório
 
 ```text
-si600-web-petshop/
+si600-web-eventos/
 ├── .agents/                    # Skills e automações de engenharia e revisão de IA
 ├── .github/workflows/          # Pipelines de CI/CD (AI Gatekeeper, SonarCloud, Testes)
 ├── backend/                    # Aplicação Spring Boot (Java 21)
@@ -66,9 +66,9 @@ docker compose up -d postgres
 ```
 
 O PostgreSQL estará disponível em `localhost:5432` com as credenciais padrão:
-* **Database:** `petshop_db`
-* **Username:** `petshop_user`
-* **Password:** `petshop_pass`
+* **Database:** `eventos_db`
+* **Username:** `eventos_user`
+* **Password:** `eventos_pass`
 
 ---
 

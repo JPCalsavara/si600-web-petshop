@@ -1,6 +1,6 @@
 # AI Agents Guidelines & Skill Registry
 
-This document guides AI coding assistants (Google Antigravity / AGY, GitHub Copilot, Claude Code, OpenAI GPT / Cursor) operating within the **SI600 Web Petshop** repository.
+This document guides AI coding assistants (Google Antigravity / AGY, GitHub Copilot, Claude Code, OpenAI GPT / Cursor) operating within the **SI600 Web Eventos** repository.
 
 ---
 
@@ -49,7 +49,7 @@ Due to runner constraints on `gitlab.unicamp.br`, the repository employs a cloud
 
 ### Required Secrets (Configured on GitHub Actions)
 * `GOOGLE_API_KEY`: Gemini API key for LangGraph gatekeeper analysis.
-* `SONAR_TOKEN` & `SONAR_PROJECT_KEY`: SonarCloud credentials (`JPCalsavara_si600-web-petshop`).
+* `SONAR_TOKEN` & `SONAR_PROJECT_KEY`: SonarCloud credentials (`JPCalsavara_si600-web-eventos`).
 * `GITLAB_TOKEN` & `GITLAB_PROJECT_ID`: GitLab Unicamp API token (`glpat-...`) and project ID `6372`.
 * `GITLAB_URL`: `https://gitlab.unicamp.br`.
 
@@ -89,7 +89,7 @@ See full specification in [docs/branching-strategy.md](docs/branching-strategy.m
 ### Official Technology Stack
 * **Backend**: Java 21 LTS with Spring Boot (Spring Web, Spring Data JPA, Bean Validation, PostgreSQL driver).
 * **Frontend**: React 18+ SPA built with Vite and TypeScript / JavaScript.
-* **Database**: PostgreSQL 16 managed via `docker-compose.yml` (`localhost:5432`, db: `petshop_db`, user: `petshop_user`, pass: `petshop_pass`).
+* **Database**: PostgreSQL 16 managed via `docker-compose.yml` (`localhost:5432`, db: `eventos_db`, user: `eventos_user`, pass: `eventos_pass`).
 * **E2E & Component Testing**: Cypress for end-to-end user journey validation and critical component tests.
 
 ### Architecture & Conventions

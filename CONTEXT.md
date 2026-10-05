@@ -1,8 +1,8 @@
-# SI600 Web Petshop — Context & Ubiquitous Language
+# SI600 Web Eventos — Context & Ubiquitous Language
 
 ## 1. Visão Geral do Sistema
 
-O **SI600 Web Petshop** é um sistema web integrado para gerenciamento operacional e comercial de um pet shop com atendimento clínico e estético. A plataforma atende dois públicos principais:
+O **SI600 Web Eventos** é um sistema web integrado para gerenciamento operacional e comercial de um pet shop com atendimento clínico e estético. A plataforma atende dois públicos principais:
 1. **Clientes (Tutores)**: Navegam pelos serviços oferecidos, cadastram seus animais de estimação, realizam e acompanham agendamentos (banho, tosa, consultas veterinárias) e visualizam histórico.
 2. **Administradores e Colaboradores (Atendentes, Tosadores, Veterinários)**: Gerenciam a agenda, controlam o fluxo de atendimento, atualizam status das ordens de serviço e administram o catálogo de serviços e clientes.
 
@@ -40,7 +40,7 @@ Camada | Tecnologia | Detalhes & Padrões
 :--- | :--- | :---
 **Backend** | **Java 21 / Spring Boot** | REST API sob `/api/...`, Spring Data JPA, Hibernate, Bean Validation (`@Valid`), Problem Details (RFC 7807 via `@RestControllerAdvice`). Arquitetura em camadas desacopladas (`controller`, `service`, `repository`, `entity`, `dto`, `exception`).
 **Frontend** | **React 18+ (Vite) + TS** | SPA moderna construída com Vite, componentes funcionais modulares, tipagem TypeScript estrita e cliente HTTP centralizado consumindo o backend.
-**Banco de Dados** | **PostgreSQL 16** | Gerenciado via `docker-compose.yml` (`localhost:5432`, base `petshop_db`, usuário `petshop_user`, senha `petshop_pass`).
+**Banco de Dados** | **PostgreSQL 16** | Gerenciado via `docker-compose.yml` (`localhost:5432`, base `eventos_db`, usuário `eventos_user`, senha `eventos_pass`).
 **Testes E2E & Componente** | **Cypress** | Suíte de testes ponta a ponta simulando jornadas completas no navegador e validando a comunicação real com a API.
 **Qualidade Estática** | **SonarCloud** | Análise estática contínua de código, cobertura, duplicações, bugs e vulnerabilidades.
 **AI Gatekeeper Reviewer** | **LangGraph + Google Gemini** | Avaliador inteligente executado no CI/CD e localmente, validando diffs, conformidade com ADRs e aderência aos padrões de projeto.

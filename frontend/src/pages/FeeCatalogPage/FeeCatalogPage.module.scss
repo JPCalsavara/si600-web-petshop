@@ -1,0 +1,17 @@
+@use '../../styles/variables' as *;
+@use '../../styles/figma' as *;
+
+.page { width: 100%; }
+.header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: $sp-3; margin-bottom: $sp-4; h1 { @include figma-title; margin: 0; } }
+.add { @include figma-pill-button; }
+.panel { @include figma-panel; }
+.tableWrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: separate; border-spacing: 0 6px; caption { text-align: left; color: $color-text-muted; padding: $sp-3; } th, td { padding: $sp-3; text-align: left; background: $figma-row-bg; font-size: $font-size-sm; overflow-wrap: anywhere; } th:first-child, td:first-child { border-radius: 18px 0 0 18px; } th:last-child, td:last-child { border-radius: 0 18px 18px 0; } }
+.active, .inactive { display: inline-block; padding: $sp-1 $sp-3; border-radius: $radius-pill; white-space: nowrap; }
+.active { color: $color-success; background: $color-success-bg; }
+.inactive { color: $color-gray-600; background: $color-gray-200; }
+.actions { display: flex; gap: $sp-2; flex-wrap: wrap; button { border: 0; border-radius: $radius-pill; padding: $sp-2 $sp-3; background: $color-gray-200; cursor: pointer; font: inherit; } }
+.alert { background: $color-danger-bg; color: $color-danger; padding: $sp-3; border-radius: $radius-md; margin-bottom: $sp-4; }
+.success { color: $color-success; }
+.dialog { border: 0; border-radius: 24px; padding: $sp-6; max-width: min(460px, 90vw); box-shadow: $shadow-lg; &::backdrop { background: rgba(0, 0, 0, .4); } }
+.page button:disabled { opacity: .6; cursor: wait; }

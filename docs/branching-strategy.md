@@ -1,6 +1,6 @@
 # Estratégia de Branches, Commits & Fluxo Obrigatório de Merge Requests
 
-Este documento define a política oficial de branches, commits, colaboração e controle de qualidade para o repositório **SI600 Web Petshop**.
+Este documento define a política oficial de branches, commits, colaboração e controle de qualidade para o repositório **SI600 Sistema de Eventos** (`si600-2026/turma-a/grupo-b/si600-sistema-de-eventos`).
 
 ---
 

@@ -1,0 +1,20 @@
+@use '../../styles/variables' as *;
+
+.viewport { min-height: 100vh; background: $color-white; padding: 4vh 7vw; }
+.shell { min-height: 90vh; display: grid; grid-template-columns: 230px minmax(0, 1fr); border-radius: 34px; overflow: hidden; background: #f2f6f6; box-shadow: 0 18px 50px rgba(26, 54, 93, .08); }
+.sidebar { background: $color-white; display: flex; flex-direction: column; justify-content: space-between; padding: 22px 0 26px; }
+.profile { margin: 0 14px 10px; padding: 10px 12px 18px; border-bottom: 1px solid $color-gray-200; display: flex; align-items: center; gap: 10px; }
+.avatar { width: 42px; height: 42px; border-radius: 50%; background: #f1f4f7; display: grid; place-items: center; color: $color-primary; font-weight: 700; }
+.profile strong, .profile span { display: block; }
+.profile strong { font-size: 15px; }
+.profile span { margin-top: 4px; font-size: 12px; color: $color-text-muted; }
+.navItem { height: 54px; padding: 0 18px; display: flex; justify-content: space-between; align-items: center; color: $color-gray-800; font-size: 15px; }
+.navItem.active { background: #f6f7f8; }
+.logout { margin: 0 18px; border: 0; background: transparent; text-align: left; font: inherit; cursor: pointer; color: $color-gray-800; padding: 10px 0; }
+.contentArea { padding: 34px 42px 42px; }
+.brand { display: flex; justify-content: flex-end; align-items: center; gap: 9px; font-size: 18px; color: #222; margin: 4px 18px 22px; }
+.brand span { color: #3971ed; }
+.content { background: rgba(255,255,255,.52); border-radius: 38px; min-height: calc(90vh - 100px); padding: 30px 36px; }
+@media (max-width: 900px) { .viewport { padding: 0; } .shell { border-radius: 0; grid-template-columns: 1fr; } .sidebar { order: 2; } .contentArea { padding: 20px; } .content { padding: 20px; border-radius: 24px; } .brand { justify-content: center; } }
+
+button.navItem { width: 100%; border: 0; background: transparent; font-family: inherit; text-align: left; cursor: pointer; &.active { background: #f6f7f8; } &:focus-visible { outline: 2px solid $color-primary; outline-offset: -2px; } }
