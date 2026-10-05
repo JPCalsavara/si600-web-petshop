@@ -2,7 +2,7 @@ import type {
   ClientProject,
   ClientProjectInput,
   ClientProjectUpdate,
-  Fee,
+  ProjectFeeOption,
   ProjectStatus,
 } from '../types';
 
@@ -14,7 +14,7 @@ import type {
  * de funções com contrato estável, para trocar por chamadas HTTP depois sem mexer nas telas.
  */
 
-export const FEE_CATALOG: Fee[] = [
+export const FEE_CATALOG: ProjectFeeOption[] = [
   { id: 't0', name: 'Aluguel do Estande', amount: 0, fixed: true },
   { id: 't1', name: 'TFE', amount: 0, fixed: false },
   { id: 't2', name: 'Energia Elétrica Medida por KVA', amount: 0, fixed: false },

@@ -41,7 +41,7 @@ export interface Project {
 // ---- US-03: criação de projeto do cliente ----
 export type AreaEstande = 'B2C' | 'Music Hub' | 'Music Sport' | 'Internacional';
 
-export interface Fee {
+export interface ProjectFeeOption {
   id: string;
   name: string;
   amount: number;
@@ -67,3 +67,28 @@ export interface ClientProject {
 
 export type ClientProjectInput = Omit<ClientProject, 'id' | 'status'>;
 export type ClientProjectUpdate = Pick<ClientProject, 'pdfDeadline' | 'paymentDeadline' | 'feeIds'>;
+
+// US-02: catálogo persistente de taxas.
+export type FeeType = 'FIXA' | 'POR_METRAGEM' | 'VARIAVEL';
+export type AreaPricingMode = 'VALOR_POR_M2' | 'UNIDADES_POR_INTERVALO';
+
+export interface Fee {
+  id: string;
+  name: string;
+  description: string | null;
+  type: FeeType;
+  active: boolean;
+  areaPricingMode: AreaPricingMode | null;
+  amount: number | null;
+  amountPerM2: number | null;
+  areaPerUnitM2: number | null;
+  unitAmount: number | null;
+  measurementUnit: string | null;
+}
+
+export type FeeRequest = { name: string; description: string } & (
+  | { type: 'FIXA'; amount: number }
+  | { type: 'POR_METRAGEM'; areaPricingMode: 'VALOR_POR_M2'; amountPerM2: number }
+  | { type: 'POR_METRAGEM'; areaPricingMode: 'UNIDADES_POR_INTERVALO'; areaPerUnitM2: number; unitAmount: number }
+  | { type: 'VARIAVEL'; measurementUnit: string }
+);

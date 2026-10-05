@@ -1,3 +1,4 @@
+import { FeeCatalogPage } from './pages/FeeCatalogPage/FeeCatalogPage';
 import { useState } from 'react';
 import './styles/global.scss';
 import { AppShell } from './components/AppShell/AppShell';
@@ -44,10 +45,11 @@ function AdminProjects() {
 export default function App() {
   const role = getCurrentActorRole();
   const projectId = import.meta.env.VITE_PROJECT_ID;
+  const [adminSection, setAdminSection] = useState<'projetos' | 'taxas'>('projetos');
 
   return (
-    <AppShell active="projetos">
-      {role === 'ADMIN' ? <AdminProjects /> : projectId ? <ClientPdfPage projectId={projectId} /> : (
+    <AppShell active={role === 'ADMIN' ? adminSection : 'projetos'} onNavigate={setAdminSection}>
+      {role === 'ADMIN' ? (adminSection === 'taxas' ? <FeeCatalogPage /> : <AdminProjects />) : projectId ? <ClientPdfPage projectId={projectId} /> : (
         <div>Configure <code>VITE_PROJECT_ID</code> para visualizar o projeto.</div>
       )}
     </AppShell>
