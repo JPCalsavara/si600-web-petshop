@@ -1,7 +1,7 @@
 # Modelo Oficial de RFC (Template Base)
 
 > [!NOTE]
-> Este documento é o **template padrão** para criação de novas RFCs (*Request for Comments*) no projeto **SI600 Web Petshop**. Para criar uma nova RFC, copie este modelo para `docs/rfc/rfc-<NN>-<slug>.md` e preencha todas as seções obrigatórias.
+> Este documento é o **template padrão** para criação de novas RFCs (*Request for Comments*) no projeto **SI600 Web Eventos**. Para criar uma nova RFC, copie este modelo para `docs/rfc/rfc-<NN>-<slug>.md` e preencha todas as seções obrigatórias.
 
 ---
 
@@ -37,7 +37,7 @@
 ### Diretriz Obrigatória de Testes
 > [!IMPORTANT]
 > **Padrão do Projeto: Apenas Testes de Integração e E2E (Sem Mocks Unitários)**
-> Conforme definido nas [ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md) e [ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md):
+> Conforme definido nas [ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md) e [ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md):
 > - Toda funcionalidade deve ser testada exclusivamente nos seams públicos (endpoints HTTP reais contra o banco de dados de integração ou testes E2E no navegador). Mocks de banco ou de serviços internos são estritamente proibidos.
 > - Toda suíte de testes deve cobrir a **Matriz Tripartite**:
 >   1. **Casos Bons (Happy Path)**: fluxos válidos com persistência verificada e status HTTP 200/201.

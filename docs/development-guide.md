@@ -1,6 +1,6 @@
 # Guia de Desenvolvimento e Padrões de Engenharia
 
-Este guia serve como especificação oficial para os desenvolvedores e assistentes de IA que implementarão e manterão a base de código do **SI600 Web Petshop**.
+Este guia serve como especificação oficial para os desenvolvedores e assistentes de IA que implementarão e manterão a base de código do **SI600 Web Eventos**.
 
 ---
 
@@ -9,11 +9,11 @@ Este guia serve como especificação oficial para os desenvolvedores e assistent
 O projeto adota uma estrutura desacoplada em monorepo simplificado:
 
 ```text
-si600-web-petshop/
+si600-web-eventos/
 ├── backend/                       # Aplicação Spring Boot (Java 21)
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── java/br/unicamp/ft/si600/petshop/
+│   │   │   ├── java/br/unicamp/ft/si600/eventos/
 │   │   │   │   ├── controller/    # Endpoints REST (@RestController)
 │   │   │   │   ├── service/       # Lógica de negócio e transações (@Service, @Transactional)
 │   │   │   │   ├── repository/    # Repositórios Spring Data JPA (@Repository)
@@ -59,18 +59,18 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: petshop_postgres
+    container_name: eventos_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: petshop_db
-      POSTGRES_USER: petshop_user
-      POSTGRES_PASSWORD: petshop_pass
+      POSTGRES_DB: eventos_db
+      POSTGRES_USER: eventos_user
+      POSTGRES_PASSWORD: eventos_pass
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U petshop_user -d petshop_db"]
+      test: ["CMD-SHELL", "pg_isready -U eventos_user -d eventos_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -104,9 +104,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/petshop_db
-    username: petshop_user
-    password: petshop_pass
+    url: jdbc:postgresql://localhost:5432/eventos_db
+    username: eventos_user
+    password: eventos_pass
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -252,9 +252,8 @@ class AgendamentoIntegrationTest {
 git checkout dev
 git pull origin dev
 
-# 2. Ir para a sua branch individual
-git checkout member/<seu-slug>
-git merge dev
+# 2. Criar sua branch individual baseada na issue
+git checkout -b <tipo>/<ID-da-issue>-<titulo>
 
 # 3. Implementar o código e os testes tripartite
 # ...
@@ -264,10 +263,10 @@ bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
 
 # 5. Fazer o push da sua branch (vai simultaneamente para GitLab e GitHub)
 git add .
-git commit -m "feat(ambiente): scaffold inicial do backend e frontend com postgres"
-git push origin member/<seu-slug>
+git commit -m "feat(US-XX): scaffold inicial do backend e frontend com postgres"
+git push origin <tipo>/<ID-da-issue>-<titulo>
 
 # 6. Abrir Merge Request no GitLab Unicamp
-# Origem: member/<seu-slug> -> Destino: dev
-# Solicitar 2 aprovações dos colegas de equipe.
+# Origem: <tipo>/<ID-da-issue>-<titulo> -> Destino: dev
+# Solicitar 1 aprovação dos colegas de equipe.
 ```

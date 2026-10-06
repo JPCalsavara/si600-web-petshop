@@ -23,13 +23,13 @@ Você pode escolher tanto **Público** quanto **Privado** no GitHub:
 ## 2. Passo 1: Criar o Repositório no GitHub
 
 1. Acesse [github.com/new](https://github.com/new).
-2. Defina o nome do repositório (ex: `si600-web-petshop`).
+2. Defina o nome do repositório (ex: `si600-web-eventos`).
 3. Escolha **Public** (ou **Private**).
 4. **IMPORTANTE**: **NÃO** marque as opções de inicializar com *README*, *.gitignore* ou *License* (o repositório deve ser criado vazio).
 5. Clique em **Create repository**.
 6. No seu terminal local, adicione o GitHub como remote secundário:
    ```bash
-   git remote add github https://github.com/<seu-usuario>/si600-web-petshop.git
+   git remote add github https://github.com/<seu-usuario>/si600-web-eventos.git
    ```
 
 ---
@@ -59,7 +59,7 @@ Você pode escolher tanto **Público** quanto **Privado** no GitHub:
    - Acesse [sonarcloud.io](https://sonarcloud.io/) e clique em **Log in with GitHub**.
 2. **Importar o Repositório**:
    - Clique no ícone de adição `+` no menu superior $\rightarrow$ **Analyze new project**.
-   - Selecione sua organização do GitHub e marque o repositório `si600-web-petshop`.
+   - Selecione sua organização do GitHub e marque o repositório `si600-web-eventos`.
    - Clique em **Set Up**.
 3. **Gerar Token de Autenticação**:
    - Clique na sua foto de perfil no canto superior direito $\rightarrow$ **My Account** $\rightarrow$ **Security**.
@@ -68,7 +68,7 @@ Você pode escolher tanto **Público** quanto **Privado** no GitHub:
 4. **Cadastrar Secrets no GitHub**:
    - No GitHub (`Settings -> Secrets and variables -> Actions`), adicione:
      - **`SONAR_TOKEN`**: Cole o token gerado no passo anterior.
-     - **`SONAR_PROJECT_KEY`**: Chave do projeto exibida na página inicial do seu projeto no SonarCloud (ex: `<usuario>_si600-web-petshop`).
+     - **`SONAR_PROJECT_KEY`**: Chave do projeto exibida na página inicial do seu projeto no SonarCloud (ex: `<usuario>_si600-web-eventos`).
      - **`SONAR_HOST_URL`**: `https://sonarcloud.io` (opcional, já é o valor padrão).
 
 ---
@@ -88,13 +88,13 @@ Para que o GitHub Actions comente o relatório diretamente no seu Merge Request 
 
 2. **Identificar o ID do Projeto no GitLab**:
    - Acesse a página inicial do projeto no `gitlab.unicamp.br`:  
-     `si600-2026/turma-a/grupo-b/si600-web-petshop`.
+     `si600-2026/turma-a/grupo-b/si600-web-eventos`.
    - Logo abaixo do título do projeto, localize o número em **Project ID** (ex: `12345`).
 
 3. **Cadastrar Secrets no GitHub**:
    - No GitHub (`Settings -> Secrets and variables -> Actions`), adicione:
      - **`GITLAB_TOKEN`**: Cole o token pessoal (`glpat-...`).
-     - **`GITLAB_PROJECT_ID`**: O número do Project ID (ex: `12345`) ou o path `si600-2026/turma-a/grupo-b/si600-web-petshop`.
+     - **`GITLAB_PROJECT_ID`**: O número do Project ID (ex: `12345`) ou o path `si600-2026/turma-a/grupo-b/si600-web-eventos`.
      - **`GITLAB_URL`**: `https://gitlab.unicamp.br` (opcional, padrão do script).
 
 ---
@@ -108,8 +108,8 @@ Configure o Git na sua máquina para enviar o código para o GitLab e para o Git
 
 ```bash
 # Adiciona o envio para o GitLab e para o GitHub no mesmo remote 'origin'
-git remote set-url --add --push origin https://gitlab.unicamp.br/si600-2026/turma-a/grupo-b/si600-web-petshop.git
-git remote set-url --add --push origin https://github.com/<seu-usuario>/si600-web-petshop.git
+git remote set-url --add --push origin https://gitlab.unicamp.br/si600-2026/turma-a/grupo-b/si600-web-eventos.git
+git remote set-url --add --push origin https://github.com/<seu-usuario>/si600-web-eventos.git
 ```
 
 A partir de agora, sempre que você rodar `git push`, o código é enviado **automaticamente para os dois lugares ao mesmo tempo**!
@@ -117,7 +117,7 @@ A partir de agora, sempre que você rodar `git push`, o código é enviado **aut
 ### Opção B: Espelhamento Automático no GitLab Unicamp
 Se o GitLab da Unicamp tiver a opção habilitada:
 1. No GitLab: `Settings` $\rightarrow$ `Repository` $\rightarrow$ `Mirroring repositories`.
-2. **Git repository URL**: `https://<seu-usuario>@github.com/<seu-usuario>/si600-web-petshop.git`.
+2. **Git repository URL**: `https://<seu-usuario>@github.com/<seu-usuario>/si600-web-eventos.git`.
 3. **Mirror direction**: `Push`.
 4. **Password**: Cole um GitHub Personal Access Token (com permissão `repo`).
 5. Clique em **Mirror repository**.
@@ -126,8 +126,8 @@ Se o GitLab da Unicamp tiver a opção habilitada:
 
 ## 7. Como Funciona no Dia a Dia da Equipe
 
-1. O integrante desenvolve na sua branch: `member/joao-calsavara`.
-2. Executa `git push origin member/joao-calsavara` e abre o MR para a branch `dev` no GitLab Unicamp.
+1. O integrante desenvolve na sua branch: `feat/US-04-envio-pdf-estande`.
+2. Executa `git push origin feat/US-04-envio-pdf-estande` e abre o MR para a branch `dev` no GitLab Unicamp.
 3. O código é sincronizado com o GitHub, que dispara o workflow `.github/workflows/gatekeeper-ci.yml`.
 4. O GitHub Actions na nuvem:
    - Roda os testes de integração.

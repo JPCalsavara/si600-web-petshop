@@ -1,33 +1,66 @@
-# Estratégia de Branches & Fluxo Obrigatório de Merge Requests
+# Estratégia de Branches, Commits & Fluxo Obrigatório de Merge Requests
 
-Este documento define a política oficial de branches, colaboração e controle de qualidade para o repositório **SI600 Web Petshop** (`si600-2026/turma-a/grupo-b/si600-web-petshop`).
+Este documento define a política oficial de branches, commits, colaboração e controle de qualidade para o repositório **SI600 Sistema de Eventos** (`si600-2026/turma-a/grupo-b/si600-sistema-de-eventos`).
 
 ---
 
-## 1. Hierarquia de Branches
+## 1. Hierarquia e Padrão de Branches
 
 Branch | Finalidade | Política de Acesso
 :--- | :--- | :---
-**`main`** | Versão de produção / entrega final estável. Recebe exclusivamente código consolidado proveniente de `dev`. | **Protegida**. Pushes diretos proibidos. Modificação apenas via Merge Request aprovado.
-**`dev`** | Branch de integração contínua e desenvolvimento ativo do grupo. Recebe as funcionalidades desenvolvidas pelos membros. | **Protegida**. Pushes diretos proibidos. Modificação apenas via Merge Request aprovado.
-**`member/<slug>`** | Branch de trabalho individual de cada integrante da equipe, originada a partir de `dev`. | **Livre para o proprietário**. Pushes permitidos.
+**`main`** | Versão de produção / entrega final estável. Recebe exclusivamente código consolidado proveniente de `dev`. | **Protegida**. Pushes diretos proibidos. Modificação apenas via MR.
+**`dev`** | Branch de integração contínua e desenvolvimento ativo do grupo. | **Protegida**. Pushes diretos proibidos. Modificação apenas via MR.
+**`<tipo>/<ID-da-issue>-<titulo>`** | Branch de trabalho associada a uma issue, originada a partir de `dev`. | **Livre**. Pushes permitidos.
+
+### Padrão de Nomenclatura das Branches
+
+Toda branch de desenvolvimento deve seguir estritamente o formato: `<tipo>/<ID-da-issue>-<titulo ou resumo>`.
+
+**Tipos permitidos**:
+- `feat`: Histórias novas ou funcionalidades.
+- `fix`: Correção de bugs.
+- `docs`: ADRs, planos de teste, documentação.
+- `chore`: Configuração, ambiente, tarefas sem valor direto para o usuário.
+
+**Regras**:
+1. Sempre criar a branch a partir da branch principal (`dev`) atualizada.
+2. Um ID de issue por branch. Se a história for grande, quebrem em sub-tarefas na própria issue, mas mantenham a mesma branch ou criem novas associadas às sub-issues.
+3. Resumo em minúsculas, sem acento, palavras separadas por hífen.
+
+**Exemplos**:
+- `feat/US-04-envio-pdf-estande`
+- `feat/US-08-geracao-pagamento`
+- `docs/ADR-004-regras-calculo-taxas`
+- `chore/EC-01-setup-ambiente`
+- `fix/US-06-quantidade-negativa`
 
 ---
 
-## 2. Mapeamento de Branches dos Integrantes
+## 2. Padrão de Commits
 
-Com base na composição do Grupo B (Turma A):
+O padrão de commits é baseado no Conventional Commits, adaptado com a inclusão obrigatória do ID da issue para rastreabilidade no board do GitLab.
 
-| Integrante | RA / Usuário | Branch Dedicada |
-| :--- | :--- | :--- |
-| **Felipe Ferreira Moreira** | `@237124` | `member/felipe-moreira` |
-| **Gabriela Santos Januário** | `@247850` | `member/gabriela-januario` |
-| **Gabriel Matheus Pereira Dos Santos** | `@281416` | `member/gabriel-santos` |
-| **João Pedro Leite Calsavara** | `@197837` | `member/joao-calsavara` |
-| **Julyo Elias Hidalgo Da Silva** | `@185720` | `member/julio-hidalgo` |
-| **Lorenzo De Oliveira Pugina** | `@234073` | `member/lorenzo-pugina` |
-| **Samuel Calegnan dos Santos Souza** | `@240432` | `member/samuel-calegnan` |
-| **Samuel Lima Martins** | `@173820` | `member/samuel-lima` |
+**Formato do Commit**:
+`<tipo>(<ID-da-issue>): <descrição curta no imperativo>`
+
+**Tipos permitidos no commit**:
+- `feat`: funcionalidade nova
+- `fix`: correção
+- `docs`: documentação/ADR
+- `test`: testes
+- `refactor`: refatoração sem mudar comportamento
+- `chore`: configuração, dependências
+
+**Regras**:
+1. Um commit deve representar uma mudança coerente. Evitem commits gigantes misturando várias tarefas diferentes.
+2. Descrição sempre no **imperativo** (ex.: "implementa", não "implementado" ou "implementei").
+
+**Exemplos**:
+- `feat(US-04): implementa upload do PDF do estande`
+- `fix(US-06): impede quantidade negativa na taxa variável`
+- `docs(ADR-004): registra regras de cálculo das taxas`
+- `test(QA-02): adiciona casos de teste do fluxo de aprovação`
+- `chore(TEC-01): configura docker-compose com PostgreSQL`
 
 ---
 
@@ -37,17 +70,18 @@ Com base na composição do Grupo B (Turma A):
 sequenceDiagram
     autonumber
     actor Dev as Integrante da Equipe
-    participant Branch as member/<slug>
+    participant Branch as Branch (Issue)
     participant GitLabMR as GitLab (Merge Request)
     participant DevBranch as Branch dev
     participant MainBranch as Branch main
 
     Note over Dev,Branch: Início do Ciclo
-    Dev->>Branch: git checkout dev && git pull && git checkout member/<slug>
+    Dev->>Branch: git checkout dev && git pull && git checkout -b feat/US-XX-titulo
     Dev->>Branch: Desenvolve testes e código (TDD tripartite)
+    Dev->>Branch: Commits no padrão: feat(US-XX): descrição
     Dev->>Branch: Executa git-flow (testes + AI Gatekeeper)
-    Dev->>GitLabMR: Abre MR Obrigatório 1: member/<slug> -> dev
-    GitLabMR->>DevBranch: Code Review + Aprovação dos pares + Merge
+    Dev->>GitLabMR: Abre MR Obrigatório 1: branch -> dev
+    GitLabMR->>DevBranch: Code Review + Aprovação dos pares + Squash & Merge
     
     Note over DevBranch,MainBranch: Fechamento de Versão / Release
     GitLabMR->>MainBranch: Abre MR Obrigatório 2: dev -> main
@@ -56,27 +90,27 @@ sequenceDiagram
 
 ### Regras Mandatórias de Merge Request
 
-1. **Regra de 2 Aprovações Obrigatórias (`Approvals Required = 2`)**:
-   - Todo Merge Request para `dev` ou para `main` **exige no mínimo 2 aprovações formais** de integrantes da equipe antes de habilitar o botão de merge.
-   - O autor do MR não pode aprovar a própria entrega (*Prevent approval by author*).
-   - Commits subsequentes invalidam aprovações prévias, exigindo nova revisão.
-2. **MR Obrigatório de Funcionalidade (`member/<slug>` $\rightarrow$ `dev`)**:
-   - Todo trabalho desenvolvido em branch individual deve ser submetido à `dev` via Merge Request.
-   - Pré-requisitos para merge:
-     - 100% dos testes de integração passando (ADR 0001 e ADR 0002).
-     - Veredito `APPROVED` pelo AI Gatekeeper (`ai-gatekeeper-reviewer`).
-     - **No mínimo 2 aprovações de code review** de outros integrantes do grupo.
-3. **MR Obrigatório de Release (`dev` $\rightarrow$ `main`)**:
-   - A promoção de alterações para a branch `main` só ocorre por meio de Merge Request aberto a partir de `dev`.
-   - Representa entregas de marcos acadêmicos ou releases formais estáveis.
-   - **Exige no mínimo 2 aprovações** e validação completa de todos os gates.
-4. **Pushes Diretos Proibidos**:
+1. **Título e Descrição**:
+   - Título do MR deve ser igual ao commit principal, ex.: `feat(US-08): geração de pagamento por taxa`.
+   - Descrição: Deve detalhar o que foi feito, como testar (ligando com a issue de QA, se existir) e incluir o link da issue de desenvolvimento.
+
+2. **Regra de Aprovação Obrigatória (`Approvals Required = 1`)**:
+   - Todo MR exige no mínimo 1 aprovação formal de outro integrante antes do merge.
+   - O autor do MR não pode aprovar a própria entrega.
+
+3. **Squash and Merge**:
+   - O merge para `dev` deve ser feito utilizando *Squash*, consolidando as mudanças em um único commit coerente. Isso mantém o histórico da branch principal limpo e legível. (Ver ADR correspondente).
+
+4. **MR Obrigatório de Release (`dev` -> `main`)**:
+   - A promoção para `main` ocorre por MR, consolidando uma release/sprint.
+
+5. **Pushes Diretos Proibidos**:
    - Ninguém pode realizar `git push origin dev` ou `git push origin main` diretamente.
 
 ### Configuração no GitLab (`gitlab.unicamp.br`):
-1. Acesse o projeto no GitLab $\rightarrow$ **Settings** $\rightarrow$ **Merge requests**.
+1. Acesse o projeto no GitLab -> **Settings** -> **Merge requests**.
 2. Na seção **Merge request approvals**:
-   - Em *Approval rules*, configure a regra com **Approvals required = 2**.
+   - Em *Approval rules*, configure a regra com **Approvals required = 1**.
    - Marque a opção: **Prevent approval by author**.
    - Marque a opção: **Prevent approvals by users who add commits**.
    - Marque a opção: **Remove all approvals when new commits are added**.
@@ -85,30 +119,25 @@ sequenceDiagram
 
 ## 4. Comandos de Referência (`git` e `glab`)
 
-### Sincronizar e trabalhar na sua branch:
+### Iniciar uma nova tarefa:
 ```bash
-# Atualizar a branch de integração
 git checkout dev
 git pull origin dev
-
-# Atualizar sua branch com as novidades de dev
-git checkout member/<seu-slug>
-git merge dev
+git checkout -b <tipo>/<ID-da-issue>-<titulo>
 ```
 
-### Validar antes de abrir MR (Gatekeeper Local):
+### Validar antes de abrir MR:
 ```bash
-# Executar o pipeline git-flow pré-MR
 bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
 ```
 
 ### Abrir o MR para `dev`:
 ```bash
 glab mr create \
-  --source member/<seu-slug> \
+  --source <nome-da-branch> \
   --target dev \
-  --title "feat(<modulo>): <resumo da entrega>" \
-  --description "Implementação baseada na RFC docs/rfc/rfc-<NN>-<slug>.md"
+  --title "feat(<ID-da-issue>): <resumo da entrega>" \
+  --description "Closes #<ID-da-issue>. <Instruções de teste / dependências>"
 ```
 
 ### Abrir o MR de release para `main`:

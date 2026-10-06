@@ -38,10 +38,10 @@ O repositório adota a estrutura hierárquica estrita:
 
 1. **`main`**: Produção / releases finais entregues. **Protegida contra push direto**.
 2. **`dev`**: Branch de integração contínua e desenvolvimento ativo da equipe. **Protegida contra push direto**.
-3. **`member/<slug>`**: Branch pessoal de cada integrante (originada de `dev`).
+3. **`<tipo>/<ID-da-issue>-<titulo>`**: Branch pessoal de cada integrante (originada de `dev`).
 
 ### Fluxo de MRs
-- **MR Obrigatório de Feature**: `member/<slug>` $\rightarrow$ `dev`
+- **MR Obrigatório de Feature**: `<tipo>/<ID-da-issue>-<titulo>` $\rightarrow$ `dev`
   - Toda funcionalidade desenvolvida deve obrigatoriamente passar por este MR após a aprovação de todos os gates do `git-flow`.
   - **Exige no mínimo 2 aprovações de integrantes** antes do merge.
 - **MR Obrigatório de Release**: `dev` $\rightarrow$ `main`
@@ -72,7 +72,7 @@ O repositório adota a estrutura hierárquica estrita:
    git diff
    ```
 2. Mapeie os arquivos modificados e as RFCs/ADRs envolvidas.
-3. Confirme que você está trabalhando na sua branch de membro (`member/<nome>`).
+3. Confirme que você está trabalhando na sua branch de membro (`<tipo>/<ID-da-issue>-<titulo>`).
 
 ### Passo 2: Gate Determinístico (Testes e Schema)
 1. Execute a suíte de testes de integração e E2E:
@@ -86,9 +86,9 @@ O repositório adota a estrutura hierárquica estrita:
    bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
    ```
 2. O Gatekeeper valida a aderência estrita às diretrizes do projeto:
-   - **[ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md)**: Apenas testes de integração e E2E reais nos seams públicos (zero mocks de banco ou serviços internos).
-   - **[ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)**: Cobertura tripartite obrigatória para cada fluxo (Casos Bons, Casos Ruins e Casos Incompletos com HTTP 400 e RFC 7807).
-   - **[CONTEXT.md](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/CONTEXT.md)**: Vocabulário ubíquo (`Cliente`, `Pet`, `Servico`, `Profissional`, `Agendamento`) e invariantes de negócio.
+   - **[ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md)**: Apenas testes de integração e E2E reais nos seams públicos (zero mocks de banco ou serviços internos).
+   - **[ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)**: Cobertura tripartite obrigatória para cada fluxo (Casos Bons, Casos Ruins e Casos Incompletos com HTTP 400 e RFC 7807).
+   - **[CONTEXT.md](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/CONTEXT.md)**: Vocabulário ubíquo (`Cliente`, `Pet`, `Servico`, `Profissional`, `Agendamento`) e invariantes de negócio.
 3. Se o veredito for `REJECTED`, emita uma **Checklist Fechada** e proceda para o Passo 4.
 
 ### Passo 4: Remediação com `/tdd`
@@ -110,11 +110,11 @@ Com 100% de aprovação nos dois gates:
 
 ### Passo 7: Validação e Abertura do Merge Request
 1. Apresente um resumo executivo das mudanças prontas para envio:
-   - Branch de trabalho (`member/<nome>`) e branch de destino (`dev`).
+   - Branch de trabalho (`<tipo>/<ID-da-issue>-<titulo>`) e branch de destino (`dev`).
    - Lista de commits gerados.
    - Status final dos testes de integração (100% verdes).
    - Veredito do AI Gatekeeper (`APPROVED`).
 2. Solicite expressamente a **autorização do usuário** para realizar o `git push` e abrir o MR:
    ```bash
-   glab mr create --source member/<nome> --target dev --title "feat: <título>" --description "<resumo>"
+   glab mr create --source <tipo>/<ID-da-issue>-<titulo> --target dev --title "feat: <título>" --description "<resumo>"
    ```

@@ -1,0 +1,29 @@
+@use '../../styles/variables' as *;
+
+.page { width: 100%; }
+.header { display: flex; justify-content: space-between; align-items: end; gap: $sp-6; margin-bottom: $sp-6; }
+h1 { margin: 0 0 $sp-2; color: #777; font-size: $font-size-2xl; }
+h2 { color: $color-primary; margin: 0 0 $sp-5; }
+.header p { color: $color-text-muted; margin: 0; }
+.card { background: rgba(255,255,255,.75); border: 0; border-radius: 24px; padding: 24px; box-shadow: none; margin-bottom: $sp-5; }
+.summaryGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: $sp-5; margin-bottom: $sp-5; }
+.summaryGrid div { display: flex; flex-direction: column; gap: $sp-1; }
+.summaryGrid span { color: $color-text-muted; font-size: $font-size-sm; }
+.formGrid { display: grid; grid-template-columns: 1fr 1.5fr; gap: $sp-5; margin-bottom: $sp-5; }
+label { display: flex; flex-direction: column; gap: $sp-2; font-size: $font-size-sm; font-weight: $font-weight-medium; }
+input { padding: $sp-3; border: 1px solid $color-gray-300; border-radius: $radius-md; font: inherit; }
+.primaryButton, .secondaryButton { border: 0; border-radius: $radius-md; padding: $sp-3 $sp-5; cursor: pointer; font-weight: $font-weight-semibold; }
+.primaryButton { background: #2cc653; color: $color-white; }
+.primaryButton:disabled { opacity: .6; cursor: wait; }
+.secondaryButton { background: $color-gray-100; color: $color-gray-800; }
+.alertDanger, .alertSuccess, .info, .success, .rejection { padding: $sp-4; border-radius: $radius-md; margin-bottom: $sp-4; }
+.alertDanger, .rejection { background: $color-danger-bg; border: 1px solid $color-danger-border; color: $color-danger; }
+.alertSuccess, .success { background: $color-success-bg; border: 1px solid $color-success-border; color: $color-success; }
+.info { background: $color-info-bg; border: 1px solid $color-info-border; color: $color-info; }
+.rejection p { margin: $sp-2 0 0; }
+.status { padding: $sp-2 $sp-3; border-radius: $radius-pill; font-size: $font-size-sm; font-weight: $font-weight-semibold; }
+.PDF_EM_ANALISE { background: $color-info-bg; color: $color-info; }
+.REPROVADO { background: $color-danger-bg; color: $color-danger; }
+.APROVADO { background: $color-success-bg; color: $color-success; }
+.AGUARDANDO_PDF { background: $color-warning-bg; color: $color-warning; }
+@media (max-width: 760px) { .summaryGrid, .formGrid { grid-template-columns: 1fr; } .header { align-items: start; flex-direction: column; } }

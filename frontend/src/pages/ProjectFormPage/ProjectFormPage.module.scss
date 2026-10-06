@@ -1,0 +1,19 @@
+@use '../../styles/variables' as *;
+@use '../../styles/figma' as *;
+
+.page { width: 100%; h1 { @include figma-title; } }
+.panel { background: $color-white; border-radius: 24px; padding: $sp-5 $sp-6; display: flex; flex-direction: column; gap: $sp-3; }
+.row { display: grid; grid-template-columns: 190px 1fr; align-items: center; gap: $sp-3; font-size: $font-size-sm;
+  input, select { @include figma-input; width: 100%; }
+  strong { word-break: break-all; }
+}
+.fees { border: 0; padding: 0; margin-top: $sp-2; legend { font-size: $font-size-sm; margin-bottom: $sp-2; } }
+.feeGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: $sp-2; }
+.fee { display: flex; flex-direction: row; justify-content: flex-start; text-align: left; align-items: center; gap: $sp-2; font-size: $font-size-sm; cursor: pointer; em { color: $color-text-muted; font-style: normal; } }
+.actions { display: flex; justify-content: flex-end; gap: $sp-3; margin-top: $sp-4; }
+.save { @include figma-pill-button; }
+.cancel { @include figma-pill-button($color-gray-400); }
+.alert { padding: $sp-3; border-radius: $radius-md; background: $color-danger-bg; border: 1px solid $color-danger-border; color: $color-danger; font-size: $font-size-sm; }
+.success { margin: 0; color: $color-success; font-size: $font-size-sm; }
+.hint { margin: 0; color: $color-text-muted; font-size: $font-size-xs; }
+@media (max-width: 640px) { .row { grid-template-columns: 1fr; } }

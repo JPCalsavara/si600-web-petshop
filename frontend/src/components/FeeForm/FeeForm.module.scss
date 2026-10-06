@@ -1,0 +1,13 @@
+@use '../../styles/variables' as *;
+@use '../../styles/figma' as *;
+
+.form { width: 100%; h1 { @include figma-title; } }
+.panel { @include figma-panel; border: 0; display: grid; gap: $sp-4; padding: $sp-6; min-width: 0; }
+.legend { font-weight: $font-weight-semibold; }
+.field { display: grid; gap: $sp-2; font-size: $font-size-sm; input, select, textarea { @include figma-input; width: 100%; } textarea { resize: vertical; } [aria-invalid='true'] { border: 1px solid $color-danger; } }
+.fieldError { color: $color-danger; font-size: $font-size-xs; }
+.alert { padding: $sp-3; margin-bottom: $sp-4; border-radius: $radius-md; background: $color-danger-bg; color: $color-danger; }
+.actions { display: flex; justify-content: flex-end; gap: $sp-3; margin-top: $sp-4; }
+.save { @include figma-pill-button; }
+.cancel { @include figma-pill-button($color-gray-400); }
+.form button:disabled { opacity: .6; cursor: wait; }

@@ -1,0 +1,25 @@
+@use '../../styles/variables' as *;
+
+.row {
+  display: grid; grid-template-columns: 1.4fr 1fr auto; gap: $sp-5; align-items: end;
+  padding: $sp-4 0; border-top: 1px solid $color-gray-200;
+}
+.info { display: flex; flex-direction: column; gap: $sp-1; }
+.info span:not(.badge) { color: $color-text-muted; font-size: $font-size-sm; }
+label { display: flex; flex-direction: column; gap: $sp-2; font-size: $font-size-sm; font-weight: $font-weight-medium; }
+.inputWrap { position: relative; display: flex; align-items: center; }
+input { width: 100%; padding: $sp-3; padding-right: 3.5rem; border: 1px solid $color-gray-300; border-radius: $radius-md; font: inherit; }
+input:disabled { background: $color-gray-100; }
+input[aria-invalid='true'] { border-color: $color-danger; }
+.unit { position: absolute; right: $sp-3; color: $color-text-muted; pointer-events: none; }
+.primaryButton { border: 0; border-radius: $radius-md; padding: $sp-3 $sp-5; cursor: pointer; font-weight: $font-weight-semibold; background: #2cc653; color: $color-white; }
+.primaryButton:disabled { opacity: .6; cursor: wait; }
+.locked { color: $color-text-muted; font-size: $font-size-sm; }
+.error, .success { grid-column: 1 / -1; padding: $sp-3; border-radius: $radius-md; }
+.error { background: $color-danger-bg; border: 1px solid $color-danger-border; color: $color-danger; }
+.success { background: $color-success-bg; border: 1px solid $color-success-border; color: $color-success; margin-top: 0; }
+.badge { align-self: flex-start; padding: $sp-1 $sp-3; border-radius: $radius-pill; font-size: $font-size-sm; font-weight: $font-weight-semibold; }
+.AGUARDANDO_QUANTIDADE { background: $color-warning-bg; color: $color-warning; }
+.AGUARDANDO_COTACAO { background: $color-info-bg; color: $color-info; }
+.COTADA, .PAGAMENTO_GERADO { background: $color-success-bg; color: $color-success; }
+@media (max-width: 760px) { .row { grid-template-columns: 1fr; } }

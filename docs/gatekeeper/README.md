@@ -1,6 +1,6 @@
 # AI Gatekeeper System & Context Harness
 
-Este diretório contém os scripts Python, utilitários e especificações de dependências do subsistema **AI Gatekeeper**, responsável pela avaliação semântica automatizada de código e alinhamento com as normas arquiteturais do repositório **SI600 Web Petshop**.
+Este diretório contém os scripts Python, utilitários e especificações de dependências do subsistema **AI Gatekeeper**, responsável pela avaliação semântica automatizada de código e alinhamento com as normas arquiteturais do repositório **SI600 Web Eventos**.
 
 ---
 
