@@ -140,9 +140,8 @@ public class Project {
     public OffsetDateTime getDecisionAt() { return decisionAt; }
     public String getRejectionJustification() { return rejectionJustification; }
 
-    public void submitPdf(BigDecimal areaM2, String objectKey, String filename,
+    public void submitPdf(String objectKey, String filename,
                           String contentType, long size, OffsetDateTime submittedAt) {
-        this.boothAreaM2 = areaM2;
         this.pdfObjectKey = objectKey;
         this.pdfOriginalFilename = filename;
         this.pdfContentType = contentType;
@@ -154,10 +153,11 @@ public class Project {
         this.rejectionJustification = null;
     }
 
-    public void approve(String adminId, OffsetDateTime decidedAt) {
+    public void approve(String adminId, OffsetDateTime decidedAt, BigDecimal approvedAreaM2) {
         this.status = ProjectStatus.APROVADO;
         this.decisionBy = adminId;
         this.decisionAt = decidedAt;
+        this.boothAreaM2 = approvedAreaM2;
         this.rejectionJustification = null;
     }
 

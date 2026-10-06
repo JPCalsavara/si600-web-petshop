@@ -70,6 +70,10 @@ export async function getClientProject(projectId: string): Promise<Project> {
   return request<Project>(`/projects/${projectId}`);
 }
 
+export async function getProjectFees(projectId: string): Promise<any[]> {
+  return request<any[]>(`/projects/${projectId}/fees`);
+}
+
 export async function submitProjectPdf(
   projectId: string,
   areaM2: number,

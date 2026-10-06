@@ -6,6 +6,7 @@ import {
 } from '../../services/api';
 import type { Project } from '../../types';
 import styles from './ClientPdfPage.module.scss';
+import { ProjectFees } from './ProjectFees';
 
 interface Props {
   projectId: string;
@@ -184,7 +185,7 @@ export function ClientPdfPage({ projectId }: Props) {
         <div className={styles.info}>Seu PDF está em análise. Aguarde a decisão do administrador.</div>
       )}
       {project.status === 'APROVADO' && (
-        <div className={styles.success}>PDF aprovado. O projeto está liberado para a próxima etapa de cotação de taxas.</div>
+        <ProjectFees projectId={projectId} />
       )}
     </main>
   );

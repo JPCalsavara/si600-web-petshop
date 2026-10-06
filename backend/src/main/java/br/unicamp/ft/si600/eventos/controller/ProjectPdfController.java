@@ -51,10 +51,9 @@ public class ProjectPdfController {
     @PostMapping(value = "/{projectId}/pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ProjectResponse submitPdf(
             @PathVariable UUID projectId,
-            @RequestParam("areaM2") @DecimalMin(value = "0.01", message = "A metragem deve ser maior que zero") BigDecimal areaM2,
             @RequestPart("file") MultipartFile file,
             HttpServletRequest request) {
-        return service.submitPdf(projectId, areaM2, file, actorResolver.resolve(request));
+        return service.submitPdf(projectId, file, actorResolver.resolve(request));
     }
 
     @GetMapping("/{projectId}/pdf/download")
@@ -70,8 +69,10 @@ public class ProjectPdfController {
     }
 
     @PostMapping("/admin/{projectId}/approve")
-    public ProjectResponse approve(@PathVariable UUID projectId, HttpServletRequest request) {
-        return service.approve(projectId, actorResolver.resolve(request));
+    public ProjectResponse approve(@PathVariable UUID projectId, 
+                                   @Valid @RequestBody br.unicamp.ft.si600.eventos.dto.ApproveProjectRequest body,
+                                   HttpServletRequest request) {
+        return service.approve(projectId, body, actorResolver.resolve(request));
     }
 
     @PostMapping("/admin/{projectId}/reject")
