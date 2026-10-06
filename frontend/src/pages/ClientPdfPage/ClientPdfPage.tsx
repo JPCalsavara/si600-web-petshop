@@ -145,7 +145,7 @@ export function ClientPdfPage({ projectId }: Props) {
       </section>
 
       {canSubmit && (
-        <form className={styles.card} onSubmit={handleSubmit}>
+        <form className={styles.card} onSubmit={handleSubmit} noValidate>
           <h2>{project.status === 'REPROVADO' ? 'Reenviar planta do estande' : 'Enviar planta do estande'}</h2>
           <div className={styles.formGrid}>
             <label>

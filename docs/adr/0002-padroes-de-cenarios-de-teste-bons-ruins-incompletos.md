@@ -20,7 +20,7 @@ Portanto, é mandatório formalizar um padrão de cobertura que guie engenheiros
 
 ## Decisão
 
-Instituímos o **Padrão Tripartite de Cobertura de Testes**. Toda funcionalidade, rota da API e fluxo de negócio deve possuir suítes de teste divididas obrigatoriamente em três categorias canônicas:
+Instituímos o **Padrão Tripartite de Cobertura de Testes**. Toda funcionalidade, rota da API e fluxo de negócio deve possuir suítes de teste divididas obrigatoriamente em três categorias canônicas, tanto nos **Testes de Integração (Backend)** quanto nos **Testes End-to-End (E2E / Frontend)**:
 
 ```mermaid
 flowchart TD
@@ -30,10 +30,13 @@ flowchart TD
         CI["3. Casos Incompletos\n(Boundary / Payloads Parciais)"]
     end
 
-    CB -->|"Expectativa"| R1["HTTP 200/201\nPersistência íntegra no BD\nSchema válido"]
-    CR -->|"Expectativa"| R2["HTTP 401/403/404/409/422\nRFC 7807 Error Body\nEstado inalterado"]
-    CI -->|"Expectativa"| R3["HTTP 400 Bad Request\nMatriz de violações estruturada\nZero erros 500"]
+    CB -->|"Expectativa"| R1["HTTP 200/201 ou UI Flow Válido\nPersistência íntegra no BD\nSchema válido"]
+    CR -->|"Expectativa"| R2["HTTP 401/403/404/409/422 ou Erro em Tela\nRFC 7807 Error Body / Mensagem visível\nEstado inalterado"]
+    CI -->|"Expectativa"| R3["HTTP 400 Bad Request ou Validação no Form\nFeedback claro na UI\nZero erros 500"]
 ```
+
+> **Aplicação em Testes E2E (Frontend):**  
+> Os testes E2E (Cypress) devem validar não apenas o fluxo de sucesso, mas também que respostas de erro (4xx) e entradas inválidas gerem mensagens compreensíveis na interface do usuário (ex.: alertas, validações de campos e estados desabilitados). Além disso, os testes E2E devem ser executados em resoluções desktop (ex.: `macbook-15`) e mobile (ex.: `iphone-x`), assegurando usabilidade e acessibilidade de componentes interativos (dropdowns, drawers/sidebars e tabelas/cards responsivos).
 
 ---
 
