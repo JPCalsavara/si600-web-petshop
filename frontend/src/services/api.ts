@@ -1,3 +1,4 @@
+import axios, { AxiosRequestConfig } from 'axios';
 import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -5,12 +6,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 const actorId = import.meta.env.VITE_USER_ID || 'client-1';
 const actorRole = (import.meta.env.VITE_USER_ROLE || 'CLIENT').toUpperCase();
 
-function actorHeaders(): HeadersInit {
-  return {
-    'X-Authenticated-User-Id': actorId,
-    'X-Authenticated-User-Role': actorRole,
-  };
-}
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+apiClient.interceptors.request.use((config) => {
+  config.headers.set('X-Authenticated-User-Id', actorId);
+  config.headers.set('X-Authenticated-User-Role', actorRole);
+  return config;
+});
 
 export class ApiRequestError extends Error {
   constructor(message: string, public readonly status: number, public readonly invalidFields: Record<string, string> = {}) {
@@ -23,17 +27,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = new Headers(init.headers);
-  Object.entries(actorHeaders()).forEach(([key, value]) => headers.set(key, value));
-
-  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
-
-  if (!response.ok) {
-    let detail = `Falha na API: HTTP ${response.status}`;
-    const invalidFields: Record<string, string> = {};
-    try {
-      const problem: unknown = await response.json();
+async function request<T>(config: AxiosRequestConfig): Promise<T> {
+  try {
+    const response = await apiClient(config);
+    if (response.status === 204) return undefined as T;
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      let detail = `Falha na API: HTTP ${error.response.status}`;
+      const invalidFields: Record<string, string> = {};
+      const problem = error.response.data;
       if (isRecord(problem)) {
         if (typeof problem.detail === 'string') detail = problem.detail;
         else if (typeof problem.title === 'string') detail = problem.title;
@@ -44,22 +47,22 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
           detail += ` ${Object.values(invalidFields).join(' ')}`;
         }
       }
-    } catch {
-      // Mantém a mensagem HTTP quando o backend não retorna JSON.
+      throw new ApiRequestError(detail, error.response.status, invalidFields);
     }
-    throw new ApiRequestError(detail, response.status, invalidFields);
+    throw error;
   }
-
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
 }
 
 export async function checkBackendHealth(): Promise<HealthStatus> {
-  const response = await fetch(`${API_BASE_URL}/health`, { headers: { Accept: 'application/json' } });
-  if (!response.ok) {
-    throw new Error(`Falha ao conectar ao backend: HTTP ${response.status} ${response.statusText}`);
+  try {
+    const response = await apiClient.get('/health', { headers: { Accept: 'application/json' } });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Falha ao conectar ao backend: HTTP ${error.response?.status || 'Desconhecido'} ${error.message}`);
+    }
+    throw error;
   }
-  return response.json();
 }
 
 export function getCurrentActorRole(): 'CLIENT' | 'ADMIN' {
@@ -67,11 +70,11 @@ export function getCurrentActorRole(): 'CLIENT' | 'ADMIN' {
 }
 
 export async function getClientProject(projectId: string): Promise<Project> {
-  return request<Project>(`/projects/${projectId}`);
+  return request<Project>({ method: 'GET', url: `/projects/${projectId}` });
 }
 
 export async function getProjectFees(projectId: string): Promise<any[]> {
-  return request<any[]>(`/projects/${projectId}/fees`);
+  return request<any[]>({ method: 'GET', url: `/projects/${projectId}/fees` });
 }
 
 export async function submitProjectPdf(
@@ -82,30 +85,32 @@ export async function submitProjectPdf(
   const form = new FormData();
   form.append('areaM2', String(areaM2));
   form.append('file', file);
-  return request<Project>(`/projects/${projectId}/pdf`, {
+  return request<Project>({
     method: 'POST',
-    body: form,
+    url: `/projects/${projectId}/pdf`,
+    data: form,
   });
 }
 
 export async function getPdfDownloadUrl(projectId: string): Promise<{ url: string; expiresInSeconds: number }> {
-  return request(`/projects/${projectId}/pdf/download`);
+  return request<{ url: string; expiresInSeconds: number }>({ method: 'GET', url: `/projects/${projectId}/pdf/download` });
 }
 
 export async function listAdminProjects(status?: ProjectStatus): Promise<Project[]> {
   const query = status ? `?status=${encodeURIComponent(status)}` : '';
-  return request<Project[]>(`/projects/admin${query}`);
+  return request<Project[]>({ method: 'GET', url: `/projects/admin${query}` });
 }
 
 export async function approveProject(projectId: string): Promise<Project> {
-  return request<Project>(`/projects/admin/${projectId}/approve`, { method: 'POST' });
+  return request<Project>({ method: 'POST', url: `/projects/admin/${projectId}/approve` });
 }
 
 export async function rejectProject(projectId: string, justification: string): Promise<Project> {
-  return request<Project>(`/projects/admin/${projectId}/reject`, {
+  return request<Project>({
     method: 'POST',
+    url: `/projects/admin/${projectId}/reject`,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ justification }),
+    data: { justification },
   });
 }
 
@@ -127,27 +132,27 @@ function parseFee(value: unknown): Fee {
 }
 
 export async function listFees(): Promise<Fee[]> {
-  const result = await request<unknown>('/fees');
+  const result = await request<unknown>({ method: 'GET', url: '/fees' });
   if (!Array.isArray(result)) throw new Error('Não foi possível carregar o catálogo. Tente novamente.');
   return result.map(parseFee);
 }
 
 export async function getFee(id: string): Promise<Fee> {
-  return parseFee(await request<unknown>(`/fees/${encodeURIComponent(id)}`));
+  return parseFee(await request<unknown>({ method: 'GET', url: `/fees/${encodeURIComponent(id)}` }));
 }
 
 export async function createFee(body: FeeRequest): Promise<Fee> {
-  return parseFee(await request<unknown>('/fees', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  return parseFee(await request<unknown>({
+    method: 'POST', url: '/fees', headers: { 'Content-Type': 'application/json' }, data: body,
   }));
 }
 
 export async function updateFee(id: string, body: FeeRequest): Promise<Fee> {
-  return parseFee(await request<unknown>(`/fees/${encodeURIComponent(id)}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  return parseFee(await request<unknown>({
+    method: 'PUT', url: `/fees/${encodeURIComponent(id)}`, headers: { 'Content-Type': 'application/json' }, data: body,
   }));
 }
 
 export async function deactivateFee(id: string): Promise<Fee> {
-  return parseFee(await request<unknown>(`/fees/${encodeURIComponent(id)}/deactivate`, { method: 'POST' }));
+  return parseFee(await request<unknown>({ method: 'POST', url: `/fees/${encodeURIComponent(id)}/deactivate` }));
 }
