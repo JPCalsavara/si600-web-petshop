@@ -86,7 +86,7 @@ describe('US-05 e US-06 - Visualização de Taxas e Quantidade Variável pelo Cl
     loginAsClient();
     
     // Encontra o input referente à taxa criada
-    cy.contains('tr', 'Taxa Extra E2E').within(() => {
+    cy.contains('Taxa Extra E2E').parent().parent().within(() => {
       // Input de quantidade deve existir
       cy.get('input[type="number"]')
         .invoke('removeAttr', 'min') // Bypass da barreira HTML5 para forçar req pro backend
@@ -94,7 +94,7 @@ describe('US-05 e US-06 - Visualização de Taxas e Quantidade Variável pelo Cl
         .clear()
         .type('0');
         
-      cy.contains('button', 'Salvar Quantidade').click();
+      cy.contains('button', 'Salvar').click();
     });
     
     // O backend retorna erro 400 "A quantidade da taxa variável deve ser maior que zero."
@@ -104,14 +104,14 @@ describe('US-05 e US-06 - Visualização de Taxas e Quantidade Variável pelo Cl
   it('US-06 Happy Path: Grava a quantidade da taxa variável com sucesso', () => {
     loginAsClient();
     
-    cy.contains('tr', 'Taxa Extra E2E').within(() => {
+    cy.contains('Taxa Extra E2E').parent().parent().within(() => {
       cy.get('input[type="number"]').clear().type('10');
-      cy.contains('button', 'Salvar Quantidade').click();
+      cy.contains('button', 'Salvar').click();
     });
     
     // Se o backend salvar, a UI pode exibir um checkmark ou apenas esconder o botão e travar o input.
     // Depende da implementação atual (provavelmente o botão some ou fica "Salvo").
-    cy.contains('tr', 'Taxa Extra E2E').within(() => {
+    cy.contains('Taxa Extra E2E').parent().parent().within(() => {
        cy.get('input[type="number"]').should('have.value', '10');
     });
   });

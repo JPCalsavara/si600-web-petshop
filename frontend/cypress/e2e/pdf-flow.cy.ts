@@ -1,9 +1,11 @@
 describe('US-04 e US-08 - fluxo do PDF do estande', () => {
   let projectId = '';
   let projectEmail = '';
+  let projectName = '';
 
   before(() => {
     projectEmail = `e2e-${Date.now()}@teste.com`;
+    projectName = `Empresa E2E ${Date.now()}`;
     // 1. Acessa como Admin e cria o projeto via API para isolar o teste do UI de criação
     cy.request({
       method: 'POST',
@@ -13,7 +15,7 @@ describe('US-04 e US-08 - fluxo do PDF do estande', () => {
         'X-Authenticated-User-Id': 'admin-1',
       },
       body: {
-        name: `Empresa E2E ${Date.now()}`,
+        name: projectName,
         document: `${Date.now()}0`, // 14 dígitos
         address: 'Rua de Teste, 123',
         area: 'B2C',
@@ -50,8 +52,7 @@ describe('US-04 e US-08 - fluxo do PDF do estande', () => {
     loginAsClient();
     cy.contains('Dados Gerais do PDF').should('be.visible');
     
-    // Como a validação do frontend bloqueia input[required], ignoramos essa etapa
-    // Tenta submeter direto
+    cy.get('input[type="number"]').type('50'); // Preenche a área para não barrar na área
     cy.contains('button', 'Enviar PDF para análise').click();
     
     cy.contains(/Selecione um arquivo PDF/i).should('be.visible');
@@ -88,20 +89,20 @@ describe('US-04 e US-08 - fluxo do PDF do estande', () => {
     cy.contains('button', 'Enviar PDF para análise').click();
     
     // Deve transitar para o estado de "Em análise"
-    cy.contains('PDF em Análise', { timeout: 10000 }).should('be.visible');
+    cy.contains(/PDF EM ANALISE/i, { timeout: 10000 }).should('be.visible');
   });
 
   it('Admin Sad Path: Tentar rejeitar sem justificativa', () => {
     loginAsAdmin();
     
-    cy.contains('button', 'Projetos').click();
+    // O menu principal já abre em Projetos
     cy.contains('button', 'Análise de PDFs').click();
     
-    // Expande o painel do nosso projeto
-    cy.contains(projectId).click();
+    // Clica em Reprovar na linha da tabela
+    cy.contains('tr', projectName).find('button').contains('Reprovar').click();
     
-    // Tenta reprovar sem preencher a justificativa
-    cy.contains('button', 'Reprovar').click();
+    // Tenta reprovar sem preencher a justificativa (clica no Confirmar do modal)
+    cy.contains('button', 'Confirmar reprovação').click();
     
     // O backend (DecisionRequest) valida @NotBlank na justificativa
     cy.contains(/justificativa.*obrigatória/i).should('be.visible');
@@ -110,12 +111,14 @@ describe('US-04 e US-08 - fluxo do PDF do estande', () => {
   it('Admin Happy Path: Reprovar o PDF', () => {
     loginAsAdmin();
     cy.contains('button', 'Análise de PDFs').click();
-    cy.contains(projectId).click();
     
-    cy.get('textarea[placeholder="Justificativa..."]').type('Faltou a marcação das saídas de emergência.');
-    cy.contains('button', 'Reprovar').click();
+    // Clica em Reprovar na linha da tabela
+    cy.contains('tr', projectName).find('button').contains('Reprovar').click();
     
-    // Deve sumir da lista ou exibir mensagem de sucesso
-    cy.contains('Faltou a marcação das saídas de emergência.').should('not.exist');
+    cy.get('textarea[placeholder="Descreva os ajustes que o cliente precisa realizar."]').type('Faltou a marcação das saídas de emergência.');
+    cy.contains('button', 'Confirmar reprovação').click();
+    
+    // Deve sumir da lista (pois o filtro default é 'PDF_EM_ANALISE')
+    cy.contains('tr', projectName).should('not.exist');
   });
 });
