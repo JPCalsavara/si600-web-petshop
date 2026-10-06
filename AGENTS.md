@@ -138,6 +138,7 @@ Skill Name | Path | Purpose
 Skill Name | Purpose
 :--- | :---
 **`refine-issue`** | Refines GitLab issue via grill-me interview into an authoritative RFC based on `docs/rfc/rfc-modelo.md`.
+**`feature-builder`** | E2E orchestrator that reads the RFC, runs TDD for Backend/Frontend, implements UI, explains the code, and self-corrects against the AI Gatekeeper.
 **`git-flow`** | Pre-commit & pre-MR quality gate: deterministic tests, AI Gatekeeper, and mandatory MR to dev.
 **`tdd`** | Test-driven development with red-green-refactor loop at public seams.
 **`code-review`** | Performs two-axis code review (Standards + Spec) using parallel sub-agents.
