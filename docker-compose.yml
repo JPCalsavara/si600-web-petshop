@@ -47,6 +47,9 @@ services:
       - VITE_USER_ROLE=ADMIN
     ports:
       - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
 
