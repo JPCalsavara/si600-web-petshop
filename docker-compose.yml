@@ -44,6 +44,7 @@ services:
     restart: unless-stopped
     environment:
       - VITE_PROXY_TARGET=http://backend:8080
+      - VITE_USER_ROLE=ADMIN
     ports:
       - "5173:5173"
     depends_on:
