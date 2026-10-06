@@ -5,7 +5,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const localRole = typeof window !== 'undefined' ? localStorage.getItem('MOCK_ROLE') : null;
 const localActorId = typeof window !== 'undefined' ? localStorage.getItem('MOCK_ACTOR_ID') : null;
-const localProjectId = typeof window !== 'undefined' ? localStorage.getItem('MOCK_PROJECT_ID') : null;
 
 const actorId = localActorId || import.meta.env.VITE_USER_ID || 'client-1';
 const actorRole = (localRole || import.meta.env.VITE_USER_ROLE || 'CLIENT').toUpperCase();
