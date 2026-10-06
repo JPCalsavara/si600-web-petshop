@@ -5,8 +5,8 @@ import {
   listAdminProjects,
   rejectProject,
 } from '../../services/api';
-import { STATUS_LABELS } from '../../constants/projectStatus';
-import type { Project } from '../../types';
+import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
+import type { Project, ProjectStatus } from '../../types';
 import styles from './AdminPdfPage.module.scss';
 
 function dateTime(value: string | null) {
@@ -15,11 +15,12 @@ function dateTime(value: string | null) {
 
 export function AdminPdfPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [filter, setFilter] = useState<'PDF_EM_ANALISE' | ''>('PDF_EM_ANALISE');
+  const [filter, setFilter] = useState<ProjectStatus | ''>('PDF_EM_ANALISE');
   const [selected, setSelected] = useState<Project | null>(null);
   const [justification, setJustification] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   async function load() {
     try {
@@ -72,6 +73,11 @@ export function AdminPdfPage() {
     }
   }
 
+  const handleFilterSelect = (val: ProjectStatus | '') => {
+    setFilter(val);
+    setDropdownOpen(false);
+  };
+
   return (
     <main className={styles.page}>
       <header className={styles.header}>
@@ -79,10 +85,20 @@ export function AdminPdfPage() {
           <h1>Projetos</h1>
           <p>Analise os projetos com PDF em análise.</p>
         </div>
-        <select value={filter} onChange={(e) => setFilter(e.target.value as typeof filter)}>
-          <option value="PDF_EM_ANALISE">PDF em Análise</option>
-          <option value="">Todos os status</option>
-        </select>
+        <div className={styles.dropdownWrap}>
+          <div className={styles.dropdownHeader} onClick={() => setDropdownOpen(!dropdownOpen)}>
+            {filter === '' ? 'Todos os status' : STATUS_LABELS[filter]}
+            <span className={styles.caret}>▼</span>
+          </div>
+          {dropdownOpen && (
+            <ul className={styles.dropdownList}>
+              <li onClick={() => handleFilterSelect('')}>Todos os status</li>
+              {STATUS_ORDER.map(status => (
+                <li key={status} onClick={() => handleFilterSelect(status)}>{STATUS_LABELS[status]}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       </header>
 
       {error && <div className={styles.alertDanger}>{error}</div>}
@@ -107,13 +123,13 @@ export function AdminPdfPage() {
               <tbody>
                 {projects.map((project) => (
                   <tr key={project.id}>
-                    <td><strong>{project.companyName}</strong></td>
-                    <td>{project.document}</td>
-                    <td>{project.representativeName}</td>
-                    <td>{project.category}</td>
-                    <td>{dateTime(project.pdfUploadedAt)}</td>
-                    <td><span className={styles.status}>{STATUS_LABELS[project.status]}</span></td>
-                    <td>
+                    <td data-label="Empresa"><strong>{project.companyName}</strong></td>
+                    <td data-label="CNPJ">{project.document}</td>
+                    <td data-label="Expositor">{project.representativeName}</td>
+                    <td data-label="Estante">{project.category}</td>
+                    <td data-label="Data">{dateTime(project.pdfUploadedAt)}</td>
+                    <td data-label="Status"><span className={styles.status}>{STATUS_LABELS[project.status]}</span></td>
+                    <td data-label="Ações">
                       <div className={styles.actions}>
                         {project.pdfOriginalFilename && (
                           <button onClick={() => download(project.id)}>Baixar PDF</button>

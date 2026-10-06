@@ -69,9 +69,9 @@ export function FeeCatalogPage() {
           <caption>Taxas cadastradas, ativas e inativas</caption>
           <thead><tr><th>Nome</th><th>Descrição</th><th>Tipo</th><th>Configuração / valor</th><th>Status</th><th>Ações</th></tr></thead>
           <tbody>{fees.map((fee) => <tr key={fee.id}>
-            <td>{fee.name}</td><td>{fee.description || '—'}</td><td>{TYPE_LABELS[fee.type]}</td><td>{configuration(fee)}</td>
-            <td><span className={fee.active ? styles.active : styles.inactive}>{fee.active ? 'Ativa' : 'Inativa'}</span></td>
-            <td><div className={styles.actions}>
+            <td data-label="Nome">{fee.name}</td><td data-label="Descrição">{fee.description || '—'}</td><td data-label="Tipo">{TYPE_LABELS[fee.type]}</td><td data-label="Configuração / valor">{configuration(fee)}</td>
+            <td data-label="Status"><span className={fee.active ? styles.active : styles.inactive}>{fee.active ? 'Ativa' : 'Inativa'}</span></td>
+            <td data-label="Ações"><div className={styles.actions}>
               <button type="button" disabled={pending} onClick={() => void edit(fee)} aria-label={`Editar ${fee.name}`}>Editar</button>
               {fee.active && <button type="button" disabled={pending} onClick={() => setSelected(fee)} aria-label={`Desativar ${fee.name}`}>Desativar</button>}
             </div></td>

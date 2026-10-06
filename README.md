@@ -57,46 +57,49 @@ si600-web-eventos/
 
 ## 4. Como Executar o Ambiente Localmente
 
-### Passo 1: Subir o Banco de Dados (PostgreSQL)
+Existem duas formas de rodar o projeto localmente: executando toda a infraestrutura de uma vez via Docker Compose (recomendado) ou executando os serviços individualmente.
 
-Na raiz do repositório, execute:
+### Opção 1: Subir tudo via Docker Compose (Recomendado)
 
+Na raiz do repositório, onde está o arquivo `docker-compose.yml`, execute:
+
+```bash
+docker compose up --build
+```
+
+Isso subirá simultaneamente:
+1. O banco de dados PostgreSQL (`localhost:5432`).
+2. O Backend Spring Boot (`http://localhost:8080/api`).
+3. O Frontend React com Vite Dev Server (`http://localhost:5173`).
+
+A aplicação web estará imediatamente acessível no seu navegador em **http://localhost:5173**, e a comunicação com a API será resolvida automaticamente.
+
+---
+
+### Opção 2: Executar Individualmente (Modo Desenvolvimento Raiz)
+
+Se preferir rodar as aplicações manualmente para ter mais controle ou usar debuggers das IDEs:
+
+**1. Subir apenas o Banco de Dados (PostgreSQL):**
 ```bash
 docker compose up -d postgres
 ```
 
-O PostgreSQL estará disponível em `localhost:5432` com as credenciais padrão:
-* **Database:** `eventos_db`
-* **Username:** `eventos_user`
-* **Password:** `eventos_pass`
-
----
-
-### Passo 2: Executar o Backend (Spring Boot)
-
-Acesse a pasta do backend e inicie a aplicação com o Maven Wrapper:
-
+**2. Executar o Backend (Spring Boot):**
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
+*(A API estará acessível em `http://localhost:8080/api`)*
 
-A API estará acessível em `http://localhost:8080/api`.
-* Endpoint de verificação de integridade (Health Check): `GET http://localhost:8080/api/health`
-
----
-
-### Passo 3: Executar o Frontend (React + Vite)
-
-Em outro terminal, acesse a pasta do frontend, instale as dependências e inicie o servidor de desenvolvimento:
-
+**3. Executar o Frontend (React + Vite):**
+Em outro terminal, instale as dependências e inicie o Vite:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-
-A aplicação web estará acessível em `http://localhost:5173`.
+*(A aplicação web estará acessível em `http://localhost:5173`)*
 
 ---
 
@@ -128,10 +131,12 @@ O projeto segue duas Decisões Arquiteturais obrigatórias:
    * É proibida a escrita de testes unitários isolados com mocks de banco de dados ou services internos.
    * Todos os testes devem validar o comportamento nas costuras públicas (endpoints HTTP, persistência real no banco de dados e fluxos no navegador).
 2. **Cobertura Tripartite de Cenários ([ADR 0002](docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)):**
-   Cada funcionalidade deve contemplar:
-   * **Casos Bons (Happy Path):** Entradas válidas, HTTP 200/201, persistência confirmada.
-   * **Casos Ruins (Sad Path / Erros de Negócio):** Violação de regras de negócio, HTTP 401/403/404/409/422 sem escrita suja no banco.
-   * **Casos Incompletos (Payloads malformados ou incompletos):** Campos obrigatórios ausentes, tipos inválidos, limites ultrapassados, garantindo HTTP 400 Bad Request e zero erros 500 não tratados.
+   Cada funcionalidade deve contemplar as três frentes tanto nos **Testes de Integração (Backend)** quanto nos **Testes E2E (Frontend)**, cobrindo inclusive a exibição correta de erros na interface:
+   * **Casos Bons (Happy Path):** Entradas válidas, HTTP 200/201, persistência confirmada e fluxo visual completo.
+   * **Casos Ruins (Sad Path / Erros de Negócio):** Violação de regras de negócio, HTTP 401/403/404/409/422 sem escrita suja no banco, validando as mensagens de erro 4xx exibidas na tela para o usuário.
+   * **Casos Incompletos (Payloads malformados ou incompletos):** Campos obrigatórios ausentes, tipos inválidos, limites ultrapassados, garantindo HTTP 400 Bad Request (zero erros 500) e feedback claro na interface.
+3. **Cobertura de Viewports (Desktop e Mobile):**
+   * Os testes E2E do Cypress devem iterar sobre resoluções diferentes (ex: `macbook-15` e `iphone-x`) para assegurar usabilidade, acessibilidade de elementos ocultos e responsividade geral.
 
 ---
 
@@ -146,21 +151,18 @@ O projeto segue duas Decisões Arquiteturais obrigatórias:
 O padrão de commits segue o formato Conventional Commits adaptado com a issue:
 `<tipo>(<ID-da-issue>): <descrição curta no imperativo>`
 
-### Fluxo Obrigatório de Merge Requests
-1. O desenvolvedor cria a nova branch `<tipo>/<ID-da-issue>-<titulo>`.
-2. **Obrigatoriedade de RFC:** Para novas funcionalidades (`feat`), o primeiro passo obrigatório antes de escrever qualquer código é refinar a issue (podendo usar a dinâmica de agentes via `/grill-me`) e criar um documento de especificação técnica (RFC) baseado no modelo `docs/rfc/rfc-modelo.md`. A RFC deve ser o **primeiro commit** da branch (conforme **ADR 0006**).
-3. O desenvolvedor implementa a funcionalidade baseada na RFC e adiciona os testes na mesma branch.
-4. Executa a validação local do Gatekeeper:
-   ```bash
-   bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
-   ```
-5. Realiza o push para a branch remota:
-   ```bash
-   git push origin <tipo>/<ID-da-issue>-<titulo>
-   ```
-6. Abre um Merge Request para a branch `dev` e marca a opção *Squash and Merge*.
-7. **Aprovação Obrigatória:** O MR requer no mínimo **1 aprovação** de outro membro da equipe (além da aprovação da RFC que será revisada em conjunto).
-8. A cada fechamento de Sprint/Release, é aberto um MR de `dev` para `main`.
+### Fluxo Obrigatório de Merge Requests (Padrão Guiado por IA)
+
+O processo padrão da equipe utiliza a suíte de skills de Inteligência Artificial do repositório para garantir qualidade, aderência arquitetural e completude dos testes:
+
+1. **Criação da Branch:** A partir da `dev`, o desenvolvedor ou agente cria a nova branch `<tipo>/<ID-da-issue>-<titulo>`.
+2. **Fase 1: Refinamento (Skill `refine-issue`):** Invoque o agente com a skill `refine-issue` ou inicie um `/grill-me` sobre a issue. O agente entrevistará o usuário, fará as decisões de design e gerará automaticamente a **RFC** baseada no modelo `docs/rfc/rfc-modelo.md` como o primeiro commit da branch (Obrigatório conforme **ADR 0006**).
+3. **Fase 2: Desenvolvimento (Skill `feature-builder`):** Ative a skill `feature-builder` (ou `ui-builder` para frontend puro / `tdd` para rotinas isoladas). O orquestrador lerá a RFC e implementará o ciclo E2E (Testes de Integração Backend -> Endpoint -> Interface React) fazendo autocorreções até que os testes passem.
+4. **Fase 3: Quality Gate (Skill `git-flow`):** Antes de empurrar o código, invoque o `git-flow`. Ele rodará o *AI Gatekeeper*, validará as métricas de código, corrigirá débitos e criará os commits semânticos automaticamente.
+5. **Abertura do Merge Request:** O desenvolvedor ou o `git-flow` faz o push (`git push origin <branch>`) e abre o Merge Request apontando para `dev` com a opção *Squash and Merge*.
+6. **Aprovação Obrigatória:** O MR exige a aprovação do Gatekeeper no pipeline (CI) e pelo menos **1 aprovação manual** de outro membro da equipe.
+
+*(Para o processo puramente manual sem assistência da IA, as mesmas regras de qualidade e fluxo se aplicam — o desenvolvedor apenas executa manualmente os scripts do gatekeeper listados em `AGENTS.md`.)*
 
 Consulte os detalhes em [docs/branching-strategy.md](docs/branching-strategy.md) e [docs/adr/0003-squash-and-merge.md](docs/adr/0003-squash-and-merge.md).
 

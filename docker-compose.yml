@@ -42,8 +42,14 @@ services:
       dockerfile: Dockerfile
     container_name: eventos_frontend
     restart: unless-stopped
+    environment:
+      - VITE_PROXY_TARGET=http://backend:8080
+      - VITE_USER_ROLE=ADMIN
     ports:
-      - "5173:80"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
 
