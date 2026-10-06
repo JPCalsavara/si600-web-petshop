@@ -92,3 +92,20 @@ export type FeeRequest = { name: string; description: string } & (
   | { type: 'POR_METRAGEM'; areaPricingMode: 'UNIDADES_POR_INTERVALO'; areaPerUnitM2: number; unitAmount: number }
   | { type: 'VARIAVEL'; measurementUnit: string }
 );
+
+// US-06: quantidade das taxas variáveis informada pelo Cliente.
+export type ProjectFeeStatus = 'AGUARDANDO_QUANTIDADE' | 'AGUARDANDO_COTACAO' | 'COTADA' | 'PAGAMENTO_GERADO';
+
+export interface ProjectFee {
+  id: string;
+  feeId: string;
+  name: string;
+  description: string | null;
+  type: FeeType;
+  measurementUnit: string | null;
+  quantity: number | null;
+  status: ProjectFeeStatus;
+  quantityUpdatedAt: string | null;
+  /** Falso quando o pagamento já foi gerado ou a taxa não é variável. */
+  quantityEditable: boolean;
+}

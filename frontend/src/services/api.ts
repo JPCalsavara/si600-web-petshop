@@ -1,4 +1,4 @@
-import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest } from '../types';
+import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest, ProjectFee } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -146,4 +146,12 @@ export async function updateFee(id: string, body: FeeRequest): Promise<Fee> {
 
 export async function deactivateFee(id: string): Promise<Fee> {
   return parseFee(await request<unknown>(`/fees/${encodeURIComponent(id)}/deactivate`, { method: 'POST' }));
+}
+
+/** US-06: grava a quantidade e leva a taxa para "Aguardando cotação". */
+export async function submitFeeQuantity(projectId: string, projectFeeId: string, quantity: number): Promise<ProjectFee> {
+  return request<ProjectFee>(
+    `/projects/${encodeURIComponent(projectId)}/fees/${encodeURIComponent(projectFeeId)}/quantity`,
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity }) },
+  );
 }
