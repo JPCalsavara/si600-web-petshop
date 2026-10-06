@@ -147,18 +147,20 @@ O padrão de commits segue o formato Conventional Commits adaptado com a issue:
 `<tipo>(<ID-da-issue>): <descrição curta no imperativo>`
 
 ### Fluxo Obrigatório de Merge Requests
-1. O desenvolvedor cria e implementa a funcionalidade em sua branch `<tipo>/<ID-da-issue>-<titulo>`.
-2. Executa a validação local do Gatekeeper:
+1. O desenvolvedor cria a nova branch `<tipo>/<ID-da-issue>-<titulo>`.
+2. **Obrigatoriedade de RFC:** Para novas funcionalidades (`feat`), o primeiro passo obrigatório antes de escrever qualquer código é refinar a issue (podendo usar a dinâmica de agentes via `/grill-me`) e criar um documento de especificação técnica (RFC) baseado no modelo `docs/rfc/rfc-modelo.md`. A RFC deve ser o **primeiro commit** da branch (conforme **ADR 0006**).
+3. O desenvolvedor implementa a funcionalidade baseada na RFC e adiciona os testes na mesma branch.
+4. Executa a validação local do Gatekeeper:
    ```bash
    bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
    ```
-3. Realiza o push para a sua branch pessoal:
+5. Realiza o push para a branch remota:
    ```bash
    git push origin <tipo>/<ID-da-issue>-<titulo>
    ```
-4. Abre um Merge Request para a branch `dev` e marca para realizar *Squash and Merge*.
-5. **Aprovação Obrigatória:** O MR requer no mínimo **1 aprovação** de outro membro da equipe antes do merge.
-6. A cada fechamento de Sprint/Release, é aberto um MR de `dev` para `main`.
+6. Abre um Merge Request para a branch `dev` e marca a opção *Squash and Merge*.
+7. **Aprovação Obrigatória:** O MR requer no mínimo **1 aprovação** de outro membro da equipe (além da aprovação da RFC que será revisada em conjunto).
+8. A cada fechamento de Sprint/Release, é aberto um MR de `dev` para `main`.
 
 Consulte os detalhes em [docs/branching-strategy.md](docs/branching-strategy.md) e [docs/adr/0003-squash-and-merge.md](docs/adr/0003-squash-and-merge.md).
 
