@@ -29,8 +29,8 @@ Siga os passos abaixo rigorosamente na ordem apresentada. Como você atua de for
    * Respeite os padrões descritos em `CONTEXT.md` e na documentação arquitetural.
 
 ### Passo 3: Ciclo de Frontend (React/Vite)
-1. **Prototipagem e Telas (`ui` / `prototype`):**
-   * Implemente as páginas e componentes descritos na RFC, consumindo os endpoints reais do Backend que acabaram de ser criados.
+1. **Prototipagem e Telas (`ui-builder`):**
+   * Acione a skill `ui-builder` para implementar as páginas e componentes descritos na RFC, consumindo os endpoints reais do Backend que acabaram de ser criados.
    * Adicione a tipagem rigorosa para a API (via Axios).
 2. **Testes de UI/E2E:**
    * Crie ou atualize os testes do Cypress em `cypress/e2e/` para cobrir os fluxos do usuário nas telas novas.
@@ -61,4 +61,9 @@ bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
   4. **Limite:** Faça isso no máximo **3 vezes**. Se o erro persistir na 3ª tentativa, aborte o pipeline e exiba as falhas para o desenvolvedor resolver manualmente.
 
 ## Finalização
-Após passar com sucesso pelo Gatekeeper (Quality Gate verde), notifique o usuário que a funcionalidade está pronta, revisada, coberta por testes, e os commits podem ser feitos (ou a branch pushada para o MR).
+Após passar com sucesso pelo Gatekeeper (Quality Gate verde), a skill deve parar e exibir um relatório final. 
+Em seguida, **instrua explicitamente o usuário (desenvolvedor humano)** a acionar a skill `git-flow`. A skill `git-flow` será a responsável por:
+1. Validar as mudanças finais.
+2. Gerar as mensagens de commit semânticas (`feat(US-XX): ...`).
+3. Fazer o push (subida) para a branch remota.
+4. Acompanhar e garantir a abertura do Merge Request.
