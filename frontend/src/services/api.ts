@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest } from '../types';
+import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest, ProjectFee } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -155,4 +155,14 @@ export async function updateFee(id: string, body: FeeRequest): Promise<Fee> {
 
 export async function deactivateFee(id: string): Promise<Fee> {
   return parseFee(await request<unknown>({ method: 'POST', url: `/fees/${encodeURIComponent(id)}/deactivate` }));
+}
+
+/** US-06: grava a quantidade e leva a taxa para "Aguardando cotação". */
+export async function submitFeeQuantity(projectId: string, projectFeeId: string, quantity: number): Promise<ProjectFee> {
+  return request<ProjectFee>({
+    method: 'PUT',
+    url: `/projects/${encodeURIComponent(projectId)}/fees/${encodeURIComponent(projectFeeId)}/quantity`,
+    headers: { 'Content-Type': 'application/json' },
+    data: { quantity }
+  });
 }

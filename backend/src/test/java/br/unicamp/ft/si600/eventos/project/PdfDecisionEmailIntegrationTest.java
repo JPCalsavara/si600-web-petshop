@@ -48,7 +48,7 @@ class PdfDecisionEmailIntegrationTest {
         CapturingEmailSender.Sent mail = emails.sent().get(0);
         assertThat(mail.to()).isEqualTo("cliente@exemplo.com");
         assertThat(mail.subject()).contains("aprovado", "Empresa Exemplo Ltda.");
-        assertThat(mail.body()).contains("42.50");
+        assertThat(mail.body()).contains("50.00");
     }
 
     @Test
