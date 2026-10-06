@@ -1,7 +1,9 @@
 describe('US-04 e US-08 - fluxo do PDF do estande', () => {
   let projectId = '';
+  let projectEmail = '';
 
   before(() => {
+    projectEmail = `e2e-${Date.now()}@teste.com`;
     // 1. Acessa como Admin e cria o projeto via API para isolar o teste do UI de criação
     cy.request({
       method: 'POST',
@@ -15,7 +17,7 @@ describe('US-04 e US-08 - fluxo do PDF do estande', () => {
         document: `${Date.now()}0`, // 14 dígitos
         address: 'Rua de Teste, 123',
         area: 'B2C',
-        email: `e2e-${Date.now()}@teste.com`,
+        email: projectEmail,
         pdfDeadline: '2050-12-31',
         paymentDeadline: '2050-12-31',
         feeIds: [],
@@ -29,6 +31,7 @@ describe('US-04 e US-08 - fluxo do PDF do estande', () => {
     cy.visit('/', {
       onBeforeLoad(win) {
         win.localStorage.setItem('MOCK_ROLE', 'CLIENT');
+        win.localStorage.setItem('MOCK_ACTOR_ID', projectEmail);
         win.localStorage.setItem('MOCK_PROJECT_ID', projectId);
       }
     });

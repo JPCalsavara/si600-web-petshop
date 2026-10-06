@@ -2,8 +2,10 @@ describe('US-05 e US-06 - Visualização de Taxas e Quantidade Variável pelo Cl
   let projectId = '';
   let feeId = '';
   let projectFeeId = ''; // Será obtido no frontend via DOM ou intercept
+  let projectEmail = '';
 
   before(() => {
+    projectEmail = `taxas-${Date.now()}@teste.com`;
     // 1. Cria uma taxa variável
     cy.request({
       method: 'POST',
@@ -22,7 +24,7 @@ describe('US-05 e US-06 - Visualização de Taxas e Quantidade Variável pelo Cl
         document: `${Date.now()}0`, // 14 dígitos
         address: 'Rua de Teste, 123',
         area: 'B2C',
-        email: `taxas-${Date.now()}@teste.com`,
+        email: projectEmail,
         pdfDeadline: '2050-12-31',
         paymentDeadline: '2050-12-31'
       }
@@ -37,12 +39,13 @@ describe('US-05 e US-06 - Visualização de Taxas e Quantidade Variável pelo Cl
       const blob = new Blob(['%PDF-1.7 E2E'], { type: 'application/pdf' });
       formData.append('file', blob, 'planta.pdf');
       
+      cy.visit('/'); // Visita a raiz para instanciar a window e permitir o XHR
       return cy.window().then((win) => {
         return new Cypress.Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.open('POST', `http://localhost:8080/api/projects/${projectId}/pdf`);
           xhr.setRequestHeader('X-Authenticated-User-Role', 'CLIENT');
-          xhr.setRequestHeader('X-Authenticated-User-Id', 'client-1');
+          xhr.setRequestHeader('X-Authenticated-User-Id', projectEmail);
           xhr.onload = () => resolve(xhr);
           xhr.onerror = () => reject(xhr);
           xhr.send(formData);
@@ -63,6 +66,7 @@ describe('US-05 e US-06 - Visualização de Taxas e Quantidade Variável pelo Cl
     cy.visit('/', {
       onBeforeLoad(win) {
         win.localStorage.setItem('MOCK_ROLE', 'CLIENT');
+        win.localStorage.setItem('MOCK_ACTOR_ID', projectEmail);
         win.localStorage.setItem('MOCK_PROJECT_ID', projectId);
       }
     });

@@ -31,6 +31,7 @@ Decidimos adotar uma estratégia de testes baseada no **Troféu de Testes**, foc
 
 ### 2. Testes End-to-End (E2E)
 - **Escopo**: Validam a jornada do usuário de ponta a ponta, simulando a interação real entre a interface web (frontend), o backend (API) e o banco de dados.
+- **Cobertura Completa (Matriz Tripartite)**: Assim como nos testes de integração, a suíte de testes E2E (frontend) **DEVE** ter cobertura completa baseada nos três cenários (Casos Bons, Casos Ruins e Casos Incompletos). É obrigatório testar as tratativas de erro no frontend, validando se as mensagens de erro 4xx vindas do backend são renderizadas corretamente para o usuário.
 - **Fluxos Críticos**:
   - Jornada do Cliente: Cadastro de tutor -> Registro de pets -> Seleção de serviços -> Escolha de horários disponíveis -> Confirmação de agendamento -> Consulta do status do atendimento.
   - Jornada Administrativa: Login do atendente/veterinário -> Gestão da agenda -> Recepção do pet (Check-in) -> Atualização de status da Ordem de Serviço -> Finalização do atendimento.

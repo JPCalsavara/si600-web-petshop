@@ -44,7 +44,7 @@ function AdminProjects() {
 
 export default function App() {
   const role = getCurrentActorRole();
-  const projectId = import.meta.env.VITE_PROJECT_ID;
+  const projectId = (typeof window !== 'undefined' ? localStorage.getItem('MOCK_PROJECT_ID') : null) || import.meta.env.VITE_PROJECT_ID;
   const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'pagamentos' | 'usuarios'>('projetos');
 
   return (

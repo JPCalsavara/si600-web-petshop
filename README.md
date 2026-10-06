@@ -131,10 +131,10 @@ O projeto segue duas Decisões Arquiteturais obrigatórias:
    * É proibida a escrita de testes unitários isolados com mocks de banco de dados ou services internos.
    * Todos os testes devem validar o comportamento nas costuras públicas (endpoints HTTP, persistência real no banco de dados e fluxos no navegador).
 2. **Cobertura Tripartite de Cenários ([ADR 0002](docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)):**
-   Cada funcionalidade deve contemplar:
-   * **Casos Bons (Happy Path):** Entradas válidas, HTTP 200/201, persistência confirmada.
-   * **Casos Ruins (Sad Path / Erros de Negócio):** Violação de regras de negócio, HTTP 401/403/404/409/422 sem escrita suja no banco.
-   * **Casos Incompletos (Payloads malformados ou incompletos):** Campos obrigatórios ausentes, tipos inválidos, limites ultrapassados, garantindo HTTP 400 Bad Request e zero erros 500 não tratados.
+   Cada funcionalidade deve contemplar as três frentes tanto nos **Testes de Integração (Backend)** quanto nos **Testes E2E (Frontend)**, cobrindo inclusive a exibição correta de erros na interface:
+   * **Casos Bons (Happy Path):** Entradas válidas, HTTP 200/201, persistência confirmada e fluxo visual completo.
+   * **Casos Ruins (Sad Path / Erros de Negócio):** Violação de regras de negócio, HTTP 401/403/404/409/422 sem escrita suja no banco, validando as mensagens de erro 4xx exibidas na tela para o usuário.
+   * **Casos Incompletos (Payloads malformados ou incompletos):** Campos obrigatórios ausentes, tipos inválidos, limites ultrapassados, garantindo HTTP 400 Bad Request (zero erros 500) e feedback claro na interface.
 
 ---
 
