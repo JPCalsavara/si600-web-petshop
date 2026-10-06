@@ -1,0 +1,67 @@
+@use '../../styles/variables' as *;
+@use '../../styles/figma' as *;
+
+.container {
+  @include figma-panel;
+  margin-top: $sp-6;
+}
+
+.title {
+  @include figma-title;
+  margin-bottom: $sp-4;
+}
+
+.feeList {
+  display: flex;
+  flex-direction: column;
+  gap: $sp-4;
+}
+
+.feeItem {
+  background: $figma-row-bg;
+  padding: $sp-4;
+  border-radius: $radius-lg;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .info {
+    flex: 1;
+
+    h3 {
+      margin: 0 0 $sp-2;
+      font-size: $font-size-lg;
+    }
+
+    p {
+      margin: 0;
+      color: $color-text-muted;
+      font-size: $font-size-sm;
+    }
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: $sp-4;
+
+    .value {
+      font-weight: $font-weight-bold;
+      font-size: $font-size-xl;
+    }
+
+    .variableInput {
+      @include figma-input;
+      width: 100px;
+    }
+
+    .saveButton {
+      @include figma-pill-button($color-primary);
+      padding: $sp-2 $sp-4;
+    }
+
+    .payButton {
+      @include figma-pill-button($figma-orange);
+    }
+  }
+}

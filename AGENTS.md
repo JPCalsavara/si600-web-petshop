@@ -64,8 +64,9 @@ Due to runner constraints on `gitlab.unicamp.br`, the repository employs a cloud
 
 ### Mandatory Workflow
 1. Integrant checks out `dev`, pulls latest changes, and creates a new branch `<tipo>/<ID-da-issue>-<titulo>`.
-2. All feature work is implemented in this branch.
-3. Commits must follow the adapted Conventional Commits pattern: `<tipo>(<ID-da-issue>): <descrição no imperativo>`.
+2. **Docs-Driven RFC First (ADR 0006)**: For new features (`feat/`), you MUST refine the issue first (e.g. using `refine-issue` skill and `/grill-me` with the user) and generate an RFC document based on `docs/rfc/rfc-modelo.md`. This RFC must be the **very first commit** on the branch before any code is written.
+3. All feature work and tests are implemented in this branch following the RFC specifications.
+4. Commits must follow the adapted Conventional Commits pattern: `<tipo>(<ID-da-issue>): <descrição no imperativo>`.
 4. Before pushing, the developer runs the local Gatekeeper check:
    ```bash
    bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
@@ -137,6 +138,8 @@ Skill Name | Path | Purpose
 Skill Name | Purpose
 :--- | :---
 **`refine-issue`** | Refines GitLab issue via grill-me interview into an authoritative RFC based on `docs/rfc/rfc-modelo.md`.
+**`feature-builder`** | E2E orchestrator that reads the RFC, runs TDD for Backend/Frontend, implements UI, explains the code, and self-corrects against the AI Gatekeeper.
+**`ui-builder`** | Frontend developer skill. Reads RFC and Backend APIs to build production-ready React components with Axios and SCSS Modules.
 **`git-flow`** | Pre-commit & pre-MR quality gate: deterministic tests, AI Gatekeeper, and mandatory MR to dev.
 **`tdd`** | Test-driven development with red-green-refactor loop at public seams.
 **`code-review`** | Performs two-axis code review (Standards + Spec) using parallel sub-agents.
