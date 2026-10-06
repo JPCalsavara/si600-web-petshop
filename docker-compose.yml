@@ -42,8 +42,10 @@ services:
       dockerfile: Dockerfile
     container_name: eventos_frontend
     restart: unless-stopped
+    environment:
+      - VITE_PROXY_TARGET=http://backend:8080
     ports:
-      - "5173:80"
+      - "5173:5173"
     depends_on:
       - backend
 
