@@ -18,7 +18,13 @@ export function formatDate(value: string) {
 
 export function ProjectListPage({ onAdd, onEdit, onOpenPdfReview }: Props) {
   const [filter, setFilter] = useState<ProjectStatus | ''>('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const projects = listClientProjects(filter || undefined);
+
+  const handleFilterSelect = (val: ProjectStatus | '') => {
+    setFilter(val);
+    setDropdownOpen(false);
+  };
 
   return (
     <div className={styles.page}>
@@ -26,14 +32,20 @@ export function ProjectListPage({ onAdd, onEdit, onOpenPdfReview }: Props) {
         <h1>Projetos</h1>
         <div className={styles.tools}>
           <button type="button" className={styles.link} onClick={onOpenPdfReview}>Análise de PDFs</button>
-          <select
-            aria-label="Filtrar por status"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as ProjectStatus | '')}
-          >
-            <option value="">Todos os status</option>
-            {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-          </select>
+          <div className={styles.dropdownWrap}>
+            <div className={styles.dropdownHeader} onClick={() => setDropdownOpen(!dropdownOpen)}>
+              {filter === '' ? 'Todos os status' : STATUS_LABELS[filter]}
+              <span className={styles.caret}>▼</span>
+            </div>
+            {dropdownOpen && (
+              <ul className={styles.dropdownList}>
+                <li onClick={() => handleFilterSelect('')}>Todos os status</li>
+                {STATUS_ORDER.map((s) => (
+                  <li key={s} onClick={() => handleFilterSelect(s)}>{STATUS_LABELS[s]}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </header>
 
@@ -58,16 +70,16 @@ export function ProjectListPage({ onAdd, onEdit, onOpenPdfReview }: Props) {
               <tbody>
                 {projects.map((p) => (
                   <tr key={p.id}>
-                    <td><strong>{p.name}</strong></td>
-                    <td>{p.document}</td>
-                    <td>{p.area}</td>
-                    <td>{formatDate(p.pdfDeadline)}</td>
-                    <td>{formatDate(p.paymentDeadline)}</td>
-                    <td title={FEE_CATALOG.filter((f) => p.feeIds.includes(f.id)).map((f) => f.name).join(', ')}>
+                    <td data-label="Empresa"><strong>{p.name}</strong></td>
+                    <td data-label="CPF/CNPJ">{p.document}</td>
+                    <td data-label="Estande">{p.area}</td>
+                    <td data-label="Prazo PDF">{formatDate(p.pdfDeadline)}</td>
+                    <td data-label="Prazo pagamento">{formatDate(p.paymentDeadline)}</td>
+                    <td data-label="Taxas" title={FEE_CATALOG.filter((f) => p.feeIds.includes(f.id)).map((f) => f.name).join(', ')}>
                       {p.feeIds.length}
                     </td>
-                    <td><span className={styles.status}>{STATUS_LABELS[p.status]}</span></td>
-                    <td><button type="button" className={styles.edit} onClick={() => onEdit(p)}>Editar</button></td>
+                    <td data-label="Status"><span className={styles.status}>{STATUS_LABELS[p.status]}</span></td>
+                    <td data-label="Ações"><button type="button" className={styles.edit} onClick={() => onEdit(p)}>Editar</button></td>
                   </tr>
                 ))}
               </tbody>

@@ -4,24 +4,46 @@
 .header { display: flex; justify-content: space-between; align-items: end; gap: $sp-5; margin-bottom: $sp-6; }
 h1 { margin: 0 0 $sp-2; color: #777; font-size: $font-size-2xl; }
 .header p { color: $color-text-muted; margin: 0; }
-.header select { padding: $sp-3; border: 1px solid $color-gray-300; border-radius: $radius-md; }
+.header select { display: none; } /* removed native select */
+
+.dropdownWrap { position: relative; width: 100%; max-width: max-content; }
+.dropdownHeader { padding: 10px 16px; border: 1px solid $color-gray-300; border-radius: 20px; background: white; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; user-select: none; font-size: 14px; }
+.caret { font-size: 10px; color: #666; }
+.dropdownList { position: absolute; top: 100%; right: 0; margin-top: 8px; background: white; border: 1px solid $color-gray-200; border-radius: 12px; list-style: none; padding: 8px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 100%; z-index: 10; white-space: nowrap; }
+.dropdownList li { padding: 8px 16px; cursor: pointer; font-size: 14px; }
+.dropdownList li:hover { background: #f0f7ff; }
+
 .card { background: rgba(255,255,255,.7); border: 0; border-radius: 24px; padding: 12px; box-shadow: none; overflow: hidden; }
 .tableWrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 10px 14px; border: 0; text-align: left; white-space: nowrap; }
 th { background: #f1f2f3; color: #222; font-size: 11px; border-radius: 18px; }
 td { font-size: 11px; background: #f4f4f4; }
-.actions { display: flex; gap: $sp-2; }
-.actions button, .modalActions button { border: 0; border-radius: $radius-md; padding: $sp-2 $sp-3; cursor: pointer; background: $color-gray-100; }
+.actions { display: flex; gap: $sp-2; flex-wrap: wrap; }
+.actions button, .modalActions button { border: 0; border-radius: $radius-md; padding: $sp-2 $sp-3; cursor: pointer; background: $color-gray-100; font: inherit; }
 .actions .approve { background: #2cc653; color: white; }
 .actions .reject, .modalActions .reject { background: $color-danger-bg; color: $color-danger; }
 .status { display: inline-block; padding: 5px 9px; border-radius: 999px; background: #fff7d6; color: #8b6a00; }
 .empty { padding: $sp-8; text-align: center; color: $color-text-muted; }
 .alertDanger { padding: $sp-4; margin-bottom: $sp-4; background: $color-danger-bg; border: 1px solid $color-danger-border; color: $color-danger; border-radius: $radius-md; }
-.modalBackdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: center; padding: $sp-5; }
+.modalBackdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: center; padding: $sp-5; z-index: 50; }
 .modal { background: white; width: min(520px, 100%); border-radius: $radius-xl; padding: $sp-6; box-shadow: $shadow-lg; }
 .modal h2 { margin-top: 0; color: $color-primary; }
 .modal label { display: flex; flex-direction: column; gap: $sp-2; font-size: $font-size-sm; font-weight: $font-weight-medium; }
 .modal textarea { resize: vertical; border: 1px solid $color-gray-300; border-radius: $radius-md; padding: $sp-3; font: inherit; }
 .modalActions { display: flex; justify-content: flex-end; gap: $sp-2; margin-top: $sp-5; }
-@media (max-width: 760px) { .header { align-items: start; flex-direction: column; } }
+
+@media (max-width: 900px) { 
+  .header { align-items: start; flex-direction: column; } 
+  .dropdownWrap { max-width: 100%; }
+  .dropdownList { left: 0; right: auto; }
+  
+  .card { padding: 0; background: transparent; }
+  .tableWrap { border: none; background: transparent; }
+  table { display: block; }
+  thead { display: none; }
+  tbody { display: flex; flex-direction: column; gap: 16px; }
+  tr { display: flex; flex-direction: column; background: white; border-radius: 18px; padding: 16px; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  td { display: flex; flex-direction: column; align-items: flex-start; padding: 0; background: transparent; font-size: 13px; white-space: normal; }
+  td::before { content: attr(data-label); font-weight: 600; color: #666; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+}

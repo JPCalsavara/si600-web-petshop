@@ -135,6 +135,8 @@ O projeto segue duas Decisões Arquiteturais obrigatórias:
    * **Casos Bons (Happy Path):** Entradas válidas, HTTP 200/201, persistência confirmada e fluxo visual completo.
    * **Casos Ruins (Sad Path / Erros de Negócio):** Violação de regras de negócio, HTTP 401/403/404/409/422 sem escrita suja no banco, validando as mensagens de erro 4xx exibidas na tela para o usuário.
    * **Casos Incompletos (Payloads malformados ou incompletos):** Campos obrigatórios ausentes, tipos inválidos, limites ultrapassados, garantindo HTTP 400 Bad Request (zero erros 500) e feedback claro na interface.
+3. **Cobertura de Viewports (Desktop e Mobile):**
+   * Os testes E2E do Cypress devem iterar sobre resoluções diferentes (ex: `macbook-15` e `iphone-x`) para assegurar usabilidade, acessibilidade de elementos ocultos e responsividade geral.
 
 ---
 

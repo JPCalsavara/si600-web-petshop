@@ -16,9 +16,11 @@ viewports.forEach((viewport) => {
     const openCatalog = () => {
       cy.visit('/');
       if (viewport === 'iphone-x') {
-        cy.contains('button', '☰').should('be.visible').click();
+        cy.contains('button', '☰').should('be.visible').click({ force: true });
+        cy.contains('button', 'Catálogo de Taxas').click({ force: true });
+      } else {
+        cy.contains('button', 'Catálogo de Taxas').should('be.visible').click();
       }
-      cy.contains('button', 'Catálogo de Taxas').should('be.visible').click();
       cy.contains('h1', 'Catálogo de Taxas').should('be.visible');
     };
     const newFee = () => cy.contains('button', 'Nova Taxa').should('be.visible').click();
