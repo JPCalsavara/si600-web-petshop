@@ -47,15 +47,8 @@ public class ProjectPdfService {
     }
 
     @Transactional
-    public ProjectResponse submitPdf(UUID projectId, BigDecimal areaM2, MultipartFile file, Actor actor) {
+    public ProjectResponse submitPdf(UUID projectId, MultipartFile file, Actor actor) {
         requireRole(actor, ActorRole.CLIENT);
-        if (areaM2 == null || areaM2.signum() <= 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "A metragem oficial do estande deve ser maior que zero.");
-        }
-        BigDecimal area = areaM2.setScale(2, RoundingMode.HALF_UP);
-        if (area.signum() <= 0 || area.compareTo(MAX_AREA_M2) > 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "A metragem oficial do estande é inválida.");
-        }
         validatePdf(file);
 
         Project project = repository.findByIdAndOwnerId(projectId, actor.id())
@@ -78,7 +71,7 @@ public class ProjectPdfService {
         }
 
         try {
-            project.submitPdf(area, key, sanitizeFilename(file.getOriginalFilename()),
+            project.submitPdf(key, sanitizeFilename(file.getOriginalFilename()),
                     PDF_CONTENT_TYPE, file.getSize(), OffsetDateTime.now());
             repository.saveAndFlush(project);
         } catch (RuntimeException ex) {
@@ -120,12 +113,12 @@ public class ProjectPdfService {
     }
 
     @Transactional
-    public ProjectResponse approve(UUID projectId, Actor actor) {
+    public ProjectResponse approve(UUID projectId, br.unicamp.ft.si600.eventos.dto.ApproveProjectRequest request, Actor actor) {
         requireRole(actor, ActorRole.ADMIN);
         Project project = repository.findById(projectId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
         requireStatusForDecision(project);
-        project.approve(actor.id(), OffsetDateTime.now());
+        project.approve(actor.id(), OffsetDateTime.now(), request.approvedAreaM2());
         Project saved = repository.save(project);
         notifier.notifyApproved(saved);
         return ProjectResponse.from(saved);

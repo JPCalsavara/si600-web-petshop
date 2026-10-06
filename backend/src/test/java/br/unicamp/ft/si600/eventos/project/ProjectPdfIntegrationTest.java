@@ -56,7 +56,7 @@ class ProjectPdfIntegrationTest {
     @Test
     void deveEnviarPdfEColocarProjetoEmAnalise() {
         HttpEntity<MultiValueMap<String, Object>> request = multipartRequest("client-1", "CLIENT", "planta.pdf",
-                "%PDF-1.7 fake pdf".getBytes(), "application/pdf", "42.50");
+                "%PDF-1.7 fake pdf".getBytes(), "application/pdf");
 
         ResponseEntity<String> response = restTemplate.postForEntity(
                 url("/projects/" + projectId + "/pdf"), request, String.class);
@@ -64,7 +64,6 @@ class ProjectPdfIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         Project saved = repository.findById(projectId).orElseThrow();
         assertThat(saved.getStatus()).isEqualTo(ProjectStatus.PDF_EM_ANALISE);
-        assertThat(saved.getBoothAreaM2()).isEqualByComparingTo("42.50");
         assertThat(saved.getPdfUploadedAt()).isNotNull();
         assertThat(saved.getPdfObjectKey()).isNotBlank();
     }
@@ -72,7 +71,7 @@ class ProjectPdfIntegrationTest {
     @Test
     void deveRejeitarPdfComConteudoQueNaoSejaPdf() {
         HttpEntity<MultiValueMap<String, Object>> request = multipartRequest("client-1", "CLIENT", "planta.pdf",
-                "not a pdf".getBytes(), "application/pdf", "42");
+                "not a pdf".getBytes(), "application/pdf");
 
         ResponseEntity<String> response = restTemplate.postForEntity(
                 url("/projects/" + projectId + "/pdf"), request, String.class);
@@ -83,32 +82,21 @@ class ProjectPdfIntegrationTest {
     }
 
     @Test
-    void deveRejeitarPayloadSemMetragem() {
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", resource("%PDF-1.7 fake pdf".getBytes(), "planta.pdf"));
-        HttpHeaders headers = actorHeaders("client-1", "CLIENT");
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-        ResponseEntity<String> response = restTemplate.postForEntity(
-                url("/projects/" + projectId + "/pdf"), new HttpEntity<>(body, headers), String.class);
-
-        assertThat(response.getStatusCode()).isIn(HttpStatus.BAD_REQUEST, HttpStatus.UNPROCESSABLE_ENTITY);
-    }
-
-    @Test
     void deveAprovarPdfERegistrarAuditoria() {
         submitValidPdf();
         HttpHeaders headers = actorHeaders("admin-7", "ADMIN");
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
         ResponseEntity<String> response = restTemplate.postForEntity(
                 url("/projects/admin/" + projectId + "/approve"),
-                new HttpEntity<>(headers), String.class);
+                new HttpEntity<>("{\"approvedAreaM2\": 42.50}", headers), String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         Project saved = repository.findById(projectId).orElseThrow();
         assertThat(saved.getStatus()).isEqualTo(ProjectStatus.APROVADO);
         assertThat(saved.getDecisionBy()).isEqualTo("admin-7");
         assertThat(saved.getDecisionAt()).isNotNull();
+        assertThat(saved.getBoothAreaM2()).isEqualByComparingTo("42.50");
     }
 
     @Test
@@ -128,7 +116,7 @@ class ProjectPdfIntegrationTest {
         assertThat(rejected.getRejectionJustification()).contains("Ajustar cotas");
 
         HttpEntity<MultiValueMap<String, Object>> resend = multipartRequest("client-1", "CLIENT",
-                "nova-planta.pdf", "%PDF-1.7 new".getBytes(), "application/pdf", "50");
+                "nova-planta.pdf", "%PDF-1.7 new".getBytes(), "application/pdf");
         ResponseEntity<String> resendResponse = restTemplate.postForEntity(
                 url("/projects/" + projectId + "/pdf"), resend, String.class);
 
@@ -187,23 +175,10 @@ class ProjectPdfIntegrationTest {
     }
 
     @Test
-    void deveRejeitarMetragemForaDaPrecisaoDaColuna() {
-        HttpEntity<MultiValueMap<String, Object>> request = multipartRequest("client-1", "CLIENT", "planta.pdf",
-                "%PDF-1.7 fake pdf".getBytes(), "application/pdf", "99999999999999");
-
-        ResponseEntity<String> response = restTemplate.postForEntity(
-                url("/projects/" + projectId + "/pdf"), request, String.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(repository.findById(projectId).orElseThrow().getStatus())
-                .isEqualTo(ProjectStatus.AGUARDANDO_PDF);
-    }
-
-    @Test
     void deveTruncarNomeDeArquivoMuitoLongo() {
         String longName = "a".repeat(400) + ".pdf";
         HttpEntity<MultiValueMap<String, Object>> request = multipartRequest("client-1", "CLIENT", longName,
-                "%PDF-1.7 fake pdf".getBytes(), "application/pdf", "10");
+                "%PDF-1.7 fake pdf".getBytes(), "application/pdf");
 
         ResponseEntity<String> response = restTemplate.postForEntity(
                 url("/projects/" + projectId + "/pdf"), request, String.class);
@@ -224,7 +199,7 @@ class ProjectPdfIntegrationTest {
                 new HttpEntity<>("{\"justification\":\"Ajustar.\"}", admin), String.class);
 
         HttpEntity<MultiValueMap<String, Object>> resend = multipartRequest("client-1", "CLIENT",
-                "nova.pdf", "%PDF-1.7 new".getBytes(), "application/pdf", "50");
+                "nova.pdf", "%PDF-1.7 new".getBytes(), "application/pdf");
         ResponseEntity<String> response = restTemplate.postForEntity(
                 url("/projects/" + projectId + "/pdf"), resend, String.class);
 
@@ -248,16 +223,15 @@ class ProjectPdfIntegrationTest {
 
     private void submitValidPdf() {
         HttpEntity<MultiValueMap<String, Object>> request = multipartRequest("client-1", "CLIENT",
-                "planta.pdf", "%PDF-1.7 fake pdf".getBytes(), "application/pdf", "42");
+                "planta.pdf", "%PDF-1.7 fake pdf".getBytes(), "application/pdf");
         ResponseEntity<String> response = restTemplate.postForEntity(
                 url("/projects/" + projectId + "/pdf"), request, String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     private HttpEntity<MultiValueMap<String, Object>> multipartRequest(
-            String id, String role, String filename, byte[] bytes, String contentType, String area) {
+            String id, String role, String filename, byte[] bytes, String contentType) {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("areaM2", area);
         body.add("file", resource(bytes, filename));
         HttpHeaders headers = actorHeaders(id, role);
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);

@@ -214,7 +214,7 @@ class ProjectFeeQuantityIntegrationTest {
     private Project approvedProject(String ownerId) {
         Project p = new Project(ownerId, "Empresa " + ownerId, "54.018.395/0001-89", "Representante",
                 "B2C", OffsetDateTime.now().plusDays(10));
-        p.approve("admin-1", OffsetDateTime.now());
+        p.approve("admin-1", OffsetDateTime.now(), new BigDecimal("50.00"));
         return projects.save(p);
     }
 

@@ -48,7 +48,7 @@ class PdfDecisionEmailIntegrationTest {
         CapturingEmailSender.Sent mail = emails.sent().get(0);
         assertThat(mail.to()).isEqualTo("cliente@exemplo.com");
         assertThat(mail.subject()).contains("aprovado", "Empresa Exemplo Ltda.");
-        assertThat(mail.body()).contains("42.50");
+        assertThat(mail.body()).contains("50.00");
     }
 
     @Test
@@ -136,14 +136,21 @@ class PdfDecisionEmailIntegrationTest {
                 contactEmail == null ? null : "54018395000189", "Joãozinho da Silva", "B2C", "Rua X, 100",
                 contactEmail, OffsetDateTime.now().plusDays(10), OffsetDateTime.now().plusDays(20),
                 "admin-1", OffsetDateTime.now());
-        project.submitPdf(new BigDecimal("42.50"), "projects/x/pdf/y.pdf", "planta.pdf",
+        project.submitPdf("projects/x/pdf/y.pdf", "planta.pdf",
                 "application/pdf", 100L, OffsetDateTime.now());
         return repository.save(project).getId();
     }
 
     private ResponseEntity<String> approve(String actorId, String role, UUID id) {
+        HttpHeaders headers = headers(actorId, role);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String body = """
+            {
+                "approvedAreaM2": 50.00
+            }
+            """;
         return restTemplate.postForEntity(url("/projects/admin/" + id + "/approve"),
-                new HttpEntity<>(headers(actorId, role)), String.class);
+                new HttpEntity<>(body, headers), String.class);
     }
 
     private ResponseEntity<String> reject(String actorId, String role, UUID id, String json) {
