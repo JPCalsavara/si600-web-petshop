@@ -8,14 +8,14 @@ Aceito (Accepted)
 
 ## Contexto
 
-No desenvolvimento do **SI600 Web Petshop**, a confiabilidade da aplicação é crítica. O sistema lida com operações transacionais fundamentais, incluindo alocação de horários, regras de concorrência de agenda, integridade relacional entre tutores (`Cliente`), animais (`Pet`), `Servico`s e atendimentos, além de permissões de acesso e validações de dados.
+No desenvolvimento do **SI600 Web Eventos**, a confiabilidade da aplicação é crítica. O sistema lida com operações transacionais fundamentais, incluindo alocação de horários, regras de concorrência de agenda, integridade relacional entre tutores (`Cliente`), animais (`Pet`), `Servico`s e atendimentos, além de permissões de acesso e validações de dados.
 
 Historicamente, a adoção dogmática da pirâmide de testes tradicional foca a maior parte dos esforços em testes unitários isolados com uso massivo de *mocks* e *stubs* (mockando banco de dados, ORM, repositórios e middlewares). No ecossistema de aplicações web orientadas a dados e APIs, essa abordagem apresenta severas patologias:
 1. **Falsos Positivos e Falsa Sensação de Segurança**: Suítes com 100% de cobertura unitária passam com sucesso, mas a aplicação falha miseravelmente em produção devido a *constraints* relacionais do banco (chaves estrangeiras, violação de unicidade), erros de serialização JSON, divergências de tipos em tempo de execução, falhas em migrations e comportamento de middlewares.
 2. **Acoplamento a Detalhes de Implementação**: Testes unitários com mocks monitoram chamadas a métodos privados ou nomes de variáveis internas. Qualquer refatoração de código que mantenha o comportamento externo idêntico quebra centenas de testes unitários, desestimulando a evolução saudável da arquitetura.
 3. **Testes Tautológicos**: O teste pré-programa o mock para retornar um valor arbitrário e em seguida valida se o método retornou o mesmo valor arbitrário, testando apenas a configuração do mock e não o comportamento real do software.
 
-Diante disso, a equipe de engenharia do SI600 Web Petshop precisa de uma estratégia de testes com **alto retorno sobre investimento (ROI)**, que valide comportamentos reais observáveis nas costuras públicas (*public seams*), garantindo a robustez do software com baixo custo de manutenção perante refatorações.
+Diante disso, a equipe de engenharia do SI600 Web Eventos precisa de uma estratégia de testes com **alto retorno sobre investimento (ROI)**, que valide comportamentos reais observáveis nas costuras públicas (*public seams*), garantindo a robustez do software com baixo custo de manutenção perante refatorações.
 
 ---
 
@@ -31,6 +31,9 @@ Decidimos adotar uma estratégia de testes baseada no **Troféu de Testes**, foc
 
 ### 2. Testes End-to-End (E2E)
 - **Escopo**: Validam a jornada do usuário de ponta a ponta, simulando a interação real entre a interface web (frontend), o backend (API) e o banco de dados.
+- **Cobertura Completa (Matriz Tripartite)**: Assim como nos testes de integração, a suíte de testes E2E (frontend) **DEVE** ter cobertura completa baseada nos três cenários (Casos Bons, Casos Ruins e Casos Incompletos). É obrigatório testar as tratativas de erro no frontend, validando se as mensagens de erro 4xx vindas do backend são renderizadas corretamente para o usuário.
+- **Isolamento de Estado (Massa de Dados Isolada)**: Mocks no Cypress (`cy.intercept` com retornos estáticos) são proibidos para a aplicação. Para evitar colisões no banco de dados real sem recorrer a rotas perigosas de truncamento (`TRUNCATE`), os testes E2E adotam a estratégia de **Massa de Dados Isolada**. Cada teste gera entidades com dados randômicos únicos (ex: uso de `Date.now()` para emails e CPFs baseados em timestamp). Isso mantém a velocidade do teste e assegura que um teste nunca quebre o outro devido à persistência de estado.
+- **Validação de Responsividade (Viewports)**: Para garantir a usabilidade em dispositivos móveis e prevenir quebras severas de layout (como botões inacessíveis por vazamento de tela), os testes de fluxo crítico devem ser executados em múltiplas resoluções usando as funcionalidades nativas do Cypress (ex: iterar sobre `macbook-15` e `iphone-x` usando `cy.viewport()`). É vedado o uso de testes de regressão visual pixel a pixel e de testes de componente isolados com mock; a ênfase é garantir usabilidade (`.should('be.visible')`) nos testes E2E.
 - **Fluxos Críticos**:
   - Jornada do Cliente: Cadastro de tutor -> Registro de pets -> Seleção de serviços -> Escolha de horários disponíveis -> Confirmação de agendamento -> Consulta do status do atendimento.
   - Jornada Administrativa: Login do atendente/veterinário -> Gestão da agenda -> Recepção do pet (Check-in) -> Atualização de status da Ordem de Serviço -> Finalização do atendimento.

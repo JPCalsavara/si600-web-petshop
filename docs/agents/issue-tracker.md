@@ -1,6 +1,6 @@
 # Issue Tracker: GitLab
 
-Issues and specs for this repository live as GitLab issues under `si600-2026/turma-a/grupo-b/si600-web-petshop` (hosted on `gitlab.unicamp.br`). Use the [`glab`](https://gitlab.com/gitlab-org/cli) CLI for all issue and merge request operations.
+Issues and specs for this repository live as GitLab issues under `si600-2026/turma-a/grupo-b/si600-web-eventos` (hosted on `gitlab.unicamp.br`). Use the [`glab`](https://gitlab.com/gitlab-org/cli) CLI for all issue and merge request operations.
 
 ## Conventions
 
@@ -10,7 +10,7 @@ Issues and specs for this repository live as GitLab issues under `si600-2026/tur
 - **Comment on an issue**: `glab issue note <number> --message "..."`. GitLab calls comments "notes".
 - **Apply / remove labels**: `glab issue update <number> --label "..."` / `--unlabel "..."`. Multiple labels can be comma-separated or set by repeating the flag.
 - **Close**: `glab issue close <number>`. `glab issue close` does not accept a closing comment, so post the explanation first with `glab issue note <number> --message "..."`, then close.
-- **Merge requests**: GitLab calls PRs "merge requests". Use `glab mr create`, `glab mr view`, `glab mr note`, etc. Feature branches must target `dev` (`glab mr create --target dev`), while release branches target `main` (`glab mr create --target main`). See [docs/branching-strategy.md](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/branching-strategy.md).
+- **Merge requests**: GitLab calls PRs "merge requests". Use `glab mr create`, `glab mr view`, `glab mr note`, etc. Feature branches must target `dev` (`glab mr create --target dev`), while release branches target `main` (`glab mr create --target main`). See [docs/branching-strategy.md](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/branching-strategy.md).
 
 The repository remote is automatically inferred from `git remote -v` (`origin`).
 

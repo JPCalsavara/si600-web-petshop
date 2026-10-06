@@ -93,7 +93,7 @@ Uma história de usuário (US-XX) só poderá ser fechada e considerada `Done` q
 
 | Papel | Responsável | Atribuições de Teste |
 | :--- | :--- | :--- |
-| **Desenvolvedor da Funcionalidade** | Autor da branch `member/<slug>` | - Implementar suíte de testes de integração cobrindo cenários tripartite.<br>- Implementar os testes E2E correspondentes no Cypress.<br>- Garantir execução verde local do script de revisão do AI Gatekeeper antes de submeter o MR. |
+| **Desenvolvedor da Funcionalidade** | Autor da branch `<tipo>/<ID-da-issue>-<titulo>` | - Implementar suíte de testes de integração cobrindo cenários tripartite.<br>- Implementar os testes E2E correspondentes no Cypress.<br>- Garantir execução verde local do script de revisão do AI Gatekeeper antes de submeter o MR. |
 | **Responsável de QA / Revisor Técnico** | Integrante alocado para QA / Revisor do MR | - Executar conferência manual dos critérios de aceite da issue.<br>- Auditar a completude dos cenários de teste da suíte de integração.<br>- Homologar a rastreabilidade entre issue e casos de teste. |
 | **Automação CI/CD & AI Gatekeeper** | GitHub Actions / GitLab Bridge | - Executar compilação e suítes completas de testes automatizados.<br>- Validar conformidade arquitetural com ADRs e regras estáticas via SonarCloud.<br>- Bloquear merge caso haja falha ou violação de diretrizes. |
 
@@ -101,7 +101,7 @@ Uma história de usuário (US-XX) só poderá ser fechada e considerada `Done` q
 
 ## 6. Ambiente e Infraestrutura de Teste
 
-1. **Banco de Dados de Testes**: PostgreSQL 16 provisionado via `docker-compose.yml` (`localhost:5432`, base `petshop_db`, isolamento por transações ou limpeza por fixture).
+1. **Banco de Dados de Testes**: PostgreSQL 16 provisionado via `docker-compose.yml` (`localhost:5432`, base `eventos_db`, isolamento por transações ou limpeza por fixture).
 2. **Servidor Backend**: Spring Boot operando em perfil `test` com propriedades alinhadas à porta do PostgreSQL local.
 3. **Servidor Frontend**: Aplicação Vite rodando em `http://localhost:5173`.
 4. **Executor Local**:

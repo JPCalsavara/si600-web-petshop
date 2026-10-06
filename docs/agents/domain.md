@@ -4,7 +4,7 @@ How engineering, testing, and review skills consume this repository's domain doc
 
 ## Before exploring, read these
 
-- **`CONTEXT.md`** at the repo root — ubiquitous language, petshop entities, business invariants, and architecture seams.
+- **`CONTEXT.md`** at the repo root — ubiquitous language, eventos entities, business invariants, and architecture seams.
 - **`docs/adr/`** — architectural decision records governing testing strategy (`0001-estrategia-de-testes-integracao-e-e2e.md`), scenario coverage patterns (`0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md`), and system design.
 - **`docs/guidelines.md`** — coding standards and architecture rules.
 

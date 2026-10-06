@@ -1,6 +1,6 @@
 # AI Agents Guidelines & Skill Registry
 
-This document guides AI coding assistants (Google Antigravity / AGY, GitHub Copilot, Claude Code, OpenAI GPT / Cursor) operating within the **SI600 Web Petshop** repository.
+This document guides AI coding assistants (Google Antigravity / AGY, GitHub Copilot, Claude Code, OpenAI GPT / Cursor) operating within the **SI600 Web Eventos** repository.
 
 ---
 
@@ -49,7 +49,7 @@ Due to runner constraints on `gitlab.unicamp.br`, the repository employs a cloud
 
 ### Required Secrets (Configured on GitHub Actions)
 * `GOOGLE_API_KEY`: Gemini API key for LangGraph gatekeeper analysis.
-* `SONAR_TOKEN` & `SONAR_PROJECT_KEY`: SonarCloud credentials (`JPCalsavara_si600-web-petshop`).
+* `SONAR_TOKEN` & `SONAR_PROJECT_KEY`: SonarCloud credentials (`JPCalsavara_si600-web-eventos`).
 * `GITLAB_TOKEN` & `GITLAB_PROJECT_ID`: GitLab Unicamp API token (`glpat-...`) and project ID `6372`.
 * `GITLAB_URL`: `https://gitlab.unicamp.br`.
 
@@ -60,23 +60,26 @@ Due to runner constraints on `gitlab.unicamp.br`, the repository employs a cloud
 ### Branch Hierarchy
 * **`main`**: Production / final stable release. Protected branch. Direct push is strictly blocked.
 * **`dev`**: Active integration branch for the entire team. Protected branch. Direct push is strictly blocked.
-* **`member/<slug>`**: Dedicated development branch for each team member (e.g., `member/joao-calsavara`, `member/felipe-moreira`, `member/gabriela-januario`, `member/gabriel-santos`, `member/julio-hidalgo`, `member/lorenzo-pugina`, `member/samuel-calegnan`, `member/samuel-lima`).
+* **`<tipo>/<ID-da-issue>-<titulo>`**: Feature/fix/docs/chore branch tied to a specific issue (e.g., `feat/US-04-envio-pdf-estande`, `fix/US-06-quantidade-negativa`).
 
 ### Mandatory Workflow
-1. Integrant checks out `dev`, pulls latest changes, and merges into their `member/<slug>`.
-2. All feature work is implemented in `member/<slug>`.
-3. Before pushing, the developer runs the local Gatekeeper check:
+1. Integrant checks out `dev`, pulls latest changes, and creates a new branch `<tipo>/<ID-da-issue>-<titulo>`.
+2. **Docs-Driven RFC First (ADR 0006)**: For new features (`feat/`), you MUST refine the issue first (e.g. using `refine-issue` skill and `/grill-me` with the user) and generate an RFC document based on `docs/rfc/rfc-modelo.md`. This RFC must be the **very first commit** on the branch before any code is written.
+3. All feature work and tests are implemented in this branch following the RFC specifications.
+4. Commits must follow the adapted Conventional Commits pattern: `<tipo>(<ID-da-issue>): <descrição no imperativo>`.
+4. Before pushing, the developer runs the local Gatekeeper check:
    ```bash
    bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
    ```
-4. Push to remote:
+5. Push to remote:
    ```bash
-   git push origin member/<slug>
+   git push origin <nome-da-branch>
    ```
    *(Pushes simultaneously to GitLab Unicamp and GitHub mirror).*
-5. Open a Merge Request on GitLab Unicamp from `member/<slug>` targeting `dev`.
-6. **Mandatory 2-Approval Rule**: The MR requires at least **2 approvals from different team members** before merging. Author self-approval is forbidden.
-7. Sprint / Milestone Release: Open an MR from `dev` to `main`, requiring at least 2 approvals and a passing CI Quality Gate.
+6. Open a Merge Request on GitLab Unicamp from `<nome-da-branch>` targeting `dev`. The MR title must match the main commit (e.g. `feat(US-08): geração de pagamento por taxa`) and description must link the issue and explain testing.
+7. **Mandatory 1-Approval Rule**: The MR requires at least **1 approval from a different team member** before merging. Author self-approval is forbidden.
+8. **Squash and Merge**: Merge requests to `dev` must be squashed into a single commit to keep the main branch history clean.
+9. Sprint / Milestone Release: Open an MR from `dev` to `main`, requiring at least 1 approval and a passing CI Quality Gate.
 
 See full specification in [docs/branching-strategy.md](docs/branching-strategy.md).
 
@@ -87,7 +90,7 @@ See full specification in [docs/branching-strategy.md](docs/branching-strategy.m
 ### Official Technology Stack
 * **Backend**: Java 21 LTS with Spring Boot (Spring Web, Spring Data JPA, Bean Validation, PostgreSQL driver).
 * **Frontend**: React 18+ SPA built with Vite and TypeScript / JavaScript.
-* **Database**: PostgreSQL 16 managed via `docker-compose.yml` (`localhost:5432`, db: `petshop_db`, user: `petshop_user`, pass: `petshop_pass`).
+* **Database**: PostgreSQL 16 managed via `docker-compose.yml` (`localhost:5432`, db: `eventos_db`, user: `eventos_user`, pass: `eventos_pass`).
 * **E2E & Component Testing**: Cypress for end-to-end user journey validation and critical component tests.
 
 ### Architecture & Conventions
@@ -135,6 +138,8 @@ Skill Name | Path | Purpose
 Skill Name | Purpose
 :--- | :---
 **`refine-issue`** | Refines GitLab issue via grill-me interview into an authoritative RFC based on `docs/rfc/rfc-modelo.md`.
+**`feature-builder`** | E2E orchestrator that reads the RFC, runs TDD for Backend/Frontend, implements UI, explains the code, and self-corrects against the AI Gatekeeper.
+**`ui-builder`** | Frontend developer skill. Reads RFC and Backend APIs to build production-ready React components with Axios and SCSS Modules.
 **`git-flow`** | Pre-commit & pre-MR quality gate: deterministic tests, AI Gatekeeper, and mandatory MR to dev.
 **`tdd`** | Test-driven development with red-green-refactor loop at public seams.
 **`code-review`** | Performs two-axis code review (Standards + Spec) using parallel sub-agents.

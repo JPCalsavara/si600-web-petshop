@@ -1,0 +1,23 @@
+@use './styles/variables' as *;
+@use './styles/mixins' as mixins;
+
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: $sp-4;
+  width: 100%;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $sp-5 $sp-6;
+  border-bottom: 1px solid $color-gray-200;
+  background: $color-white;
+
+  h1 { margin: 0; color: $color-primary-dark; font-size: $font-size-2xl; }
+  small { color: $color-text-muted; }
+}
+
+.card-surface { @include mixins.card-surface; }

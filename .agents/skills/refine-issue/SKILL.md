@@ -5,7 +5,7 @@ description: "Refine a GitLab issue into an authoritative implementation RFC usi
 
 # Skill: Refinamento de Issues com Grill-me e Modelo RFC
 
-A skill `refine-issue` conduz o refinamento aprofundado de uma demanda (issue do GitLab), eliminando ambiguidades por meio de uma entrevista técnica implacável (`/grill-me`) e gerando um documento base formal (`docs/rfc/rfc-<NN>-<slug>.md`) baseado no [rfc-modelo.md](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/rfc/rfc-modelo.md), pronto para execução via TDD e validação pré-MR pelo [git-flow](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/.agents/skills/git-flow/SKILL.md).
+A skill `refine-issue` conduz o refinamento aprofundado de uma demanda (issue do GitLab), eliminando ambiguidades por meio de uma entrevista técnica implacável (`/grill-me`) e gerando um documento base formal (`docs/rfc/rfc-<NN>-<slug>.md`) baseado no [rfc-modelo.md](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/rfc/rfc-modelo.md), pronto para execução via TDD e validação pré-MR pelo [git-flow](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/.agents/skills/git-flow/SKILL.md).
 
 ```mermaid
 flowchart TD
@@ -13,7 +13,7 @@ flowchart TD
     B --> C["3. Entrevista Relentless /grill-me\n(Rodadas na Fronteira de Decisões)"]
     C --> D["4. Geração da RFC de Execução\n(docs/rfc/rfc-NN-slug.md)"]
     D --> E["5. Atualização da Issue GitLab\n(Comentário + label ready-for-agent)"]
-    E --> F["6. Execução na Branch do Membro\n(member/<slug> originada de dev)"]
+    E --> F["6. Execução na Branch do Membro\n(<tipo>/<ID-da-issue>-<titulo> originada de dev)"]
     F --> G["7. Gatekeeper Obrigatório Pré-MR\n(git-flow: MR para dev)"]
 ```
 
@@ -34,45 +34,35 @@ flowchart TD
 ### Passo 2: Investigação Autônoma de Fatos (Agent's Job)
 
 Antes de questionar o usuário, o agente deve investigar o repositório por conta própria:
-1. **Vocabulário de Domínio**: Consulte [CONTEXT.md](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/CONTEXT.md) para garantir termos ubíquos (`Cliente`, `Pet`, `Servico`, `Profissional`, `Agendamento`, etc.).
-2. **Decisões Arquiteturais**: Revise [ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md) (apenas testes de integração/E2E reais) e [ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md) (cenários tripartite: bons, ruins, incompletos).
+1. **Vocabulário de Domínio**: Consulte [CONTEXT.md](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/CONTEXT.md) para garantir termos ubíquos (`Cliente`, `Pet`, `Servico`, `Profissional`, `Agendamento`, etc.).
+2. **Decisões Arquiteturais**: Revise [ADR 0001](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md) (apenas testes de integração/E2E reais) e [ADR 0002](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md) (cenários tripartite: bons, ruins, incompletos).
 3. **Seams Existentes**: Verifique se já existem rotas, modelos de banco ou middlewares relacionados à demanda.
 4. *Nunca pergunte ao usuário nada que possa ser inspecionado diretamente no código ou na documentação.*
 
 ### Passo 3: Entrevista Relentless (`/grill-me`)
+Conduza a entrevista técnica com o usuário para fechar o escopo de negócio e regras limítrofes:
+1. Trabalhe em **rodadas**. Questione ambiguidades, tratamento de erros, escopo exato do usuário afetado e restrições.
+2. Cada pergunta deve sugerir uma resposta recomendada baseada no domínio.
+3. Não avance para as especificações técnicas até que o cenário de negócio esteja 100% definido.
 
-Conduza a entrevista técnica seguindo o modelo do **`grilling`**:
-1. Trabalhe em **rodadas**. A fronteira é composta pelas decisões cujos pré-requisitos já foram esclarecidos.
-2. Cada pergunta deve ser formatada estritamente com título, contexto/opções e uma resposta recomendada:
-   ```
-   ❓ **Q<N>** - **<Título da Decisão>**: <Contexto, opções ou implicações>
+### Passo 4: Detalhamento Técnico (`/to-spec`)
+Com o negócio fechado, inicie a fase de especificação técnica (o *Spec*):
+1. **Contratos de Interface**: Defina os endpoints HTTP exatos, DTOs de entrada/saída e HTTP Status codes de sucesso (200/201) e erro (400, 403, 404, 422 - RFC 7807).
+2. **Modelo de Dados**: Especifique as alterações em entidades (`@Entity`), colunas e tipagens de banco de dados.
+3. **Matriz Tripartite**: Especifique os cenários de testes que serão exigidos (Happy Path, Sad Path, Boundary/Malformed).
+4. **Dependências**: Liste se a tarefa precisa criar novas queries JPA ou consumir serviços de terceiros.
 
-   ➡️ <Sua recomendação técnica fundamentada no domínio e ADRs>
-   ```
-3. A entrevista deve cobrir obrigatoriamente:
-   - **Dor Real & Escopo**: Quem é o usuário impactado (tutor ou equipe interna) e o que está fora de escopo.
-   - **No mínimo 3 Alternativas Descartadas**: Abordagens técnicas ou de produto que foram cogitadas, justificando o porquê do descarte e trade-offs.
-   - **As Seis Perguntas Obrigatórias do Fluxo**:
-     1. Qual é o endpoint e método HTTP?
-     2. Quais validações e buscas no banco de dados ocorrem?
-     3. Quais são todos os desvios de erro e códigos HTTP (`400`, `403`, `404`, `409`, `422`) via RFC 7807?
-     4. O que é persistido no banco e qual o estado resultante?
-     5. Qual o DTO de resposta formatado?
-     6. Qual o status HTTP de sucesso retornado (`200` ou `201`)?
-   - **Matriz Tripartite de Testes (ADR 0002)**: Casos Bons, Casos Ruins (com garantia de zero escrita suja) e Casos Incompletos (payloads vazios/nulos com erro 400).
-   - **Principal Desafio Técnico**: Condições de corrida, locks, concorrência de agendamentos no mesmo horário.
+### Passo 5: Geração da RFC de Execução
+Reúna os outputs do Passo 3 e Passo 4:
+1. Crie o arquivo `docs/rfc/rfc-<NN>-<slug>.md` utilizando a estrutura do [docs/rfc/rfc-modelo.md](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/docs/rfc/rfc-modelo.md).
+2. Preencha a RFC com a visão de negócio e a especificação técnica documentada.
 
-### Passo 4: Geração da RFC de Execução
+### Passo 6: Fatiamento em Tarefas (`/to-ticket`)
+O último passo é quebrar a implementação em passos sequenciais acionáveis (sub-cards):
+1. Crie uma **Checklist de Execução**, dividindo o épico em pequenas tarefas (ex: `[ ] 1. Criar DTOs e Endpoint`, `[ ] 2. Implementar Repository`, `[ ] 3. Escrever Integração Tripartite`, `[ ] 4. Tela Frontend`).
+2. Insira essa checklist de tarefas no final da RFC gerada para controle do desenvolvedor/agente no orquestrador `feature-builder`.
 
-Após a confirmação e encerramento da fronteira de perguntas:
-1. Crie o arquivo `docs/rfc/rfc-<NN>-<slug>.md` utilizando a estrutura do [docs/rfc/rfc-modelo.md](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/docs/rfc/rfc-modelo.md).
-2. Preencha integralmente todas as seções obrigatórias:
-   - Metadados (`Status: Em Refinamento` ou `Aprovada`, Autor, Data, Versão).
-   - Contextualização (Entendendo o problema, Solução macro, Alternativas descartadas).
-   - Implementação (Diretriz ADR 0001/0002, Tabela de Rotas, Diagrama ER Mermaid, Diagrama de Fluxo Mermaid respondendo às 6 perguntas, Fluxos textuais tripartite).
-   - Principal Desafio.
-
-### Passo 5: Registro no Issue Tracker do GitLab
+### Passo 7: Registro no Issue Tracker do GitLab
 
 1. Publique um comentário na issue vinculando o documento base:
    ```bash
@@ -83,7 +73,7 @@ Após a confirmação e encerramento da fronteira de perguntas:
    glab issue update <id> --label "ready-for-agent"
    ```
 
-### Passo 6: Passagem para Execução & Padrão Pré-MR (`git-flow`)
+### Passo 8: Passagem para Execução & Padrão Pré-MR (`git-flow`)
 
 O documento de RFC torna-se o contrato executável para implementação:
 1. **Branch de Trabalho**:
@@ -91,14 +81,14 @@ O documento de RFC torna-se o contrato executável para implementação:
      ```bash
      git checkout dev
      git pull origin dev
-     git checkout member/<slug>
+     git checkout <tipo>/<ID-da-issue>-<titulo>
      git merge dev
      ```
 2. **Ciclo TDD**:
    - Implementação dos testes de integração primeiro nos seams públicos (cobrindo a matriz tripartite).
    - Implementação do código até que todos os testes passem (Red $\rightarrow$ Green).
 3. **Padrão Pré-MR (`git-flow`)**:
-   - Antes de abrir qualquer Merge Request, o agente/desenvolvedor deve executar rigorosamente o pipeline [git-flow](file:///home/jpcalsavara/projetos/andamento/si600-web-petshop/.agents/skills/git-flow/SKILL.md):
+   - Antes de abrir qualquer Merge Request, o agente/desenvolvedor deve executar rigorosamente o pipeline [git-flow](file:///home/jpcalsavara/projetos/andamento/si600-web-eventos/.agents/skills/git-flow/SKILL.md):
      - Inspeção de diff.
      - Gate determinístico: 100% dos testes de integração passando.
      - Gate semântico: `bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .` com veredito `APPROVED`.
@@ -106,5 +96,5 @@ O documento de RFC torna-se o contrato executável para implementação:
 4. **Abertura do Merge Request Obrigatório**:
    - Apenas com a aprovação explícita do desenvolvedor:
      ```bash
-     glab mr create --source member/<slug> --target dev --title "feat(<escopo>): <título da issue>" --description "Ref: #<id>\nRFC: docs/rfc/rfc-<NN>-<slug>.md"
+     glab mr create --source <tipo>/<ID-da-issue>-<titulo> --target dev --title "feat(<escopo>): <título da issue>" --description "Ref: #<id>\nRFC: docs/rfc/rfc-<NN>-<slug>.md"
      ```

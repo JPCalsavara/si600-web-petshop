@@ -13,6 +13,10 @@ When exploring the codebase, read `CONTEXT.md` (if it exists) so test names and 
 
 Tests verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't. A good test reads like a specification — "user can checkout with valid cart" tells you exactly what capability exists — and survives refactors because it doesn't care about internal structure.
 
+**Tripartite Coverage (Backend & E2E):** All tests, both backend integration tests and frontend E2E tests, must cover three scenarios: Happy Path (Casos Bons), Business Errors (Casos Ruins), and Boundary/Validation Errors (Casos Incompletos). In E2E tests, this means you MUST verify that backend error responses (4xx) are properly handled and displayed in the frontend UI.
+
+**Viewport Coverage (E2E):** E2E tests must be executed across multiple viewports (e.g., desktop `macbook-15` and mobile `iphone-x`) to ensure UI responsiveness, hidden element accessibility, and structural integrity across devices.
+
 See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
 
 ## Seams — where tests go
