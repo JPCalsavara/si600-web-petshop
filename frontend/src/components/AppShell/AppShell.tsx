@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { getCurrentActorRole } from '../../services/api';
 import styles from './AppShell.module.scss';
 
-interface Props { active: 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas'; children: ReactNode; onNavigate?: (section: 'projetos' | 'taxas') => void; }
+interface Props { active: 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas'; children: ReactNode; onNavigate?: (section: 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas') => void; }
 
 export function AppShell({ active, children, onNavigate }: Props) {
   const role = getCurrentActorRole();
@@ -20,11 +20,11 @@ export function AppShell({ active, children, onNavigate }: Props) {
               <div><strong>{name}</strong><span>{handle}</span></div>
             </div>
             <nav>
-              {admin && <NavItem label="Resumo" active={active === 'resumo'} />}
+              {admin && <NavItem label="Resumo" active={active === 'resumo'} onClick={onNavigate ? () => onNavigate('resumo') : undefined} />}
               <NavItem label="Projetos" active={active === 'projetos'} onClick={admin && onNavigate ? () => onNavigate('projetos') : undefined} />
               {admin && <NavItem label="Catálogo de Taxas" active={active === 'taxas'} onClick={onNavigate ? () => onNavigate('taxas') : undefined} />}
-              {admin && <NavItem label="Pagamentos" active={active === 'pagamentos'} />}
-              {admin && <NavItem label="Usuários" active={active === 'usuarios'} />}
+              {admin && <NavItem label="Pagamentos" active={active === 'pagamentos'} onClick={onNavigate ? () => onNavigate('pagamentos') : undefined} />}
+              {admin && <NavItem label="Usuários" active={active === 'usuarios'} onClick={onNavigate ? () => onNavigate('usuarios') : undefined} />}
             </nav>
           </div>
           <button className={styles.logout} type="button">↪ <span>Sair</span></button>

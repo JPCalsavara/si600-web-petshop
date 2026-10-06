@@ -45,11 +45,18 @@ function AdminProjects() {
 export default function App() {
   const role = getCurrentActorRole();
   const projectId = import.meta.env.VITE_PROJECT_ID;
-  const [adminSection, setAdminSection] = useState<'projetos' | 'taxas'>('projetos');
+  const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'pagamentos' | 'usuarios'>('projetos');
 
   return (
     <AppShell active={role === 'ADMIN' ? adminSection : 'projetos'} onNavigate={setAdminSection}>
-      {role === 'ADMIN' ? (adminSection === 'taxas' ? <FeeCatalogPage /> : <AdminProjects />) : projectId ? <ClientPdfPage projectId={projectId} /> : (
+      {role === 'ADMIN' ? (
+        adminSection === 'taxas' ? <FeeCatalogPage /> :
+        adminSection === 'projetos' ? <AdminProjects /> :
+        <div style={{ padding: '4rem', textAlign: 'center', color: '#666' }}>
+          <h2>Em breve</h2>
+          <p>A seção de {adminSection} ainda não foi implementada.</p>
+        </div>
+      ) : projectId ? <ClientPdfPage projectId={projectId} /> : (
         <div>Configure <code>VITE_PROJECT_ID</code> para visualizar o projeto.</div>
       )}
     </AppShell>
