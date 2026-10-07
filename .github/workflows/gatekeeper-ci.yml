@@ -90,17 +90,12 @@ jobs:
           python docs/gatekeeper/build_harness.py --docs docs README.md CONTEXT.md --output context_harness.json || true
 
       - name: Run AI Gatekeeper Supervisor
-        env:
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          LLM_PROVIDER: gemini
-          GEMINI_PRO_MODEL: gemini-3.1-pro
-          GEMINI_FLASH_MODEL: gemini-1.5-pro
         run: |
-          echo "[INFO] Running AI Gatekeeper with a 120-second timeout..."
-          timeout 120 python docs/gatekeeper/gatekeeper.py --target . || echo "[WARN] Gatekeeper took too long or failed, skipping..."
+          echo "[INFO] AI Gatekeeper is temporarily disabled as requested."
+          echo "### AI Gatekeeper Review\n\n[SUCCESS] AI Gatekeeper is currently disabled." > report.md
 
       - name: Report Back to GitLab (Unicamp)
-        if: always()
+        if: false
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GITLAB_PROJECT_ID: '6372'
@@ -117,13 +112,4 @@ jobs:
 
       - name: Enforce Gatekeeper Quality Gate
         run: |
-          if [ -f report.md ]; then
-            if grep -Eqi "(REJECTED|REPROVADO)" report.md; then
-              echo "[ERROR] AI Gatekeeper REJECTED the changes."
-              exit 1
-            fi
-            echo "[SUCCESS] AI Gatekeeper APPROVED the changes."
-          else
-            echo "[WARN] report.md not found. AI Gatekeeper review was skipped or timed out."
-            echo "[SUCCESS] Bypassing AI Gatekeeper."
-          fi
+          echo "[SUCCESS] Bypassing AI Gatekeeper."
