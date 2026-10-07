@@ -96,19 +96,21 @@ jobs:
           if [ "$BACKEND_STR" = "failed" ] || [ "$FRONT_STR" = "failed" ] || [ "$E2E_STR" = "failed" ]; then VERDICT="REJECTED"; fi
 
           # Generate report
-          cat <<EOF > report.md
-## Porteiro do CI/CD (\${{ github.ref_name }})
-
-### Supervisor Verdict
-**$VERDICT**: $(if [ "$VERDICT" = "APPROVED" ]; then echo "Todas as etapas foram concluídas com sucesso!"; else echo "Falha detectada em uma ou mais etapas dos testes."; fi)
-
-> *O Revisor de IA Gatekeeper está temporariamente desativado.*
-
-### Status das Etapas
-- **Backend (Lint & Testes):** $BACKEND_STR
-- **Frontend (Lint & Testes):** $FRONT_STR
-- **E2E (Cypress):** $E2E_STR
-EOF
+          echo "## Porteiro do CI/CD (${{ github.ref_name }})" > report.md
+          echo "" >> report.md
+          echo "### Supervisor Verdict" >> report.md
+          if [ "$VERDICT" = "APPROVED" ]; then
+            echo "**$VERDICT**: Todas as etapas foram concluídas com sucesso!" >> report.md
+          else
+            echo "**$VERDICT**: Falha detectada em uma ou mais etapas dos testes." >> report.md
+          fi
+          echo "" >> report.md
+          echo "> *O Revisor de IA Gatekeeper está temporariamente desativado.*" >> report.md
+          echo "" >> report.md
+          echo "### Status das Etapas" >> report.md
+          echo "- **Backend (Lint & Testes):** $BACKEND_STR" >> report.md
+          echo "- **Frontend (Lint & Testes):** $FRONT_STR" >> report.md
+          echo "- **E2E (Cypress):** $E2E_STR" >> report.md
 
           if [ "$VERDICT" = "REJECTED" ]; then
             echo -e "\n### 🚨 Logs de Erro Extraídos\n<details>\n<summary>Clique para expandir os trechos com erro</summary>\n\n\`\`\`text" >> report.md
