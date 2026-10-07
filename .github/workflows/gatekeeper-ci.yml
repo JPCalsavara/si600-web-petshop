@@ -3,16 +3,10 @@ name: CI/CD Simplificado (GitLab Bridge)
 on:
   push:
     branches:
-      - main
-      - dev
-      - 'feat/**'
-      - 'fix/**'
-      - 'docs/**'
-      - 'chore/**'
+      - '**'
   pull_request:
     branches:
-      - main
-      - dev
+      - '**'
   workflow_dispatch:
 
 permissions:
