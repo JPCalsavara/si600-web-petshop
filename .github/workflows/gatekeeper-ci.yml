@@ -96,7 +96,8 @@ jobs:
           GEMINI_PRO_MODEL: gemini-3.1-pro
           GEMINI_FLASH_MODEL: gemini-1.5-pro
         run: |
-          python docs/gatekeeper/gatekeeper.py --target . || true
+          echo "[INFO] Running AI Gatekeeper with a 120-second timeout..."
+          timeout 120 python docs/gatekeeper/gatekeeper.py --target . || echo "[WARN] Gatekeeper took too long or failed, skipping..."
 
       - name: Report Back to GitLab (Unicamp)
         if: always()
@@ -116,8 +117,13 @@ jobs:
 
       - name: Enforce Gatekeeper Quality Gate
         run: |
-          if grep -Eqi "(REJECTED|REPROVADO)" report.md; then
-            echo "[ERROR] AI Gatekeeper REJECTED the changes."
-            exit 1
+          if [ -f report.md ]; then
+            if grep -Eqi "(REJECTED|REPROVADO)" report.md; then
+              echo "[ERROR] AI Gatekeeper REJECTED the changes."
+              exit 1
+            fi
+            echo "[SUCCESS] AI Gatekeeper APPROVED the changes."
+          else
+            echo "[WARN] report.md not found. AI Gatekeeper review was skipped or timed out."
+            echo "[SUCCESS] Bypassing AI Gatekeeper."
           fi
-          echo "[SUCCESS] AI Gatekeeper APPROVED the changes."

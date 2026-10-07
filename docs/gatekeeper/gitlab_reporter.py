@@ -14,6 +14,7 @@ import urllib.request
 import urllib.error
 import urllib.parse
 from pathlib import Path
+import re
 
 
 def make_gitlab_request(url: str, method: str = "GET", data: dict = None, token: str = "") -> dict:
@@ -131,7 +132,25 @@ def main():
         mr = find_active_mr(args.gitlab_url, args.project_id, args.branch, args.token)
         if mr and "iid" in mr:
             mr_iid = mr["iid"]
-            print(f"[INFO] Found GitLab MR !{mr_iid} ('{mr.get('title')}'). Posting review note...")
+            mr_title = mr.get("title", "")
+            mr_desc = mr.get("description") or ""
+            print(f"[INFO] Found GitLab MR !{mr_iid} ('{mr_title}'). Posting review note...")
+            
+            warnings = []
+            title_pattern = r"^(feat|fix|docs|chore|refactor|test|style|perf)\([a-zA-Z0-9\-]+\):\s.+"
+            if not re.match(title_pattern, mr_title):
+                warnings.append(f"- **Título Fora do Padrão**: O título `{mr_title}` não segue o formato exigido: `tipo(ID-da-issue): descrição`.")
+            
+            if len(mr_desc) < 30:
+                warnings.append("- **Descrição Curta**: A descrição do MR deve ter no mínimo 30 caracteres.")
+            
+            if not re.search(r"(test|teste|validaç[ãa]o)", mr_desc, re.IGNORECASE):
+                warnings.append("- **Falta Explicação de Testes**: A descrição do MR deve mencionar os testes executados (ex: 'testes unitários', 'validação manual', etc).")
+                
+            if warnings:
+                warning_block = "\n\n### ⚠️ MR Standards Warnings\n" + "\n".join(warnings)
+                report_content += warning_block
+
             note_ok = post_mr_note(args.gitlab_url, args.project_id, mr_iid, report_content, args.token)
             if note_ok:
                 print(f"[SUCCESS] Review report successfully published to GitLab MR !{mr_iid}")
