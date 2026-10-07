@@ -111,6 +111,10 @@ jobs:
 EOF
 
           if [ "$VERDICT" = "REJECTED" ]; then
+            echo -e "\n### 🚨 Logs de Erro Extraídos\n<details>\n<summary>Clique para expandir os trechos com erro</summary>\n\n\`\`\`text" >> report.md
+            grep -iE "fail|error|exception" -B 2 -A 5 tests.log | tail -n 50 >> report.md || echo "Nenhuma linha específica identificada." >> report.md
+            echo -e "\n\`\`\`\n</details>" >> report.md
+            
             echo "[ERROR] Tests failed."
             exit 1
           fi
