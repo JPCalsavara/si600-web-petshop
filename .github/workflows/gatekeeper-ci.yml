@@ -57,14 +57,18 @@ jobs:
           
           echo "=== Running Backend Tests ==="
           cd backend
-          ./mvnw clean test >> ../tests.log 2>&1 || true
+          ./mvnw clean test >> ../tests.log 2>&1
+          BACKEND_STATUS=$?
           cd ..
           
           echo "=== Running Frontend Tests & Linter ==="
           cd frontend
-          npm ci >> ../tests.log 2>&1 || true
-          npm run build >> ../tests.log 2>&1 || true
-          npm run test --if-present >> ../tests.log 2>&1 || true
+          npm ci >> ../tests.log 2>&1
+          NPM_CI_STATUS=$?
+          npm run build >> ../tests.log 2>&1
+          BUILD_STATUS=$?
+          npm run test --if-present >> ../tests.log 2>&1
+          FRONTEND_STATUS=$?
           cd ..
           
           echo "=== Starting Full Env for E2E ==="
@@ -74,7 +78,42 @@ jobs:
           
           echo "=== Running Cypress E2E ==="
           cd frontend
-          npx cypress run >> ../tests.log 2>&1 || true
+          npx cypress run >> ../tests.log 2>&1
+          E2E_STATUS=$?
+          cd ..
+
+          # Determine statuses
+          BACKEND_STR="success"
+          if [ $BACKEND_STATUS -ne 0 ]; then BACKEND_STR="failed"; fi
+          
+          FRONT_STR="success"
+          if [ $NPM_CI_STATUS -ne 0 ] || [ $BUILD_STATUS -ne 0 ] || [ $FRONTEND_STATUS -ne 0 ]; then FRONT_STR="failed"; fi
+          
+          E2E_STR="success"
+          if [ $E2E_STATUS -ne 0 ]; then E2E_STR="failed"; fi
+          
+          VERDICT="APPROVED"
+          if [ "$BACKEND_STR" = "failed" ] || [ "$FRONT_STR" = "failed" ] || [ "$E2E_STR" = "failed" ]; then VERDICT="REJECTED"; fi
+
+          # Generate report
+          cat <<EOF > report.md
+## Porteiro do CI/CD (\${{ github.ref_name }})
+
+### Supervisor Verdict
+**$VERDICT**: $(if [ "$VERDICT" = "APPROVED" ]; then echo "Todas as etapas foram concluídas com sucesso!"; else echo "Falha detectada em uma ou mais etapas dos testes."; fi)
+
+> *O Revisor de IA Gatekeeper está temporariamente desativado.*
+
+### Status das Etapas
+- **Backend (Lint & Testes):** $BACKEND_STR
+- **Frontend (Lint & Testes):** $FRONT_STR
+- **E2E (Cypress):** $E2E_STR
+EOF
+
+          if [ "$VERDICT" = "REJECTED" ]; then
+            echo "[ERROR] Tests failed."
+            exit 1
+          fi
 
       - name: Extract Git Diff
         run: |
@@ -88,11 +127,6 @@ jobs:
       - name: Build Context Harness Vector Index
         run: |
           python docs/gatekeeper/build_harness.py --docs docs README.md CONTEXT.md --output context_harness.json || true
-
-      - name: Run AI Gatekeeper Supervisor
-        run: |
-          echo "[INFO] AI Gatekeeper is temporarily disabled as requested."
-          echo "### AI Gatekeeper Review\n\n[SUCCESS] AI Gatekeeper is currently disabled." > report.md
 
       - name: Report Back to GitLab (Unicamp)
         if: always()
