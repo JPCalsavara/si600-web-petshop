@@ -95,7 +95,7 @@ jobs:
           echo "### AI Gatekeeper Review\n\n[SUCCESS] AI Gatekeeper is currently disabled." > report.md
 
       - name: Report Back to GitLab (Unicamp)
-        if: false
+        if: always()
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GITLAB_PROJECT_ID: '6372'
