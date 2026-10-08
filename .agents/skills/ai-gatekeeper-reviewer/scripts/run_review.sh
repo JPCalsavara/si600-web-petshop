@@ -180,11 +180,7 @@ LOCAL_GATEKEEPER_ARGS=(--target "$TARGET_DIR")
 GATEKEEPER_SCRIPT="${GATEKEEPER_ROOT}/docs/gatekeeper/gatekeeper.py"
 [[ ! -f "$GATEKEEPER_SCRIPT" ]] && GATEKEEPER_SCRIPT="${GATEKEEPER_ROOT}/gatekeeper.py"
 
-if command -v docker &>/dev/null && [[ -f "${GATEKEEPER_ROOT}/docker-compose.yml" ]]; then
-  docker compose -f "${GATEKEEPER_ROOT}/docker-compose.yml" run --rm \
-    -v "${TARGET_DIR}:/target" \
-    test python3 -u gatekeeper.py "${GATEKEEPER_ARGS[@]}" || EXIT_CODE=$?
-elif [[ -f "$GATEKEEPER_SCRIPT" ]]; then
+if [[ -f "$GATEKEEPER_SCRIPT" ]]; then
   python3 "$GATEKEEPER_SCRIPT" "${LOCAL_GATEKEEPER_ARGS[@]}" || EXIT_CODE=$?
 else
   echo "[WARN] Gatekeeper script not found at ${GATEKEEPER_SCRIPT}."

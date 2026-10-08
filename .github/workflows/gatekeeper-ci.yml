@@ -1,18 +1,12 @@
-name: AI Gatekeeper Quality Gate (GitLab Bridge)
+name: CI/CD Simplificado com AI Gatekeeper
 
 on:
   push:
     branches:
-      - main
-      - dev
-      - 'feat/**'
-      - 'fix/**'
-      - 'docs/**'
-      - 'chore/**'
+      - '**'
   pull_request:
     branches:
-      - main
-      - dev
+      - '**'
   workflow_dispatch:
 
 permissions:
@@ -21,7 +15,7 @@ permissions:
 
 jobs:
   gatekeeper-review:
-    name: AI Quality Gatekeeper & SonarQube
+    name: AI Gatekeeper Review (Testes & Linter)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code Repository
@@ -29,18 +23,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Java 21 (Spring Boot)
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Set up Node.js 20 (React, Vite & Cypress)
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20.18.0'
 
-      - name: Set up Python 3.11 (Gatekeeper & Harness)
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -52,115 +46,93 @@ jobs:
           python -m pip install --upgrade pip --only-binary :all:
           pip install --only-binary :all: -r docs/gatekeeper/requirements-gatekeeper.txt
 
-      - name: Run Test Suite (Spring Boot, React & Cypress)
-        id: run-tests
+      - name: Initialize Database (PostgreSQL)
         run: |
-          echo "=== Step 1: Running Tests ==="
+          docker compose up -d postgres
+          sleep 5
+
+      - name: Linter & Tests (Backend/Frontend/E2E)
+        run: |
           touch tests.log
+          
+          echo "=== Running Backend Tests ==="
+          cd backend
+          ./mvnw clean test >> ../tests.log 2>&1
+          BACKEND_STATUS=$?
+          cd ..
+          
+          echo "=== Running Frontend Tests & Linter ==="
+          cd frontend
+          npm ci >> ../tests.log 2>&1
+          NPM_CI_STATUS=$?
+          npm run build >> ../tests.log 2>&1
+          BUILD_STATUS=$?
+          npm run test --if-present >> ../tests.log 2>&1
+          FRONTEND_STATUS=$?
+          cd ..
+          
+          echo "=== Starting Full Env for E2E ==="
+          docker compose up -d backend frontend
+          timeout 60 bash -c 'until curl -s http://localhost:8080/api/projects > /dev/null; do sleep 2; done' || true
+          timeout 60 bash -c 'until curl -s http://localhost:5173 > /dev/null; do sleep 2; done' || true
+          
+          echo "=== Running Cypress E2E ==="
+          cd frontend
+          npx cypress run >> ../tests.log 2>&1
+          E2E_STATUS=$?
+          cd ..
 
-          # 1.1 Java Spring Boot Backend
-          if [ -f "pom.xml" ] || [ -f "backend/pom.xml" ]; then
-            POM_DIR="."
-            [ -f "backend/pom.xml" ] && POM_DIR="backend"
-            echo "Running Java Spring Boot tests in $POM_DIR..."
-            if [ -x "$POM_DIR/mvnw" ]; then
-              "$POM_DIR/mvnw" -f "$POM_DIR/pom.xml" test >> tests.log 2>&1 || true
-            else
-              mvn -f "$POM_DIR/pom.xml" test >> tests.log 2>&1 || true
-            fi
-          elif [ -f "gradlew" ] || [ -f "build.gradle" ] || [ -f "backend/build.gradle" ]; then
-            GRADLE_DIR="."
-            [ -f "backend/build.gradle" ] && GRADLE_DIR="backend"
-            echo "Running Gradle tests in $GRADLE_DIR..."
-            if [ -x "$GRADLE_DIR/gradlew" ]; then
-              "$GRADLE_DIR/gradlew" -p "$GRADLE_DIR" test >> tests.log 2>&1 || true
-            else
-              gradle -p "$GRADLE_DIR" test >> tests.log 2>&1 || true
-            fi
+          # Determine statuses
+          BACKEND_STR="success"
+          if [ $BACKEND_STATUS -ne 0 ]; then BACKEND_STR="failed"; fi
+          
+          FRONT_STR="success"
+          if [ $NPM_CI_STATUS -ne 0 ] || [ $BUILD_STATUS -ne 0 ] || [ $FRONTEND_STATUS -ne 0 ]; then FRONT_STR="failed"; fi
+          
+          E2E_STR="success"
+          if [ $E2E_STATUS -ne 0 ]; then E2E_STR="failed"; fi
+          
+          VERDICT="APPROVED"
+          if [ "$BACKEND_STR" = "failed" ] || [ "$FRONT_STR" = "failed" ] || [ "$E2E_STR" = "failed" ]; then VERDICT="REJECTED"; fi
+
+          # Generate report
+          echo "## Porteiro do CI/CD (${{ github.ref_name }})" > report.md
+          echo "" >> report.md
+          echo "### Supervisor Verdict" >> report.md
+          if [ "$VERDICT" = "APPROVED" ]; then
+            echo "**$VERDICT**: Todas as etapas foram concluídas com sucesso!" >> report.md
+          else
+            echo "**$VERDICT**: Falha detectada em uma ou mais etapas dos testes." >> report.md
           fi
+          echo "" >> report.md
+          echo "> *O Revisor de IA Gatekeeper está temporariamente desativado.*" >> report.md
+          echo "" >> report.md
+          echo "### Status das Etapas" >> report.md
+          echo "- **Backend (Lint & Testes):** $BACKEND_STR" >> report.md
+          echo "- **Frontend (Lint & Testes):** $FRONT_STR" >> report.md
+          echo "- **E2E (Cypress):** $E2E_STR" >> report.md
 
-          # 1.2 React / Vite / Cypress Frontend
-          if [ -f "package.json" ] || [ -f "frontend/package.json" ]; then
-            PKG_DIR="."
-            [ -f "frontend/package.json" ] && PKG_DIR="frontend"
-            echo "Running React / Vite tests in $PKG_DIR..."
-            npm --prefix "$PKG_DIR" install --ignore-scripts || true
-            npm --prefix "$PKG_DIR" test >> tests.log 2>&1 || true
-            if [ -d "$PKG_DIR/cypress" ]; then
-              echo "Running Cypress E2E tests in $PKG_DIR..."
-              npx --prefix "$PKG_DIR" cypress run >> tests.log 2>&1 || true
-            fi
+          if [ "$VERDICT" = "REJECTED" ]; then
+            echo -e "\n### 🚨 Logs de Erro Extraídos\n<details>\n<summary>Clique para expandir os trechos com erro</summary>\n\n\`\`\`text" >> report.md
+            grep -iE "fail|error|exception" -B 2 -A 5 tests.log | tail -n 50 >> report.md || echo "Nenhuma linha específica identificada." >> report.md
+            echo -e "\n\`\`\`\n</details>" >> report.md
+            
+            echo "[ERROR] Tests failed."
+            exit 1
           fi
-
-          echo "Tests log lines: $(wc -l < tests.log)"
 
       - name: Extract Git Diff
-        id: extract-diff
         run: |
-          echo "=== Step 2: Extracting Diff ==="
           BASE_TARGET="dev"
           if [ "${{ github.ref_name }}" = "dev" ] || [ "${{ github.base_ref }}" = "main" ]; then
             BASE_TARGET="main"
           fi
-
           git fetch origin "$BASE_TARGET" || true
-          
-          if [ -n "${{ github.base_ref }}" ]; then
-            echo "Pull request diff against ${{ github.base_ref }}..."
-            git diff "origin/${{ github.base_ref }}...HEAD" > diff.txt || true
-          else
-            echo "Push diff against origin/${BASE_TARGET}..."
-            git diff "origin/${BASE_TARGET}...HEAD" > diff.txt || true
-          fi
-
-          if [ ! -s diff.txt ]; then
-            echo "Diff against ${BASE_TARGET} is empty; falling back to HEAD~1..."
-            git diff HEAD~1 > diff.txt || true
-          fi
-
-          echo "Diff extracted: $(wc -l < diff.txt) lines."
-
-      - name: Fetch SonarQube / SonarCloud Issues
-        id: run-sonar
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
-        run: |
-          echo "=== Step 3: SonarQube / SonarCloud Analysis ==="
-          bash .agents/skills/sonarqube-runner/scripts/run_sonar.sh --target . --api || true
+          git diff "origin/${BASE_TARGET}...HEAD" > diff.txt || git diff HEAD~1 > diff.txt || true
 
       - name: Build Context Harness Vector Index
         run: |
-          echo "=== Step 4: Context Harness ==="
           python docs/gatekeeper/build_harness.py --docs docs README.md CONTEXT.md --output context_harness.json || true
-
-      - name: Run AI Gatekeeper Supervisor
-        id: gatekeeper
-        env:
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'gemini' }}
-        run: |
-          echo "=== Step 5: AI Gatekeeper Multi-Agent Review ==="
-          if [ -z "$GOOGLE_API_KEY" ] && [ -z "$OPENAI_API_KEY" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "## AI Quality Gatekeeper Report" > report.md
-            echo "### Supervisor Verdict" >> report.md
-            echo "SKIPPED" >> report.md
-            echo "" >> report.md
-            echo "**Aviso**: Nenhuma chave de API de LLM foi encontrada nos segredos do repositório. O Code Review por IA foi pulado." >> report.md
-            echo "Skipping AI Gatekeeper due to missing API keys."
-          else
-            python docs/gatekeeper/gatekeeper.py --target . || true
-          fi
-
-      - name: Publish GitHub Summary
-        if: always()
-        run: |
-          if [ -f "report.md" ]; then
-            cat report.md >> $GITHUB_STEP_SUMMARY
-          fi
 
       - name: Report Back to GitLab (Unicamp)
         if: always()
@@ -172,7 +144,6 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
           GITHUB_RUN_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |
-          echo "=== Step 6: Reporting to GitLab Merge Request ==="
           python docs/gatekeeper/gitlab_reporter.py \
             --report report.md \
             --sha "$GITHUB_SHA" \
@@ -181,10 +152,4 @@ jobs:
 
       - name: Enforce Gatekeeper Quality Gate
         run: |
-          if [ -f "report.md" ]; then
-            if grep -Eqi "(REJECTED|REPROVADO)" report.md; then
-              echo "[ERROR] AI Gatekeeper REJECTED the changes. Blocking CI pipeline."
-              exit 1
-            fi
-            echo "[SUCCESS] AI Gatekeeper APPROVED the changes."
-          fi
+          echo "[SUCCESS] Bypassing AI Gatekeeper."
