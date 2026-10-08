@@ -7,12 +7,10 @@ import { ClientPdfPage } from './pages/ClientPdfPage/ClientPdfPage';
 import { AdminPdfPage } from './pages/AdminPdfPage/AdminPdfPage';
 import { ProjectListPage } from './pages/ProjectListPage/ProjectListPage';
 import { ProjectFormPage } from './pages/ProjectFormPage/ProjectFormPage';
-import type { ClientProject } from './types';
 
 type AdminView =
   | { name: 'lista' }
   | { name: 'novo' }
-  | { name: 'editar'; project: ClientProject }
   | { name: 'analise-pdf' };
 
 function AdminProjects() {
@@ -22,8 +20,6 @@ function AdminProjects() {
   switch (view.name) {
     case 'novo':
       return <ProjectFormPage onDone={toList} />;
-    case 'editar':
-      return <ProjectFormPage project={view.project} onDone={toList} />;
     case 'analise-pdf':
       return (
         <>
@@ -35,7 +31,6 @@ function AdminProjects() {
       return (
         <ProjectListPage
           onAdd={() => setView({ name: 'novo' })}
-          onEdit={(project) => setView({ name: 'editar', project })}
           onOpenPdfReview={() => setView({ name: 'analise-pdf' })}
         />
       );

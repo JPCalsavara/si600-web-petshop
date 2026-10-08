@@ -7,11 +7,8 @@ import type {
 } from '../types';
 
 /**
- * Registro de projetos da US-03.
- *
- * Ainda não existe endpoint de criação no backend, então o estado fica em memória
- * (some ao recarregar a página). Toda a regra de negócio da US-03 está aqui, atrás
- * de funções com contrato estável, para trocar por chamadas HTTP depois sem mexer nas telas.
+ * Regras legadas de validação local usadas pela edição ainda não contemplada no contrato HTTP.
+ * A criação de projetos usa o endpoint real do backend em `api.ts`.
  */
 
 export const FEE_CATALOG: ProjectFeeOption[] = [

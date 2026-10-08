@@ -47,9 +47,10 @@ public class ProjectPdfService {
     }
 
     @Transactional
-    public ProjectResponse submitPdf(UUID projectId, MultipartFile file, Actor actor) {
+    public ProjectResponse submitPdf(UUID projectId, MultipartFile file, BigDecimal areaM2, Actor actor) {
         requireRole(actor, ActorRole.CLIENT);
         validatePdf(file);
+        validateArea(areaM2);
 
         Project project = repository.findByIdAndOwnerId(projectId, actor.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
@@ -72,7 +73,7 @@ public class ProjectPdfService {
 
         try {
             project.submitPdf(key, sanitizeFilename(file.getOriginalFilename()),
-                    PDF_CONTENT_TYPE, file.getSize(), OffsetDateTime.now());
+                    PDF_CONTENT_TYPE, file.getSize(), areaM2.setScale(2, RoundingMode.HALF_UP), OffsetDateTime.now());
             repository.saveAndFlush(project);
         } catch (RuntimeException ex) {
             deleteQuietly(key); // o registro não aponta para o novo objeto: evita órfão
@@ -189,6 +190,12 @@ public class ProjectPdfService {
     private void requireRole(Actor actor, ActorRole role) {
         if (actor.role() != role) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Você não possui permissão para esta operação.");
+        }
+    }
+
+    private void validateArea(BigDecimal areaM2) {
+        if (areaM2 == null || areaM2.signum() <= 0 || areaM2.compareTo(MAX_AREA_M2) > 0) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "A área deve ser maior que zero e estar dentro do limite permitido.");
         }
     }
 

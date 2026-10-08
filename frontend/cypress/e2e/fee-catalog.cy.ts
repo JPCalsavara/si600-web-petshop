@@ -1,4 +1,4 @@
-// Requer Cypress instalado, backend real e Vite iniciado com VITE_USER_ROLE=ADMIN.
+// Requer Cypress instalado, backend real e Vite iniciado. O teste define o ator ADMIN explicitamente.
 const viewports: Cypress.ViewportPreset[] = ['macbook-15', 'iphone-x'];
 
 viewports.forEach((viewport) => {
@@ -14,7 +14,13 @@ viewports.forEach((viewport) => {
     });
 
     const openCatalog = () => {
-      cy.visit('/');
+      cy.visit('/', {
+        onBeforeLoad(win) {
+          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
+          win.localStorage.setItem('MOCK_ACTOR_ID', 'admin-1');
+          win.localStorage.removeItem('MOCK_PROJECT_ID');
+        },
+      });
       if (viewport === 'iphone-x') {
         cy.contains('button', '☰').should('be.visible').click({ force: true });
         cy.contains('button', 'Catálogo de Taxas').click({ force: true });

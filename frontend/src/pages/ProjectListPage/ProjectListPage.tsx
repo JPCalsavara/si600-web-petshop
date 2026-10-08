@@ -1,25 +1,43 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
-import { FEE_CATALOG, listClientProjects } from '../../services/projectRegistry';
-import type { ClientProject, ProjectStatus } from '../../types';
+import { listAdminProjects } from '../../services/api';
+import type { Project, ProjectStatus } from '../../types';
 import styles from './ProjectListPage.module.scss';
 
 interface Props {
   onAdd: () => void;
-  onEdit: (project: ClientProject) => void;
   onOpenPdfReview: () => void;
 }
 
 /** yyyy-mm-dd -> dd/mm/aaaa sem passar por Date (evita deslocar um dia por fuso). */
-export function formatDate(value: string) {
-  const [y, m, d] = value.split('-');
+export function formatDate(value: string | null) {
+  if (!value) return '-';
+  const datePart = value.slice(0, 10);
+  const [y, m, d] = datePart.split('-');
   return y && m && d ? `${d}/${m}/${y}` : '-';
 }
 
-export function ProjectListPage({ onAdd, onEdit, onOpenPdfReview }: Props) {
+export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
   const [filter, setFilter] = useState<ProjectStatus | ''>('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const projects = listClientProjects(filter || undefined);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+        setProjects(await listAdminProjects(filter || undefined));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar os projetos.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    void load();
+  }, [filter]);
 
   const handleFilterSelect = (val: ProjectStatus | '') => {
     setFilter(val);
@@ -50,7 +68,10 @@ export function ProjectListPage({ onAdd, onEdit, onOpenPdfReview }: Props) {
       </header>
 
       <section className={styles.panel}>
-        {projects.length === 0 ? (
+        {error && <div className={styles.alert} role="alert">{error}</div>}
+        {loading ? (
+          <p className={styles.empty}>Carregando projetos...</p>
+        ) : projects.length === 0 ? (
           <p className={styles.empty}>Nenhum projeto encontrado.</p>
         ) : (
           <div className={styles.tableWrap}>
@@ -70,16 +91,16 @@ export function ProjectListPage({ onAdd, onEdit, onOpenPdfReview }: Props) {
               <tbody>
                 {projects.map((p) => (
                   <tr key={p.id}>
-                    <td data-label="Empresa"><strong>{p.name}</strong></td>
+                    <td data-label="Empresa"><strong>{p.companyName}</strong></td>
                     <td data-label="CPF/CNPJ">{p.document}</td>
-                    <td data-label="Estande">{p.area}</td>
+                    <td data-label="Estande">{p.category}</td>
                     <td data-label="Prazo PDF">{formatDate(p.pdfDeadline)}</td>
                     <td data-label="Prazo pagamento">{formatDate(p.paymentDeadline)}</td>
-                    <td data-label="Taxas" title={FEE_CATALOG.filter((f) => p.feeIds.includes(f.id)).map((f) => f.name).join(', ')}>
-                      {p.feeIds.length}
+                    <td data-label="Taxas" title="Os vínculos de taxas não fazem parte do contrato GET /projects/admin.">
+                      -
                     </td>
                     <td data-label="Status"><span className={styles.status}>{STATUS_LABELS[p.status]}</span></td>
-                    <td data-label="Ações"><button type="button" className={styles.edit} onClick={() => onEdit(p)}>Editar</button></td>
+                    <td data-label="Ações">-</td>
                   </tr>
                 ))}
               </tbody>

@@ -1,0 +1,25 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+app:
+  cors:
+    # Em produção, a origem deve ser fornecida explicitamente pelo ambiente.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+storage:
+  b2:
+    # Produção deve usar armazenamento persistente; sobrescreva via ambiente somente quando necessário.
+    enabled: ${B2_ENABLED:true}
+
+notification:
+  gmail:
+    enabled: ${GMAIL_ENABLED:false}

@@ -141,12 +141,13 @@ public class Project {
     public String getRejectionJustification() { return rejectionJustification; }
 
     public void submitPdf(String objectKey, String filename,
-                          String contentType, long size, OffsetDateTime submittedAt) {
+                          String contentType, long size, BigDecimal areaM2, OffsetDateTime submittedAt) {
         this.pdfObjectKey = objectKey;
         this.pdfOriginalFilename = filename;
         this.pdfContentType = contentType;
         this.pdfSizeBytes = size;
         this.pdfUploadedAt = submittedAt;
+        this.boothAreaM2 = areaM2;
         this.status = ProjectStatus.PDF_EM_ANALISE;
         this.decisionBy = null;
         this.decisionAt = null;

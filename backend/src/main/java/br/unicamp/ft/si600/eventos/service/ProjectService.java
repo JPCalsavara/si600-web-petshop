@@ -5,6 +5,10 @@ import br.unicamp.ft.si600.eventos.dto.ProjectResponse;
 import br.unicamp.ft.si600.eventos.entity.Project;
 import br.unicamp.ft.si600.eventos.exception.ApiException;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
+import br.unicamp.ft.si600.eventos.repository.FeeRepository;
+import br.unicamp.ft.si600.eventos.repository.ProjectFeeRepository;
+import br.unicamp.ft.si600.eventos.entity.Fee;
+import br.unicamp.ft.si600.eventos.entity.ProjectFee;
 import br.unicamp.ft.si600.eventos.security.Actor;
 import br.unicamp.ft.si600.eventos.security.ActorRole;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -17,6 +21,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Locale;
+import java.util.List;
+import java.util.UUID;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** US-03: criação de projeto pelo Admin. */
 @Service
@@ -26,9 +34,13 @@ public class ProjectService {
     private static final ZoneId EVENT_ZONE = ZoneId.of("America/Sao_Paulo");
 
     private final ProjectRepository repository;
+    private final FeeRepository feeRepository;
+    private final ProjectFeeRepository projectFeeRepository;
 
-    public ProjectService(ProjectRepository repository) {
+    public ProjectService(ProjectRepository repository, FeeRepository feeRepository, ProjectFeeRepository projectFeeRepository) {
         this.repository = repository;
+        this.feeRepository = feeRepository;
+        this.projectFeeRepository = projectFeeRepository;
     }
 
     @Transactional
@@ -64,7 +76,20 @@ public class ProjectService {
                 endOfDay(request.pdfDeadline()), endOfDay(request.paymentDeadline()),
                 actor.id(), OffsetDateTime.now());
         try {
-            return ProjectResponse.from(repository.saveAndFlush(project));
+            Project saved = repository.saveAndFlush(project);
+            List<UUID> feeIds = request.feeIds() == null ? List.of() : request.feeIds();
+            Set<UUID> distinctFeeIds = feeIds.stream().collect(Collectors.toSet());
+            if (distinctFeeIds.size() != feeIds.size()) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "A mesma taxa não pode ser selecionada mais de uma vez.");
+            }
+            if (!distinctFeeIds.isEmpty()) {
+                List<Fee> fees = feeRepository.findAllById(distinctFeeIds);
+                if (fees.size() != distinctFeeIds.size() || fees.stream().anyMatch(f -> !f.isActive())) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "Uma ou mais taxas selecionadas não existem ou estão inativas.");
+                }
+                projectFeeRepository.saveAll(fees.stream().map(f -> new ProjectFee(saved, f)).toList());
+            }
+            return ProjectResponse.from(saved);
         } catch (DataIntegrityViolationException ex) {
             // Corrida entre duas criações simultâneas: a constraint unique do banco é a palavra final.
             throw new ApiException(HttpStatus.CONFLICT, DUPLICATE_MESSAGE);

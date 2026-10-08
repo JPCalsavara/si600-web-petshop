@@ -52,6 +52,12 @@ async function request<T>(config: AxiosRequestConfig): Promise<T> {
       }
       throw new ApiRequestError(detail, error.response.status, invalidFields);
     }
+    if (axios.isAxiosError(error)) {
+      throw new ApiRequestError(
+        'Não foi possível comunicar com a API. Verifique se o backend está disponível e tente novamente.',
+        0,
+      );
+    }
     throw error;
   }
 }
@@ -70,6 +76,26 @@ export async function checkBackendHealth(): Promise<HealthStatus> {
 
 export function getCurrentActorRole(): 'CLIENT' | 'ADMIN' {
   return actorRole === 'ADMIN' ? 'ADMIN' : 'CLIENT';
+}
+
+
+export async function createProject(body: {
+  name: string;
+  document: string;
+  address: string;
+  area: string;
+  email: string;
+  pdfDeadline: string;
+  paymentDeadline: string;
+  representativeName?: string;
+  feeIds?: string[];
+}): Promise<Project> {
+  return request<Project>({
+    method: 'POST',
+    url: '/projects',
+    headers: { 'Content-Type': 'application/json' },
+    data: body,
+  });
 }
 
 export async function getClientProject(projectId: string): Promise<Project> {
@@ -104,8 +130,13 @@ export async function listAdminProjects(status?: ProjectStatus): Promise<Project
   return request<Project[]>({ method: 'GET', url: `/projects/admin${query}` });
 }
 
-export async function approveProject(projectId: string): Promise<Project> {
-  return request<Project>({ method: 'POST', url: `/projects/admin/${projectId}/approve` });
+export async function approveProject(projectId: string, approvedAreaM2: number): Promise<Project> {
+  return request<Project>({
+    method: 'POST',
+    url: `/projects/admin/${projectId}/approve`,
+    headers: { 'Content-Type': 'application/json' },
+    data: { approvedAreaM2 },
+  });
 }
 
 export async function rejectProject(projectId: string, justification: string): Promise<Project> {

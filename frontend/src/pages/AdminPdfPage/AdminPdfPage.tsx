@@ -18,6 +18,7 @@ export function AdminPdfPage() {
   const [filter, setFilter] = useState<ProjectStatus | ''>('PDF_EM_ANALISE');
   const [selected, setSelected] = useState<Project | null>(null);
   const [justification, setJustification] = useState('');
+  const [approvedAreaM2, setApprovedAreaM2] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -47,9 +48,15 @@ export function AdminPdfPage() {
   }
 
   async function approve(project: Project) {
+    const area = Number(approvedAreaM2);
+    if (!Number.isFinite(area) || area <= 0) {
+      setError('Informe a metragem aprovada em m².');
+      return;
+    }
     try {
       setError(null);
-      await approveProject(project.id);
+      await approveProject(project.id, area);
+      setApprovedAreaM2('');
       await load();
       setSelected(null);
     } catch (err) {
@@ -136,6 +143,15 @@ export function AdminPdfPage() {
                         )}
                         {project.status === 'PDF_EM_ANALISE' && (
                           <>
+                            <input
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              placeholder="m² aprovado"
+                              aria-label={`Metragem aprovada para ${project.companyName}`}
+                              value={approvedAreaM2}
+                              onChange={(event) => setApprovedAreaM2(event.target.value)}
+                            />
                             <button className={styles.approve} onClick={() => approve(project)}>Aprovar</button>
                             <button className={styles.reject} onClick={() => { setError(null); setSelected(project); }}>Reprovar</button>
                           </>
