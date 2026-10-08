@@ -3,6 +3,10 @@ package br.unicamp.ft.si600.eventos.project;
 import br.unicamp.ft.si600.eventos.entity.Project;
 import br.unicamp.ft.si600.eventos.entity.ProjectStatus;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
+import br.unicamp.ft.si600.eventos.repository.FeeRepository;
+import br.unicamp.ft.si600.eventos.repository.ProjectFeeRepository;
+import br.unicamp.ft.si600.eventos.entity.Fee;
+import br.unicamp.ft.si600.eventos.entity.FeeType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,10 +26,14 @@ class ProjectCreationIntegrationTest {
     @LocalServerPort int port;
     @Autowired TestRestTemplate restTemplate;
     @Autowired ProjectRepository repository;
+    @Autowired FeeRepository feeRepository;
+    @Autowired ProjectFeeRepository projectFeeRepository;
 
     @BeforeEach
     void setUp() {
+        projectFeeRepository.deleteAll();
         repository.deleteAll();
+        feeRepository.deleteAll();
     }
 
     @Test
@@ -51,6 +59,20 @@ class ProjectCreationIntegrationTest {
                 HttpMethod.GET, new HttpEntity<>(h), String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void devePersistirFeeIdsSelecionadosNoProjeto() {
+        Fee fee = feeRepository.saveAndFlush(new Fee("Aluguel", "", FeeType.FIXA, null,
+                new java.math.BigDecimal("100.00"), null, null, null, null));
+        String json = body("Empresa A", "54.018.395/0001-89", "a@exemplo.com", "2026-11-10", "2026-11-20")
+                .replace("\"representativeName\":null", "\"representativeName\":null,\"feeIds\":[\"" + fee.getId() + "\"]");
+        ResponseEntity<String> response = post("admin-1", "ADMIN", json);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        Project saved = repository.findAll().get(0);
+        assertThat(projectFeeRepository.findAll()).hasSize(1);
+        assertThat(projectFeeRepository.findAll().get(0).getProject().getId()).isEqualTo(saved.getId());
+        assertThat(projectFeeRepository.findAll().get(0).getFee().getId()).isEqualTo(fee.getId());
     }
 
     @Test
@@ -122,7 +144,7 @@ class ProjectCreationIntegrationTest {
     private String body(String name, String doc, String email, String pdf, String payment) {
         return "{\"name\":\"" + name + "\",\"document\":\"" + doc + "\",\"address\":\"Rua X, 100\","
                 + "\"area\":\"B2C\",\"email\":\"" + email + "\",\"pdfDeadline\":\"" + pdf
-                + "\",\"paymentDeadline\":\"" + payment + "\"}";
+                + "\",\"paymentDeadline\":\"" + payment + "\",\"representativeName\":null}";
     }
 
     private ResponseEntity<String> post(String id, String role, String json) {

@@ -221,6 +221,24 @@ class ProjectPdfIntegrationTest {
         assertThat(response.getBody()).contains(projectId.toString());
     }
 
+    @Test
+    void uploadPdfDevePersistirAreaInformadaNoMultipart() {
+        submitValidPdf();
+        assertThat(repository.findById(projectId).orElseThrow().getBoothAreaM2())
+                .isEqualByComparingTo("42.50");
+    }
+
+    @Test
+    void uploadPdfDeveExigirAreaM2() {
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", resource("%PDF-1.7 fake pdf".getBytes(), "planta.pdf"));
+        HttpHeaders headers = actorHeaders("client-1", "CLIENT");
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                url("/projects/" + projectId + "/pdf"), new HttpEntity<>(body, headers), String.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
     private void submitValidPdf() {
         HttpEntity<MultiValueMap<String, Object>> request = multipartRequest("client-1", "CLIENT",
                 "planta.pdf", "%PDF-1.7 fake pdf".getBytes(), "application/pdf");
@@ -232,9 +250,15 @@ class ProjectPdfIntegrationTest {
     private HttpEntity<MultiValueMap<String, Object>> multipartRequest(
             String id, String role, String filename, byte[] bytes, String contentType) {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", resource(bytes, filename));
+        HttpHeaders fileHeaders = new HttpHeaders();
+        fileHeaders.setContentType(MediaType.parseMediaType(contentType));
+        body.add("file", new HttpEntity<>(resource(bytes, filename), fileHeaders));
+
+        HttpHeaders areaHeaders = new HttpHeaders();
+        areaHeaders.setContentType(MediaType.TEXT_PLAIN);
+        body.add("areaM2", new HttpEntity<>("42.50", areaHeaders));
+
         HttpHeaders headers = actorHeaders(id, role);
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         return new HttpEntity<>(body, headers);
     }
 

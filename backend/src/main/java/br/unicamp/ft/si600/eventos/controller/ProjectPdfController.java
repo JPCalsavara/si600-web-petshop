@@ -5,6 +5,7 @@ import br.unicamp.ft.si600.eventos.dto.DecisionRequest;
 import br.unicamp.ft.si600.eventos.dto.DownloadUrlResponse;
 import br.unicamp.ft.si600.eventos.dto.ProjectResponse;
 import br.unicamp.ft.si600.eventos.entity.ProjectStatus;
+import br.unicamp.ft.si600.eventos.exception.FieldValidationException;
 import br.unicamp.ft.si600.eventos.security.Actor;
 import br.unicamp.ft.si600.eventos.security.ActorResolver;
 import br.unicamp.ft.si600.eventos.service.ProjectPdfService;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -52,8 +54,22 @@ public class ProjectPdfController {
     public ProjectResponse submitPdf(
             @PathVariable UUID projectId,
             @RequestPart("file") MultipartFile file,
+            @RequestPart("areaM2") String areaM2,
             HttpServletRequest request) {
-        return service.submitPdf(projectId, file, actorResolver.resolve(request));
+
+        BigDecimal parsedAreaM2;
+        try {
+            parsedAreaM2 = new BigDecimal(areaM2);
+        } catch (NumberFormatException ex) {
+            throw new FieldValidationException(
+                    Map.of("areaM2", "Valor numérico inválido."));
+        }
+
+        return service.submitPdf(
+                projectId,
+                file,
+                parsedAreaM2,
+                actorResolver.resolve(request));
     }
 
     @GetMapping("/{projectId}/pdf/download")

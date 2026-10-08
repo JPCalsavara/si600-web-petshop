@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 
 /** Corpo do POST /projects (US-03). Datas em yyyy-mm-dd, como o frontend envia. */
 public record CreateProjectRequest(
@@ -24,5 +26,6 @@ public record CreateProjectRequest(
         @Size(max = 254, message = "E-mail muito longo") String email,
         @NotNull(message = "A data limite de envio do PDF é obrigatória") LocalDate pdfDeadline,
         @NotNull(message = "A data limite de pagamento é obrigatória") LocalDate paymentDeadline,
-        @Size(max = 200, message = "O nome do representante deve ter no máximo 200 caracteres") String representativeName
+        @Size(max = 200, message = "O nome do representante deve ter no máximo 200 caracteres") String representativeName,
+        List<UUID> feeIds
 ) {}

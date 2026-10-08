@@ -12,7 +12,7 @@ viewports.forEach((viewport) => {
       // 1. Acessa como Admin e cria o projeto via API para isolar o teste do UI de criação
       cy.request({
         method: 'POST',
-        url: 'http://localhost:8080/api/projects',
+        url: `${Cypress.expose('API_BASE_URL')}/projects`,
         headers: {
           'X-Authenticated-User-Role': 'ADMIN',
           'X-Authenticated-User-Id': 'admin-1',

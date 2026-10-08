@@ -137,7 +137,7 @@ class PdfDecisionEmailIntegrationTest {
                 contactEmail, OffsetDateTime.now().plusDays(10), OffsetDateTime.now().plusDays(20),
                 "admin-1", OffsetDateTime.now());
         project.submitPdf("projects/x/pdf/y.pdf", "planta.pdf",
-                "application/pdf", 100L, OffsetDateTime.now());
+                "application/pdf", 100L, new java.math.BigDecimal("42.50"), OffsetDateTime.now());
         return repository.save(project).getId();
     }
 

@@ -36,6 +36,9 @@ export interface Project {
   decisionBy: string | null;
   decisionAt: string | null;
   rejectionJustification: string | null;
+  address: string;
+  contactEmail: string;
+  paymentDeadline: string | null;
 }
 
 // ---- US-03: criação de projeto do cliente ----

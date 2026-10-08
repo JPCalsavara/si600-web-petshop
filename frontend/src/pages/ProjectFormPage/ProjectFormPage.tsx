@@ -1,11 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import {
-  FEE_CATALOG,
-  ProjectValidationError,
-  createClientProject,
-  updateClientProject,
-} from '../../services/projectRegistry';
+import { ProjectValidationError, updateClientProject } from '../../services/projectRegistry';
+import { ApiRequestError, createProject, listFees } from '../../services/api';
 import type { AreaEstande, ClientProject } from '../../types';
 import styles from './ProjectFormPage.module.scss';
 
@@ -27,13 +23,22 @@ export function ProjectFormPage({ project, onDone }: Props) {
   const [pdfDeadline, setPdfDeadline] = useState(project?.pdfDeadline ?? '');
   const [paymentDeadline, setPaymentDeadline] = useState(project?.paymentDeadline ?? '');
   const [feeIds, setFeeIds] = useState<string[]>(project?.feeIds ?? []);
+  const [fees, setFees] = useState<Array<{ id: string; name: string; type: string }>>([]);
   const [error, setError] = useState<string | null>(null);
-  const [credentials, setCredentials] = useState<{ login: string; password: string } | null>(null);
+  const [credentials, setCredentials] = useState<{ login: string } | null>(null);
+
+  useEffect(() => {
+    if (!editing) {
+      listFees()
+        .then((items) => setFees(items.filter((fee) => fee.active)))
+        .catch((err) => setError(err instanceof Error ? err.message : 'Não foi possível carregar as taxas.'));
+    }
+  }, [editing]);
 
   const toggleFee = (id: string) =>
     setFeeIds((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]));
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     try {
@@ -42,12 +47,16 @@ export function ProjectFormPage({ project, onDone }: Props) {
         onDone();
         return;
       }
-      const { project: created, temporaryPassword } = createClientProject({
+      const created = await createProject({
         name, document, address, area, email, pdfDeadline, paymentDeadline, feeIds,
       });
-      setCredentials({ login: created.email, password: temporaryPassword });
+      setCredentials({ login: created.contactEmail });
     } catch (err) {
-      setError(err instanceof ProjectValidationError ? err.message : 'Não foi possível salvar o projeto.');
+      setError(
+        err instanceof ApiRequestError || err instanceof ProjectValidationError
+          ? err.message
+          : 'Não foi possível salvar o projeto.',
+      );
     }
   }
 
@@ -57,10 +66,9 @@ export function ProjectFormPage({ project, onDone }: Props) {
       <div className={styles.page}>
         <h1>Projeto criado</h1>
         <section className={styles.panel}>
-          <p className={styles.success}>Acesso do cliente criado com sucesso. Repasse os dados abaixo.</p>
+          <p className={styles.success}>Projeto criado com sucesso. O login do cliente é o e-mail cadastrado.</p>
           <div className={styles.row}><span>Usuário</span><strong>{credentials.login}</strong></div>
-          <div className={styles.row}><span>Senha temporária</span><strong><code>{credentials.password}</code></strong></div>
-          <p className={styles.hint}>Esta senha não será exibida novamente.</p>
+          <p className={styles.hint}>A criação de senha/autenticação não faz parte do contrato atual do backend.</p>
         </section>
         <div className={styles.actions}>
           <button type="button" className={styles.save} onClick={onDone}>Voltar à lista</button>
@@ -110,10 +118,10 @@ export function ProjectFormPage({ project, onDone }: Props) {
         <fieldset className={styles.fees}>
           <legend>Taxas do projeto</legend>
           <div className={styles.feeGrid}>
-            {FEE_CATALOG.map((fee) => (
+            {fees.map((fee) => (
               <label key={fee.id} className={styles.fee}>
                 <input type="checkbox" checked={feeIds.includes(fee.id)} onChange={() => toggleFee(fee.id)} />
-                {fee.name}{fee.fixed && <em> (fixa)</em>}
+                {fee.name}{fee.type === 'FIXA' && <em> (fixa)</em>}
               </label>
             ))}
           </div>
