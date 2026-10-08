@@ -114,7 +114,14 @@ Com 100% de aprovação nos dois gates:
    - Lista de commits gerados.
    - Status final dos testes de integração (100% verdes).
    - Veredito do AI Gatekeeper (`APPROVED`).
-2. Solicite expressamente a **autorização do usuário** para realizar o `git push` e abrir o MR:
+   - **Labels Inferidas**: Deduza as labels com base no tipo da branch (ex: `feat` = `feature`, `fix` = `bug`, `docs` = `documentation`).
+   - **Vínculo com a Issue**: Extraia o `<ID-da-issue>` da branch para garantir o vínculo.
+2. Solicite expressamente a **autorização do usuário** para realizar o `git push` e abrir o MR.
+3. Ao abrir o MR (via CLI `glab` ou tool de API), certifique-se de:
+   - Adicionar `Closes #<ID-da-issue>` no final da descrição.
+   - Atribuir o MR ao próprio usuário (ex: `--assignee @me`).
+   - Incluir as labels inferidas (ex: `--label "feature"`).
+   Exemplo com glab:
    ```bash
-   glab mr create --source <tipo>/<ID-da-issue>-<titulo> --target dev --title "feat: <título>" --description "<resumo>"
+   glab mr create --source <tipo>/<ID-da-issue>-<titulo> --target dev --title "feat: <título>" --description "<resumo>\n\nCloses #<ID-da-issue>" --assignee @me --label "<label-inferida>"
    ```
