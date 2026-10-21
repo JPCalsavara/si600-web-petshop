@@ -97,7 +97,7 @@ export type FeeRequest = { name: string; description: string } & (
 );
 
 // US-06: quantidade das taxas variáveis informada pelo Cliente.
-export type ProjectFeeStatus = 'AGUARDANDO_QUANTIDADE' | 'AGUARDANDO_COTACAO' | 'COTADA' | 'PAGAMENTO_GERADO';
+export type ProjectFeeStatus = 'AGUARDANDO_QUANTIDADE' | 'AGUARDANDO_COTACAO' | 'DISPONIVEL' | 'COTADA' | 'PAGAMENTO_GERADO';
 
 export interface ProjectFee {
   id: string;
@@ -111,4 +111,23 @@ export interface ProjectFee {
   quantityUpdatedAt: string | null;
   /** Falso quando o pagamento já foi gerado ou a taxa não é variável. */
   quantityEditable: boolean;
+}
+
+/** US-05: linha da lista de taxas do Cliente (GET /projects/{id}/fees). */
+export interface CalculatedFee {
+  /** Id do vínculo taxa-projeto: é o id das rotas de quantidade e cotação. */
+  projectFeeId: string;
+  /** Id da taxa no catálogo. */
+  feeId: string;
+  name: string;
+  description: string | null;
+  type: FeeType;
+  /** Fixa/por metragem: valor calculado. Variável: valor cotado (null até a cotação). */
+  calculatedValue: number | null;
+  /** Variável: quantidade informada. Por metragem: m² ou unidades cobradas. */
+  quantity: number | null;
+  measurementUnit: string | null;
+  status: ProjectFeeStatus;
+  quantityEditable: boolean;
+  paymentDeadline: string | null;
 }

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { getCurrentActorRole } from '../../services/api';
 import styles from './AppShell.module.scss';
 
-interface Props { active: 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas'; children: ReactNode; onNavigate?: (section: 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas') => void; }
+interface Props { active: 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas' | 'cotacoes'; children: ReactNode; onNavigate?: (section: 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas' | 'cotacoes') => void; }
 
 export function AppShell({ active, children, onNavigate }: Props) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -43,6 +43,7 @@ export function AppShell({ active, children, onNavigate }: Props) {
             <nav>
               {admin && <NavItem label="Resumo" active={active === 'resumo'} onClick={() => handleNavigate('resumo')} />}
               <NavItem label="Projetos" active={active === 'projetos'} onClick={admin ? () => handleNavigate('projetos') : undefined} />
+              {admin && <NavItem label="Cotação de taxas" active={active === 'cotacoes'} onClick={() => handleNavigate('cotacoes')} />}
               {admin && <NavItem label="Catálogo de Taxas" active={active === 'taxas'} onClick={() => handleNavigate('taxas')} />}
               {admin && <NavItem label="Pagamentos" active={active === 'pagamentos'} onClick={() => handleNavigate('pagamentos')} />}
               {admin && <NavItem label="Usuários" active={active === 'usuarios'} onClick={() => handleNavigate('usuarios')} />}

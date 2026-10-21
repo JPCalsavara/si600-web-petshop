@@ -1,3 +1,7 @@
 storage:
   b2:
     enabled: false
+
+app:
+  fees:
+    seed-demo: ${SEED_DEMO_FEES:true}

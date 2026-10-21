@@ -7,6 +7,7 @@ import {
 import type { Project } from '../../types';
 import styles from './ClientPdfPage.module.scss';
 import { ProjectFees } from './ProjectFees';
+import { STATUS_LABELS, feesVisible } from '../../constants/projectStatus';
 
 interface Props {
   projectId: string;
@@ -115,7 +116,7 @@ export function ClientPdfPage({ projectId }: Props) {
           <p>{project.companyName} · {project.category}</p>
         </div>
         <span className={`${styles.status} ${styles[project.status]}`}>
-          {project.status.replace(/_/g, ' ')}
+          {STATUS_LABELS[project.status]}
         </span>
       </section>
 
@@ -131,7 +132,8 @@ export function ClientPdfPage({ projectId }: Props) {
 
       <section className={styles.card}>
         <div className={styles.summaryGrid}>
-          <div><span>Prazo limite</span><strong>{formatDate(project.pdfDeadline)}</strong></div>
+          <div><span>Prazo limite do PDF</span><strong>{formatDate(project.pdfDeadline)}</strong></div>
+          <div><span>Prazo limite de pagamento</span><strong>{project.paymentDeadline ? formatDate(project.paymentDeadline) : '-'}</strong></div>
           <div><span>Metragem informada</span><strong>{project.boothAreaM2 ? `${project.boothAreaM2} m²` : 'Não informada'}</strong></div>
           <div><span>Arquivo atual</span><strong>{project.pdfOriginalFilename || 'Nenhum arquivo'}</strong></div>
           <div><span>Tamanho</span><strong>{formatBytes(project.pdfSizeBytes)}</strong></div>
@@ -184,8 +186,12 @@ export function ClientPdfPage({ projectId }: Props) {
       {!canSubmit && project.status === 'PDF_EM_ANALISE' && (
         <div className={styles.info}>Seu PDF está em análise. Aguarde a decisão do administrador.</div>
       )}
-      {project.status === 'APROVADO' && (
+      {feesVisible(project.status) ? (
         <ProjectFees projectId={projectId} />
+      ) : (
+        <div className={styles.info}>
+          As taxas do projeto ficam disponíveis após a aprovação do PDF. Situação atual: {STATUS_LABELS[project.status]}.
+        </div>
       )}
     </main>
   );

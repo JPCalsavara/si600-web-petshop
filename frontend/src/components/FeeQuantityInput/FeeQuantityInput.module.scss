@@ -21,5 +21,6 @@ input[aria-invalid='true'] { border-color: $color-danger; }
 .badge { align-self: flex-start; padding: $sp-1 $sp-3; border-radius: $radius-pill; font-size: $font-size-sm; font-weight: $font-weight-semibold; }
 .AGUARDANDO_QUANTIDADE { background: $color-warning-bg; color: $color-warning; }
 .AGUARDANDO_COTACAO { background: $color-info-bg; color: $color-info; }
-.COTADA, .PAGAMENTO_GERADO { background: $color-success-bg; color: $color-success; }
-@media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
+.DISPONIVEL, .COTADA, .PAGAMENTO_GERADO { background: $color-success-bg; color: $color-success; }
+.compact { grid-template-columns: 1fr auto; padding: 0; border-top: 0; }
+@media (max-width: 760px) { .row, .compact { grid-template-columns: 1fr; } }

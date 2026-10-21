@@ -7,6 +7,7 @@ import { ClientPdfPage } from './pages/ClientPdfPage/ClientPdfPage';
 import { AdminPdfPage } from './pages/AdminPdfPage/AdminPdfPage';
 import { ProjectListPage } from './pages/ProjectListPage/ProjectListPage';
 import { ProjectFormPage } from './pages/ProjectFormPage/ProjectFormPage';
+import { QuoteFeesPage } from './pages/QuoteFeesPage/QuoteFeesPage';
 
 type AdminView =
   | { name: 'lista' }
@@ -40,12 +41,13 @@ function AdminProjects() {
 export default function App() {
   const role = getCurrentActorRole();
   const projectId = (typeof window !== 'undefined' ? localStorage.getItem('MOCK_PROJECT_ID') : null) || import.meta.env.VITE_PROJECT_ID;
-  const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'pagamentos' | 'usuarios'>('projetos');
+  const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios'>('projetos');
 
   return (
     <AppShell active={role === 'ADMIN' ? adminSection : 'projetos'} onNavigate={setAdminSection}>
       {role === 'ADMIN' ? (
         adminSection === 'taxas' ? <FeeCatalogPage /> :
+        adminSection === 'cotacoes' ? <QuoteFeesPage /> :
         adminSection === 'projetos' ? <AdminProjects /> :
         <div style={{ padding: '4rem', textAlign: 'center', color: '#666' }}>
           <h2>Em breve</h2>
