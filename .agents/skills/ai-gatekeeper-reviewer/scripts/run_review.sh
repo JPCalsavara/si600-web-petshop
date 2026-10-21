@@ -160,8 +160,15 @@ if [[ "$SKIP_HARNESS" == false ]]; then
     BUILD_HARNESS_SCRIPT="${GATEKEEPER_ROOT}/docs/gatekeeper/build_harness.py"
     [[ ! -f "$BUILD_HARNESS_SCRIPT" ]] && BUILD_HARNESS_SCRIPT="${GATEKEEPER_ROOT}/build_harness.py"
 
+    PYTHON_BIN="python3"
+    if [[ -x "${GATEKEEPER_ROOT}/.venv/bin/python" ]]; then
+      PYTHON_BIN="${GATEKEEPER_ROOT}/.venv/bin/python"
+    elif [[ -x "${TARGET_DIR}/.venv/bin/python" ]]; then
+      PYTHON_BIN="${TARGET_DIR}/.venv/bin/python"
+    fi
+
     if [[ ${#DOCS_ARGS[@]} -gt 0 && -f "$BUILD_HARNESS_SCRIPT" ]]; then
-      python3 "$BUILD_HARNESS_SCRIPT" --docs "${DOCS_ARGS[@]}" --output "$HARNESS_FILE" || true
+      "$PYTHON_BIN" "$BUILD_HARNESS_SCRIPT" --docs "${DOCS_ARGS[@]}" --output "$HARNESS_FILE" || true
     fi
   else
     echo "[INFO] Existing harness index found at ${HARNESS_FILE}."
@@ -180,8 +187,15 @@ LOCAL_GATEKEEPER_ARGS=(--target "$TARGET_DIR")
 GATEKEEPER_SCRIPT="${GATEKEEPER_ROOT}/docs/gatekeeper/gatekeeper.py"
 [[ ! -f "$GATEKEEPER_SCRIPT" ]] && GATEKEEPER_SCRIPT="${GATEKEEPER_ROOT}/gatekeeper.py"
 
+PYTHON_BIN="python3"
+if [[ -x "${GATEKEEPER_ROOT}/.venv/bin/python" ]]; then
+  PYTHON_BIN="${GATEKEEPER_ROOT}/.venv/bin/python"
+elif [[ -x "${TARGET_DIR}/.venv/bin/python" ]]; then
+  PYTHON_BIN="${TARGET_DIR}/.venv/bin/python"
+fi
+
 if [[ -f "$GATEKEEPER_SCRIPT" ]]; then
-  python3 "$GATEKEEPER_SCRIPT" "${LOCAL_GATEKEEPER_ARGS[@]}" || EXIT_CODE=$?
+  "$PYTHON_BIN" "$GATEKEEPER_SCRIPT" "${LOCAL_GATEKEEPER_ARGS[@]}" || EXIT_CODE=$?
 else
   echo "[WARN] Gatekeeper script not found at ${GATEKEEPER_SCRIPT}."
 fi

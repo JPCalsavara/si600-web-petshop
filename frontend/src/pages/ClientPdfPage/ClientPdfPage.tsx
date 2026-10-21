@@ -4,6 +4,7 @@ import {
   getPdfDownloadUrl,
   submitProjectPdf,
 } from '../../services/api';
+import { ALERT_TAG_LABELS } from '../../constants/alertTag';
 import type { Project } from '../../types';
 import styles from './ClientPdfPage.module.scss';
 import { ProjectFees } from './ProjectFees';
@@ -114,9 +115,16 @@ export function ClientPdfPage({ projectId }: Props) {
           <h1>Dados Gerais do PDF</h1>
           <p>{project.companyName} · {project.category}</p>
         </div>
-        <span className={`${styles.status} ${styles[project.status]}`}>
-          {project.status.replace(/_/g, ' ')}
-        </span>
+        <div className={styles.badges}>
+          <span className={`${styles.status} ${styles[project.status]}`}>
+            {project.status.replace(/_/g, ' ')}
+          </span>
+          {project.alertTag && (
+            <span className={`${styles.alertBadge} ${styles[project.alertTag.toLowerCase()]}`}>
+              {ALERT_TAG_LABELS[project.alertTag]}
+            </span>
+          )}
+        </div>
       </section>
 
       {error && <div className={styles.alertDanger}>{error}</div>}
