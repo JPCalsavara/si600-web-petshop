@@ -86,7 +86,7 @@ if [[ "$SKIP_TESTS" == false ]]; then
     npm --prefix "$PKG_DIR" test >> "${TARGET_DIR}/tests.log" 2>&1 || true
     if [[ -d "${PKG_DIR}/cypress" ]] && grep -q "cypress" "${PKG_DIR}/package.json"; then
       echo "[INFO] Running Cypress tests in ${PKG_DIR}..."
-      npx --prefix "$PKG_DIR" cypress run >> "${TARGET_DIR}/tests.log" 2>&1 || true
+      (cd "$PKG_DIR" && npx cypress run >> "${TARGET_DIR}/tests.log" 2>&1 || true)
     fi
   elif [[ -f "${TARGET_DIR}/pytest.ini" || -d "${TARGET_DIR}/tests" ]]; then
     echo "[INFO] Detected Python project."
@@ -157,11 +157,18 @@ if [[ "$SKIP_HARNESS" == false ]]; then
       [[ -f "$spec" ]] && DOCS_ARGS+=("$spec")
     done
 
+    PYTHON_BIN="python3"
+    if [[ -x "${TARGET_DIR}/.venv/bin/python" ]]; then
+      PYTHON_BIN="${TARGET_DIR}/.venv/bin/python"
+    elif [[ -x "${GATEKEEPER_ROOT}/.venv/bin/python" ]]; then
+      PYTHON_BIN="${GATEKEEPER_ROOT}/.venv/bin/python"
+    fi
+
     BUILD_HARNESS_SCRIPT="${GATEKEEPER_ROOT}/docs/gatekeeper/build_harness.py"
     [[ ! -f "$BUILD_HARNESS_SCRIPT" ]] && BUILD_HARNESS_SCRIPT="${GATEKEEPER_ROOT}/build_harness.py"
 
     if [[ ${#DOCS_ARGS[@]} -gt 0 && -f "$BUILD_HARNESS_SCRIPT" ]]; then
-      python3 "$BUILD_HARNESS_SCRIPT" --docs "${DOCS_ARGS[@]}" --output "$HARNESS_FILE" || true
+      "$PYTHON_BIN" "$BUILD_HARNESS_SCRIPT" --docs "${DOCS_ARGS[@]}" --output "$HARNESS_FILE" || true
     fi
   else
     echo "[INFO] Existing harness index found at ${HARNESS_FILE}."
@@ -171,6 +178,13 @@ fi
 # 5. Execute LangGraph Gatekeeper
 echo "[STEP 5/5] Executing AI Quality Gatekeeper..."
 EXIT_CODE=0
+PYTHON_BIN="python3"
+if [[ -x "${TARGET_DIR}/.venv/bin/python" ]]; then
+  PYTHON_BIN="${TARGET_DIR}/.venv/bin/python"
+elif [[ -x "${GATEKEEPER_ROOT}/.venv/bin/python" ]]; then
+  PYTHON_BIN="${GATEKEEPER_ROOT}/.venv/bin/python"
+fi
+
 GATEKEEPER_ARGS=(--target /target)
 [[ "$APPLY_PATCH" == true ]] && GATEKEEPER_ARGS+=(--apply-patch)
 
@@ -181,7 +195,7 @@ GATEKEEPER_SCRIPT="${GATEKEEPER_ROOT}/docs/gatekeeper/gatekeeper.py"
 [[ ! -f "$GATEKEEPER_SCRIPT" ]] && GATEKEEPER_SCRIPT="${GATEKEEPER_ROOT}/gatekeeper.py"
 
 if [[ -f "$GATEKEEPER_SCRIPT" ]]; then
-  python3 "$GATEKEEPER_SCRIPT" "${LOCAL_GATEKEEPER_ARGS[@]}" || EXIT_CODE=$?
+  "$PYTHON_BIN" "$GATEKEEPER_SCRIPT" "${LOCAL_GATEKEEPER_ARGS[@]}" || EXIT_CODE=$?
 else
   echo "[WARN] Gatekeeper script not found at ${GATEKEEPER_SCRIPT}."
 fi
