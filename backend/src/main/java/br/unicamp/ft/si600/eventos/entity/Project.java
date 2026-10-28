@@ -54,6 +54,9 @@ public class Project {
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
+    @Column(name = "last_access_at")
+    private OffsetDateTime lastAccessAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
     private ProjectStatus status = ProjectStatus.AGUARDANDO_PDF;
@@ -123,6 +126,8 @@ public class Project {
     public OffsetDateTime getPaymentDeadline() { return paymentDeadline; }
     public String getCreatedBy() { return createdBy; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
+    public OffsetDateTime getLastAccessAt() { return lastAccessAt; }
+    public void recordAccess(OffsetDateTime accessTime) { this.lastAccessAt = accessTime; }
     public String getOwnerId() { return ownerId; }
     public String getCompanyName() { return companyName; }
     public String getDocument() { return document; }
@@ -167,5 +172,13 @@ public class Project {
         this.decisionBy = adminId;
         this.decisionAt = decidedAt;
         this.rejectionJustification = justification;
+    }
+
+    public void markAguardandoPagamento() {
+        this.status = ProjectStatus.AGUARDANDO_PAGAMENTO;
+    }
+
+    public void markConcluido() {
+        this.status = ProjectStatus.CONCLUIDO;
     }
 }

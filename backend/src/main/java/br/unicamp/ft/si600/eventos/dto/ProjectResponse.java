@@ -23,14 +23,20 @@ public record ProjectResponse(
         String rejectionJustification,
         String address,
         String contactEmail,
-        OffsetDateTime paymentDeadline
+        OffsetDateTime paymentDeadline,
+        AlertTag alertTag
 ) {
-    public static ProjectResponse from(Project p) {
+    public static ProjectResponse from(Project p, AlertTag alertTag) {
         return new ProjectResponse(p.getId(), p.getCompanyName(), p.getDocument(),
                 p.getRepresentativeName(), p.getCategory(), p.getPdfDeadline(),
                 p.getStatus(), p.getBoothAreaM2(), p.getPdfOriginalFilename(),
                 p.getPdfSizeBytes(), p.getPdfUploadedAt(), p.getDecisionBy(),
                 p.getDecisionAt(), p.getRejectionJustification(),
-                p.getAddress(), p.getContactEmail(), p.getPaymentDeadline());
+                p.getAddress(), p.getContactEmail(), p.getPaymentDeadline(),
+                alertTag != null ? alertTag : AlertTag.EM_DIA);
+    }
+
+    public static ProjectResponse from(Project p) {
+        return from(p, AlertTag.EM_DIA);
     }
 }
