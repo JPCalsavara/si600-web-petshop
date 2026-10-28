@@ -17,10 +17,10 @@ No modelo operacional do SI600 Web Eventos, o Administrador necessita monitorar 
 Atualmente, essas informações estão dispersas ou requerem navegações e filtragens manuais na listagem geral de projetos. A falta de uma visão consolidada e acionável em uma tela única retarda o processo decisório, impede intervenções proativas da organização junto aos expositores inativos e atrasa o fluxo de aprovação de plantas e emissão de cobranças.
 
 ### Explicando a solução de forma macro
-A solução implementa o **Dashboard Principal do Administrador**, acessível pela rota de navegação "Resumo", consolidando as métricas e filas operacionais em três painéis integrados:
-1. **Expositores Inativos**: exibe a informação de `ultimoAcesso` (em dias decorridos ou flag destacada em vermelho caso o cliente "Nunca acessou"), acompanhada da data de criação do projeto (`criadoEm` / `createdAt`).
-2. **Projetos com Pendências e Prazos**: exibe projetos com suas respectivas tags de alerta (`ATRASADO`, `PRAZO_PROXIMO`, `PENDENTE`, `EM_DIA`), reaproveitando o cálculo dinâmico da US-09 (`AlertTagCalculator`).
-3. **Aprovações Pendentes**: exibe a fila de projetos com plantas submetidas em status `PDF_EM_ANALISE`, com detalhes do arquivo e atalho de clique direto para a tela de análise/aprovação técnica (US-04/US-08).
+A solução implementa o **Dashboard Principal do Administrador**, acessível pela rota de navegação "Resumo", consolidando as métricas e filas operacionais em um **Board Kanban** moderno e responsivo (com opção de alternância para o formato em tabelas):
+1. **Coluna "Nunca Acessou"**: exibe a informação de `ultimoAcesso` (em dias decorridos ou flag destacada em vermelho caso o cliente "Nunca acessou"), acompanhada da data de criação do projeto (`criadoEm` / `createdAt`) e contador de empresas no grupo.
+2. **Coluna "Pendentes"**: exibe projetos com suas respectivas tags de alerta (`ATRASADO`, `PRAZO_PROXIMO`, `PENDENTE`), reaproveitando o cálculo dinâmico da US-09 (`AlertTagCalculator`), além da fila de aprovações técnicas em status `PDF_EM_ANALISE`, com detalhes do arquivo e atalho de clique direto para a tela de análise/aprovação técnica (US-04/US-08), com contador total de pendências no grupo.
+3. **Coluna "Em Dia"**: exibe projetos regulares com prazos cumpridos e sem pendências operacionais, com contador de itens no grupo.
 
 Para suportar o primeiro painel com precisão, a entidade `Project` passa a rastrear a data/hora do último acesso do expositor (`lastAccessAt`), que é automaticamente atualizada quando o cliente consulta os detalhes de seu projeto (`GET /projects/{id}`).
 
@@ -157,31 +157,31 @@ flowchart TD
 
 ### Checklist de Execução (/to-ticket)
 
-- [ ] **1. RFC e Preparação da Branch**:
+- [x] **1. RFC e Preparação da Branch**:
   - [x] Refinar requisitos da US-18 com o usuário via entrevista técnica (/grill-me).
-  - [ ] Comitar `docs/rfc/US-18-dashboard-do-admin.md` como o primeiro commit da branch.
-- [ ] **2. Incorporação de Prazos (Backend)**:
-  - [ ] Incorporar `AlertTag`, `AlertTagCalculator`, `TimeHelper` e `TimeConfiguration` na branch.
-  - [ ] Adicionar campo `lastAccessAt` em `Project.java` e método `recordAccess()`.
-  - [ ] Atualizar `ProjectPdfService.getClientProject` para registrar acesso ao consultar projeto.
-- [ ] **3. Endpoints e DTOs do Dashboard (Backend)**:
-  - [ ] Criar DTOs `InactiveExhibitorResponse`, `PendingApprovalResponse` e `AdminDashboardResponse`.
-  - [ ] Criar método `getAdminDashboard()` em `ProjectService` / `ProjectPdfService`.
-  - [ ] Expor endpoint `GET /projects/admin/dashboard` em `ProjectPdfController`.
-- [ ] **4. Testes de Integração Tripartite (Backend)**:
-  - [ ] Criar `AdminDashboardIntegrationTest` cobrindo Happy Path, Forbidden (Sad) e Casos Limítrofes (Incompletos).
-  - [ ] Validar que todos os testes passam via `./mvnw test`.
-- [ ] **5. Interface do Dashboard (Frontend React/Vite)**:
-  - [ ] Criar tipos em `src/types/index.ts` para o Dashboard.
-  - [ ] Criar serviço de API para o Dashboard em `src/services/adminDashboard.ts` ou `api.ts`.
-  - [ ] Criar componente `AdminDashboardPage` e estilização SCSS moderna:
-    - Painel 1: Expositores Inativos com tag vermelha para "Nunca acessou" e data de criação.
-    - Painel 2: Projetos com Pendências e Prazos com tags visuais de alerta.
-    - Painel 3: Aprovações Pendentes com atalho direto para a tela de análise de PDF.
-  - [ ] Integrar `AdminDashboardPage` na navegação do `App.tsx` (seção `resumo`).
-- [ ] **6. Testes Frontend e E2E**:
-  - [ ] Criar testes unitários/componente com Vitest.
-  - [ ] Criar teste de jornada E2E no Cypress validando o Dashboard do Admin.
-- [ ] **7. Validação do Quality Gate (Gatekeeper)**:
-  - [ ] Executar `./mvnw test` e `npm test`.
-  - [ ] Executar script do AI Gatekeeper (`run_review.sh`).
+  - [x] Comitar `docs/rfc/US-18-dashboard-do-admin.md` como o primeiro commit da branch.
+- [x] **2. Incorporação de Prazos (Backend)**:
+  - [x] Incorporar `AlertTag`, `AlertTagCalculator`, `TimeHelper` e `TimeConfiguration` na branch.
+  - [x] Adicionar campo `lastAccessAt` em `Project.java` e método `recordAccess()`.
+  - [x] Atualizar `ProjectPdfService.getClientProject` para registrar acesso ao consultar projeto.
+- [x] **3. Endpoints e DTOs do Dashboard (Backend)**:
+  - [x] Criar DTOs `InactiveExhibitorResponse`, `PendingApprovalResponse` e `AdminDashboardResponse`.
+  - [x] Criar método `getAdminDashboard()` em `ProjectService` / `ProjectPdfService`.
+  - [x] Expor endpoint `GET /projects/admin/dashboard` em `ProjectPdfController`.
+- [x] **4. Testes de Integração Tripartite (Backend)**:
+  - [x] Criar `AdminDashboardIntegrationTest` cobrindo Happy Path, Forbidden (Sad) e Casos Limítrofes (Incompletos).
+  - [x] Validar que todos os testes passam via `./mvnw test`.
+- [x] **5. Interface do Dashboard (Frontend React/Vite)**:
+  - [x] Criar tipos em `src/types/index.ts` para o Dashboard.
+  - [x] Criar serviço de API para o Dashboard em `src/services/adminDashboard.ts` ou `api.ts`.
+  - [x] Criar componente `AdminDashboardPage` com visualização Kanban moderna e modo tabelas:
+    - Coluna 1: "Nunca Acessou" com contador e badge para expositores sem acesso.
+    - Coluna 2: "Pendentes" com contador, alertas de prazo e fila de aprovação de plantas.
+    - Coluna 3: "Em Dia" com contador e projetos regularizados.
+  - [x] Integrar `AdminDashboardPage` na navegação do `App.tsx` (seção `resumo`).
+- [x] **6. Testes Frontend e E2E**:
+  - [x] Criar testes unitários/componente com Vitest.
+  - [x] Criar teste de jornada E2E no Cypress validando o Dashboard do Admin e o fluxo Kanban.
+- [x] **7. Validação do Quality Gate (Gatekeeper)**:
+  - [x] Executar `./mvnw test` e `npm test`.
+  - [x] Executar script do AI Gatekeeper (`run_review.sh`).
