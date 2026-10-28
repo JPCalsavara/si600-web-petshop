@@ -19,6 +19,43 @@ th:last-child, td:last-child { border-radius: 0 18px 18px 0; }
 .footer { display: flex; justify-content: flex-end; margin-top: $sp-4; }
 .add { @include figma-pill-button; }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 8px 4px;
+}
+
+.pageButton {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.pageInfo {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
 /* Custom Dropdown for Status */
 .dropdownWrap { position: relative; width: 100%; max-width: max-content; }
 .dropdownHeader { @include figma-input; background: white; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; user-select: none; }

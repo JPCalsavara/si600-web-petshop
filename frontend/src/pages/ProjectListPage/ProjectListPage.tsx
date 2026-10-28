@@ -18,6 +18,8 @@ export function formatDate(value: string | null) {
   return y && m && d ? `${d}/${m}/${y}` : '-';
 }
 
+const PAGE_SIZE = 4;
+
 export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
   const [filter, setFilter] = useState<ProjectStatus | ''>('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -25,6 +27,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [configProject, setConfigProject] = useState<Project | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function load() {
@@ -32,6 +35,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
         setLoading(true);
         setError(null);
         setProjects(await listAdminProjects(filter || undefined));
+        setCurrentPage(1);
       } catch (err) {
         setError(
           err instanceof Error
@@ -58,8 +62,12 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
 
   const handleFilterSelect = (val: ProjectStatus | '') => {
     setFilter(val);
+    setCurrentPage(1);
     setDropdownOpen(false);
   };
+
+  const totalPages = Math.max(1, Math.ceil(projects.length / PAGE_SIZE));
+  const pagedProjects = projects.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
 
   return (
@@ -107,7 +115,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {projects.map((p) => (
+                {pagedProjects.map((p) => (
                   <tr key={p.id}>
                     <td data-label="Empresa"><strong>{p.companyName}</strong></td>
                     <td data-label="CPF/CNPJ">{p.document}</td>
@@ -125,6 +133,30 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                 ))}
               </tbody>
             </table>
+
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage <= 1}
+                >
+                  ← Anterior
+                </button>
+                <span className={styles.pageInfo}>
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  Próximo →
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>

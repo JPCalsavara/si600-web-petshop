@@ -9,11 +9,27 @@ interface Props {
   onNavigateToProjects?: () => void;
 }
 
+const PAGE_SIZE = 4;
+
+type PendingKanbanItem =
+  | { kind: 'approval'; item: PendingApproval }
+  | { kind: 'deadline'; item: Project };
+
 export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Props) {
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
+
+  // Paginação individual por grupo (4 itens por página)
+  const [pageNeverAccessed, setPageNeverAccessed] = useState(1);
+  const [pagePending, setPagePending] = useState(1);
+  const [pageOnTrack, setPageOnTrack] = useState(1);
+
+  // Paginação para o modo de tabela alternativo
+  const [tablePageInactives, setTablePageInactives] = useState(1);
+  const [tablePageDeadlines, setTablePageDeadlines] = useState(1);
+  const [tablePageApprovals, setTablePageApprovals] = useState(1);
 
   async function loadDashboard() {
     try {
@@ -34,27 +50,61 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
 
   // 1. Grupo: Nunca acessou / Inativos
   const neverAccessedItems: InactiveExhibitor[] = data?.inactiveExhibitors || [];
+  const totalNeverAccessedPages = Math.max(1, Math.ceil(neverAccessedItems.length / PAGE_SIZE));
+  const pagedNeverAccessed = neverAccessedItems.slice(
+    (pageNeverAccessed - 1) * PAGE_SIZE,
+    pageNeverAccessed * PAGE_SIZE
+  );
 
-  // Mapeamento de aprovações pendentes por ID de projeto
+  // 2. Grupo: Pendentes (aprovações de plantas + pendências de prazos)
   const pendingApprovalsList: PendingApproval[] = data?.pendingApprovals || [];
   const approvalIds = new Set(pendingApprovalsList.map((app) => app.projectId));
 
-  // 2. Grupo: Pendentes (prazos com atraso/alerta ou plantas em análise)
   const pendingDeadlineProjects: Project[] = (data?.pendingDeadlines || []).filter(
     (p) => (p.alertTag !== 'EM_DIA' && Boolean(p.alertTag)) || p.status === 'PDF_EM_ANALISE' || approvalIds.has(p.id)
   );
 
-  // Aprovações que porventura não estejam na lista de prazos
-  const additionalApprovals = pendingApprovalsList.filter(
-    (app) => !pendingDeadlineProjects.some((p) => p.id === app.projectId)
+  const allPendingItems: PendingKanbanItem[] = [
+    ...pendingApprovalsList.map((app): PendingKanbanItem => ({ kind: 'approval', item: app })),
+    ...pendingDeadlineProjects
+      .filter((p) => !approvalIds.has(p.id))
+      .map((p): PendingKanbanItem => ({ kind: 'deadline', item: p })),
+  ];
+
+  const totalPendingPages = Math.max(1, Math.ceil(allPendingItems.length / PAGE_SIZE));
+  const pagedPendingItems = allPendingItems.slice(
+    (pagePending - 1) * PAGE_SIZE,
+    pagePending * PAGE_SIZE
   );
 
-  const totalPendingCount = pendingDeadlineProjects.length + additionalApprovals.length;
-
-  // 3. Grupo: Em dia (sem alertas críticos e fora de análise)
+  // 3. Grupo: Em dia
   const onTrackProjects: Project[] = (data?.pendingDeadlines || []).filter(
     (p) => (p.alertTag === 'EM_DIA' || !p.alertTag) && p.status !== 'PDF_EM_ANALISE' && !approvalIds.has(p.id)
   );
+  const totalOnTrackPages = Math.max(1, Math.ceil(onTrackProjects.length / PAGE_SIZE));
+  const pagedOnTrack = onTrackProjects.slice(
+    (pageOnTrack - 1) * PAGE_SIZE,
+    pageOnTrack * PAGE_SIZE
+  );
+
+  // Tabelas paginadas
+  const pagedTableInactives = (data?.inactiveExhibitors || []).slice(
+    (tablePageInactives - 1) * PAGE_SIZE,
+    tablePageInactives * PAGE_SIZE
+  );
+  const totalTableInactivesPages = Math.max(1, Math.ceil((data?.inactiveExhibitors || []).length / PAGE_SIZE));
+
+  const pagedTableDeadlines = (data?.pendingDeadlines || []).slice(
+    (tablePageDeadlines - 1) * PAGE_SIZE,
+    tablePageDeadlines * PAGE_SIZE
+  );
+  const totalTableDeadlinesPages = Math.max(1, Math.ceil((data?.pendingDeadlines || []).length / PAGE_SIZE));
+
+  const pagedTableApprovals = (data?.pendingApprovals || []).slice(
+    (tablePageApprovals - 1) * PAGE_SIZE,
+    tablePageApprovals * PAGE_SIZE
+  );
+  const totalTableApprovalsPages = Math.max(1, Math.ceil((data?.pendingApprovals || []).length / PAGE_SIZE));
 
   return (
     <div className={styles.dashboard} data-testid="admin-dashboard-page">
@@ -135,7 +185,7 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
               {neverAccessedItems.length === 0 ? (
                 <div className={styles.emptyCard}>Nenhum expositor inativo registrado.</div>
               ) : (
-                neverAccessedItems.map((item) => (
+                pagedNeverAccessed.map((item) => (
                   <article
                     key={item.projectId}
                     className={styles.kanbanCard}
@@ -171,6 +221,32 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                 ))
               )}
             </div>
+
+            {totalNeverAccessedPages > 1 && (
+              <div className={styles.pagination} data-testid="pagination-never-accessed">
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setPageNeverAccessed((p) => Math.max(1, p - 1))}
+                  disabled={pageNeverAccessed <= 1}
+                  data-testid="btn-prev-never-accessed"
+                >
+                  ← Anterior
+                </button>
+                <span className={styles.pageInfo} data-testid="page-info-never-accessed">
+                  {pageNeverAccessed} / {totalNeverAccessedPages}
+                </span>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setPageNeverAccessed((p) => Math.min(totalNeverAccessedPages, p + 1))}
+                  disabled={pageNeverAccessed >= totalNeverAccessedPages}
+                  data-testid="btn-next-never-accessed"
+                >
+                  Próximo →
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Coluna 2: Pendentes */}
@@ -184,10 +260,10 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                 <h2>Pendentes</h2>
               </div>
               <span
-                className={`${styles.columnCountBadge} ${totalPendingCount > 0 ? styles.countWarning : ''}`}
+                className={`${styles.columnCountBadge} ${allPendingItems.length > 0 ? styles.countWarning : ''}`}
                 data-testid="count-pending"
               >
-                {totalPendingCount}
+                {allPendingItems.length}
               </span>
             </div>
             <p className={styles.columnDescription}>
@@ -195,57 +271,56 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
             </p>
 
             <div className={styles.kanbanCardsList}>
-              {totalPendingCount === 0 ? (
+              {allPendingItems.length === 0 ? (
                 <div className={styles.emptyCard}>Nenhum projeto com pendências no momento.</div>
               ) : (
-                <>
-                  {/* Cards de Aprovações Pendentes */}
-                  <div data-testid="pending-approvals-panel" className={styles.approvalsGroup}>
-                    {pendingApprovalsList.map((app) => (
-                      <article
-                        key={`approval-${app.projectId}`}
-                        className={`${styles.kanbanCard} ${styles.cardApprovalHighlight}`}
-                        data-testid={`row-approval-${app.projectId}`}
-                      >
-                        <div className={styles.cardHeader}>
-                          <strong className={styles.cardCompanyName}>{app.companyName}</strong>
-                          <span className={`${styles.alertBadge} ${styles.alertPendente}`} data-testid="badge-approval-status">
-                            Planta em Análise
-                          </span>
-                        </div>
-                        <div className={styles.cardBody}>
-                          <div className={styles.metaRow}>
-                            <span className={styles.metaLabel}>Arquivo:</span>
-                            <span className={styles.metaValue}>{app.pdfOriginalFilename || 'planta.pdf'}</span>
+                <div data-testid="pending-approvals-panel" className={styles.approvalsGroup}>
+                  {pagedPendingItems.map((entry) => {
+                    if (entry.kind === 'approval') {
+                      const app = entry.item;
+                      return (
+                        <article
+                          key={`approval-${app.projectId}`}
+                          className={`${styles.kanbanCard} ${styles.cardApprovalHighlight}`}
+                          data-testid={`row-approval-${app.projectId}`}
+                        >
+                          <div className={styles.cardHeader}>
+                            <strong className={styles.cardCompanyName}>{app.companyName}</strong>
+                            <span className={`${styles.alertBadge} ${styles.alertPendente}`} data-testid="badge-approval-status">
+                              Planta em Análise
+                            </span>
                           </div>
-                          <div className={styles.metaRow}>
-                            <span className={styles.metaLabel}>Área:</span>
-                            <span className={styles.metaValue}>{app.boothAreaM2 ? `${app.boothAreaM2} m²` : '-'}</span>
+                          <div className={styles.cardBody}>
+                            <div className={styles.metaRow}>
+                              <span className={styles.metaLabel}>Arquivo:</span>
+                              <span className={styles.metaValue}>{app.pdfOriginalFilename || 'planta.pdf'}</span>
+                            </div>
+                            <div className={styles.metaRow}>
+                              <span className={styles.metaLabel}>Área:</span>
+                              <span className={styles.metaValue}>{app.boothAreaM2 ? `${app.boothAreaM2} m²` : '-'}</span>
+                            </div>
+                            <div className={styles.metaRow}>
+                              <span className={styles.metaLabel}>Enviado em:</span>
+                              <span className={styles.metaValue}>{formatDate(app.pdfUploadedAt)}</span>
+                            </div>
                           </div>
-                          <div className={styles.metaRow}>
-                            <span className={styles.metaLabel}>Enviado em:</span>
-                            <span className={styles.metaValue}>{formatDate(app.pdfUploadedAt)}</span>
+                          <div className={styles.cardFooter}>
+                            <button
+                              type="button"
+                              className={styles.actionShortcut}
+                              onClick={() => onOpenPdfReview?.(app.projectId)}
+                              data-testid={`shortcut-review-pdf-${app.projectId}`}
+                              id={`shortcut-review-pdf-${app.projectId}`}
+                            >
+                              Analisar Planta →
+                            </button>
                           </div>
-                        </div>
-                        <div className={styles.cardFooter}>
-                          <button
-                            type="button"
-                            className={styles.actionShortcut}
-                            onClick={() => onOpenPdfReview?.(app.projectId)}
-                            data-testid={`shortcut-review-pdf-${app.projectId}`}
-                            id={`shortcut-review-pdf-${app.projectId}`}
-                          >
-                            Analisar Planta →
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
+                        </article>
+                      );
+                    }
 
-                  {/* Cards de Pendências de Prazo */}
-                  {pendingDeadlineProjects
-                    .filter((p) => !approvalIds.has(p.id))
-                    .map((p) => (
+                    const p = entry.item;
+                    return (
                       <article
                         key={`deadline-${p.id}`}
                         className={styles.kanbanCard}
@@ -289,10 +364,37 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                           </div>
                         </div>
                       </article>
-                    ))}
-                </>
+                    );
+                  })}
+                </div>
               )}
             </div>
+
+            {totalPendingPages > 1 && (
+              <div className={styles.pagination} data-testid="pagination-pending">
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setPagePending((p) => Math.max(1, p - 1))}
+                  disabled={pagePending <= 1}
+                  data-testid="btn-prev-pending"
+                >
+                  ← Anterior
+                </button>
+                <span className={styles.pageInfo} data-testid="page-info-pending">
+                  {pagePending} / {totalPendingPages}
+                </span>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setPagePending((p) => Math.min(totalPendingPages, p + 1))}
+                  disabled={pagePending >= totalPendingPages}
+                  data-testid="btn-next-pending"
+                >
+                  Próximo →
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Coluna 3: Em Dia */}
@@ -317,7 +419,7 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
               {onTrackProjects.length === 0 ? (
                 <div className={styles.emptyCard}>Nenhum projeto regularizado registrado.</div>
               ) : (
-                onTrackProjects.map((p) => (
+                pagedOnTrack.map((p) => (
                   <article
                     key={`ontrack-${p.id}`}
                     className={styles.kanbanCard}
@@ -347,6 +449,32 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                 ))
               )}
             </div>
+
+            {totalOnTrackPages > 1 && (
+              <div className={styles.pagination} data-testid="pagination-on-track">
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setPageOnTrack((p) => Math.max(1, p - 1))}
+                  disabled={pageOnTrack <= 1}
+                  data-testid="btn-prev-on-track"
+                >
+                  ← Anterior
+                </button>
+                <span className={styles.pageInfo} data-testid="page-info-on-track">
+                  {pageOnTrack} / {totalOnTrackPages}
+                </span>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setPageOnTrack((p) => Math.min(totalOnTrackPages, p + 1))}
+                  disabled={pageOnTrack >= totalOnTrackPages}
+                  data-testid="btn-next-on-track"
+                >
+                  Próximo →
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -380,7 +508,7 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                     </tr>
                   </thead>
                   <tbody>
-                    {data.inactiveExhibitors.map((item) => (
+                    {pagedTableInactives.map((item) => (
                       <tr key={item.projectId} data-testid={`table-row-inactive-${item.projectId}`}>
                         <td>
                           <strong>{item.companyName}</strong>
@@ -404,6 +532,30 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                 </table>
               )}
             </div>
+
+            {totalTableInactivesPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setTablePageInactives((p) => Math.max(1, p - 1))}
+                  disabled={tablePageInactives <= 1}
+                >
+                  ← Anterior
+                </button>
+                <span className={styles.pageInfo}>
+                  {tablePageInactives} / {totalTableInactivesPages}
+                </span>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setTablePageInactives((p) => Math.min(totalTableInactivesPages, p + 1))}
+                  disabled={tablePageInactives >= totalTableInactivesPages}
+                >
+                  Próximo →
+                </button>
+              </div>
+            )}
           </section>
 
           {/* Painel 2: Projetos com Pendências e Prazos */}
@@ -446,7 +598,7 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                     </tr>
                   </thead>
                   <tbody>
-                    {data.pendingDeadlines.map((p) => (
+                    {pagedTableDeadlines.map((p) => (
                       <tr key={p.id}>
                         <td>
                           <strong>{p.companyName}</strong>
@@ -481,6 +633,30 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                 </table>
               )}
             </div>
+
+            {totalTableDeadlinesPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setTablePageDeadlines((p) => Math.max(1, p - 1))}
+                  disabled={tablePageDeadlines <= 1}
+                >
+                  ← Anterior
+                </button>
+                <span className={styles.pageInfo}>
+                  {tablePageDeadlines} / {totalTableDeadlinesPages}
+                </span>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setTablePageDeadlines((p) => Math.min(totalTableDeadlinesPages, p + 1))}
+                  disabled={tablePageDeadlines >= totalTableDeadlinesPages}
+                >
+                  Próximo →
+                </button>
+              </div>
+            )}
           </section>
 
           {/* Painel 3: Aprovações Pendentes */}
@@ -516,7 +692,7 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                     </tr>
                   </thead>
                   <tbody>
-                    {data.pendingApprovals.map((app) => (
+                    {pagedTableApprovals.map((app) => (
                       <tr key={app.projectId}>
                         <td>
                           <strong>{app.companyName}</strong>
@@ -539,6 +715,30 @@ export function AdminDashboardPage({ onOpenPdfReview, onNavigateToProjects }: Pr
                 </table>
               )}
             </div>
+
+            {totalTableApprovalsPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setTablePageApprovals((p) => Math.max(1, p - 1))}
+                  disabled={tablePageApprovals <= 1}
+                >
+                  ← Anterior
+                </button>
+                <span className={styles.pageInfo}>
+                  {tablePageApprovals} / {totalTableApprovalsPages}
+                </span>
+                <button
+                  type="button"
+                  className={styles.pageButton}
+                  onClick={() => setTablePageApprovals((p) => Math.min(totalTableApprovalsPages, p + 1))}
+                  disabled={tablePageApprovals >= totalTableApprovalsPages}
+                >
+                  Próximo →
+                </button>
+              </div>
+            )}
           </section>
         </div>
       )}
