@@ -126,4 +126,49 @@ describe('US-18: Dashboard do Administrador', () => {
     cy.contains('button', 'Voltar aos projetos').should('be.visible');
     cy.contains('h1', 'Aprovação de Projetos').should('be.visible');
   });
+
+  it('pagina os projetos de 4 em 4 no grupo quando houver mais de 4 itens', () => {
+    const paginatedData = {
+      inactiveExhibitors: [
+        { projectId: 'p1', companyName: 'Empresa Alfa 1', representativeName: 'Rep 1', contactEmail: 'e1@t.com', createdAt: '2026-10-01T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
+        { projectId: 'p2', companyName: 'Empresa Alfa 2', representativeName: 'Rep 2', contactEmail: 'e2@t.com', createdAt: '2026-10-02T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
+        { projectId: 'p3', companyName: 'Empresa Alfa 3', representativeName: 'Rep 3', contactEmail: 'e3@t.com', createdAt: '2026-10-03T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
+        { projectId: 'p4', companyName: 'Empresa Alfa 4', representativeName: 'Rep 4', contactEmail: 'e4@t.com', createdAt: '2026-10-04T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
+        { projectId: 'p5', companyName: 'Empresa Alfa 5', representativeName: 'Rep 5', contactEmail: 'e5@t.com', createdAt: '2026-10-05T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
+      ],
+      pendingDeadlines: [],
+      pendingApprovals: [],
+    };
+
+    cy.intercept('GET', '**/projects/admin/dashboard', {
+      statusCode: 200,
+      body: paginatedData,
+    }).as('getPaginatedDashboard');
+
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
+        win.localStorage.removeItem('MOCK_PROJECT_ID');
+      },
+    });
+
+    cy.wait('@getPaginatedDashboard');
+
+    // Valida exibição dos 4 primeiros projetos na página 1
+    cy.contains('Empresa Alfa 1').should('be.visible');
+    cy.contains('Empresa Alfa 4').should('be.visible');
+    cy.contains('Empresa Alfa 5').should('not.exist');
+    cy.get('[data-testid="page-info-never-accessed"]').should('contain.text', '1 / 2');
+
+    // Avança para a página 2
+    cy.get('[data-testid="btn-next-never-accessed"]').click();
+    cy.contains('Empresa Alfa 5').should('be.visible');
+    cy.contains('Empresa Alfa 1').should('not.exist');
+    cy.get('[data-testid="page-info-never-accessed"]').should('contain.text', '2 / 2');
+
+    // Retorna para a página 1
+    cy.get('[data-testid="btn-prev-never-accessed"]').click();
+    cy.contains('Empresa Alfa 1').should('be.visible');
+    cy.get('[data-testid="page-info-never-accessed"]').should('contain.text', '1 / 2');
+  });
 });
