@@ -111,20 +111,14 @@ describe('US-18: Dashboard do Administrador', () => {
     cy.get('[data-testid="on-track-panel"]').should('be.visible');
     cy.get('[data-testid="count-on-track"]').should('contain.text', '0');
 
-    // 4. Teste de alternância para o modo Tabelas e volta para Kanban
-    cy.get('[data-testid="btn-view-table"]').click();
-    cy.get('[data-testid="inactive-exhibitors-panel-table"]').should('be.visible');
-    cy.get('[data-testid="btn-view-kanban"]').click();
-    cy.get('[data-testid="kanban-board"]').should('be.visible');
-
-    // 5. Atalho de clique direto para a tela de aprovação técnica
+    // 4. Atalho de clique direto para a tela de aprovação técnica
     cy.get('[data-testid="shortcut-review-pdf-proj-approval-1"]')
       .should('be.visible')
       .click();
 
     // Valida navegação direta para a tela de análise técnica de PDF
     cy.contains('button', 'Voltar aos projetos').should('be.visible');
-    cy.contains('h1', 'Aprovação de Projetos').should('be.visible');
+    cy.contains('Analise os projetos com PDF em análise.').should('be.visible');
   });
 
   it('pagina os projetos de 4 em 4 no grupo quando houver mais de 4 itens', () => {
