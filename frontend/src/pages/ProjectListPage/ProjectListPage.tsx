@@ -62,16 +62,6 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
     void load();
   }, []);
 
-  if (configProject) {
-    return (
-      <ProjectFeesConfigPage
-        projectId={configProject.id}
-        projectName={configProject.companyName || 'Projeto'}
-        onBack={() => setConfigProject(null)}
-      />
-    );
-  }
-
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -185,6 +175,16 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
         return styles.statusDefault;
     }
   };
+
+  if (configProject) {
+    return (
+      <ProjectFeesConfigPage
+        projectId={configProject.id}
+        projectName={configProject.companyName || 'Projeto'}
+        onBack={() => setConfigProject(null)}
+      />
+    );
+  }
 
   return (
     <div className={styles.page} data-testid="project-list-page">
