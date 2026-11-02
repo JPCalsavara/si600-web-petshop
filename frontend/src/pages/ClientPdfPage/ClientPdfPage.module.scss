@@ -21,7 +21,13 @@ input { padding: $sp-3; border: 1px solid $color-gray-300; border-radius: $radiu
 .alertSuccess, .success { background: $color-success-bg; border: 1px solid $color-success-border; color: $color-success; }
 .info { background: $color-info-bg; border: 1px solid $color-info-border; color: $color-info; }
 .rejection p { margin: $sp-2 0 0; }
+.badges { display: flex; align-items: center; gap: $sp-2; flex-wrap: wrap; }
 .status { padding: $sp-2 $sp-3; border-radius: $radius-pill; font-size: $font-size-sm; font-weight: $font-weight-semibold; }
+.alertBadge { padding: $sp-2 $sp-3; border-radius: $radius-pill; font-size: $font-size-sm; font-weight: $font-weight-semibold; }
+.atrasado { background: $color-danger-bg; color: $color-danger; border: 1px solid $color-danger-border; }
+.prazo_proximo { background: $color-warning-bg; color: #9a3412; border: 1px solid #fb923c; }
+.pendente { background: $color-info-bg; color: $color-info; border: 1px solid $color-info-border; }
+.em_dia { background: $color-success-bg; color: $color-success; border: 1px solid $color-success-border; }
 .PDF_EM_ANALISE { background: $color-info-bg; color: $color-info; }
 .REPROVADO { background: $color-danger-bg; color: $color-danger; }
 .APROVADO { background: $color-success-bg; color: $color-success; }

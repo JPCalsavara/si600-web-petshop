@@ -168,4 +168,12 @@ public class Project {
         this.decisionAt = decidedAt;
         this.rejectionJustification = justification;
     }
+
+    public void markAguardandoPagamento() {
+        this.status = ProjectStatus.AGUARDANDO_PAGAMENTO;
+    }
+
+    public void markConcluido() {
+        this.status = ProjectStatus.CONCLUIDO;
+    }
 }

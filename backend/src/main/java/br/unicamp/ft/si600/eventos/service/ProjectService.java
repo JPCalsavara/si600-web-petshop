@@ -36,11 +36,14 @@ public class ProjectService {
     private final ProjectRepository repository;
     private final FeeRepository feeRepository;
     private final ProjectFeeRepository projectFeeRepository;
+    private final AlertTagCalculator alertTagCalculator;
 
-    public ProjectService(ProjectRepository repository, FeeRepository feeRepository, ProjectFeeRepository projectFeeRepository) {
+    public ProjectService(ProjectRepository repository, FeeRepository feeRepository,
+                          ProjectFeeRepository projectFeeRepository, AlertTagCalculator alertTagCalculator) {
         this.repository = repository;
         this.feeRepository = feeRepository;
         this.projectFeeRepository = projectFeeRepository;
+        this.alertTagCalculator = alertTagCalculator;
     }
 
     @Transactional
@@ -89,7 +92,7 @@ public class ProjectService {
                 }
                 projectFeeRepository.saveAll(fees.stream().map(f -> new ProjectFee(saved, f)).toList());
             }
-            return ProjectResponse.from(saved);
+            return ProjectResponse.from(saved, alertTagCalculator.calculate(saved));
         } catch (DataIntegrityViolationException ex) {
             // Corrida entre duas criações simultâneas: a constraint unique do banco é a palavra final.
             throw new ApiException(HttpStatus.CONFLICT, DUPLICATE_MESSAGE);
