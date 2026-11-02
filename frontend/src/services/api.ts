@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest, ProjectFee } from '../types';
+import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest, ProjectFee, CalculatedFee } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -102,8 +102,8 @@ export async function getClientProject(projectId: string): Promise<Project> {
   return request<Project>({ method: 'GET', url: `/projects/${projectId}` });
 }
 
-export async function getProjectFees(projectId: string): Promise<any[]> {
-  return request<any[]>({ method: 'GET', url: `/projects/${projectId}/fees` });
+export async function getProjectFees(projectId: string): Promise<CalculatedFee[]> {
+  return request<CalculatedFee[]>({ method: 'GET', url: `/projects/${encodeURIComponent(projectId)}/fees` });
 }
 
 export async function submitProjectPdf(
@@ -198,5 +198,63 @@ export async function submitFeeQuantity(projectId: string, projectFeeId: string,
     url: `/projects/${encodeURIComponent(projectId)}/fees/${encodeURIComponent(projectFeeId)}/quantity`,
     headers: { 'Content-Type': 'application/json' },
     data: { quantity }
+  });
+}
+
+export interface QuoteableProjectFee {
+  projectId: string;
+  projectName: string;
+  clientEmail: string | null;
+  projectFeeId: string;
+  feeName: string;
+  feeType: string;
+  quantity: number | null;
+  measurementUnit: string | null;
+  status: string;
+  quotedAmount: number | null;
+  quotedBy: string | null;
+  quotedAt: string | null;
+}
+
+export async function getQuoteableFees(): Promise<QuoteableProjectFee[]> {
+  return request<QuoteableProjectFee[]>({ method: 'GET', url: '/admin/quotes' });
+}
+
+export async function quoteProjectFee(projectId: string, projectFeeId: string, amount: number): Promise<QuoteableProjectFee> {
+  return request<QuoteableProjectFee>({
+    method: 'PUT',
+    url: `/projects/${encodeURIComponent(projectId)}/fees/${encodeURIComponent(projectFeeId)}/quote`,
+    headers: { 'Content-Type': 'application/json' },
+    data: { amount },
+  });
+}
+
+export interface ProjectFeeConfiguration {
+  projectFeeId: string;
+  feeId: string;
+  name: string;
+  description: string | null;
+  type: string;
+  measurementUnit: string | null;
+  amount: number | null;
+  amountPerM2: number | null;
+  areaPerUnitM2: number | null;
+  unitAmount: number | null;
+  areaPricingMode: string | null;
+  status: string;
+  quantity: number | null;
+  quotedAmount: number | null;
+  quotedBy: string | null;
+  quotedAt: string | null;
+}
+
+export async function getProjectFeeConfiguration(projectId: string): Promise<ProjectFeeConfiguration[]> {
+  return request<ProjectFeeConfiguration[]>({ method: 'GET', url: `/projects/${encodeURIComponent(projectId)}/fees/configuration` });
+}
+
+export async function configureProjectFees(projectId: string, feeIds: string[]): Promise<ProjectFeeConfiguration[]> {
+  return request<ProjectFeeConfiguration[]>({
+    method: 'PUT', url: `/projects/${encodeURIComponent(projectId)}/fees/configuration`,
+    headers: { 'Content-Type': 'application/json' }, data: { feeIds },
   });
 }

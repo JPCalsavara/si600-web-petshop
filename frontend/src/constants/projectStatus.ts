@@ -10,3 +10,8 @@ export const STATUS_LABELS: Record<ProjectStatus, string> = {
 };
 
 export const STATUS_ORDER = Object.keys(STATUS_LABELS) as ProjectStatus[];
+
+/** US-05: as taxas só aparecem depois da aprovação do PDF (inclui as etapas seguintes do projeto). */
+export function feesVisible(status: ProjectStatus): boolean {
+  return status === 'APROVADO' || status === 'AGUARDANDO_PAGAMENTO' || status === 'CONCLUIDO';
+}

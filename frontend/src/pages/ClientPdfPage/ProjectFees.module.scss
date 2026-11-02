@@ -11,6 +11,15 @@
   margin-bottom: $sp-4;
 }
 
+.alertDanger {
+  padding: $sp-4;
+  margin-bottom: $sp-4;
+  border-radius: $radius-md;
+  background: $color-danger-bg;
+  border: 1px solid $color-danger-border;
+  color: $color-danger;
+}
+
 .feeList {
   display: flex;
   flex-direction: column;
@@ -24,6 +33,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: $sp-4;
 
   .info {
     flex: 1;
@@ -42,6 +53,7 @@
 
   .actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: $sp-4;
 

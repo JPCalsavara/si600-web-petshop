@@ -4,6 +4,7 @@ import { ALERT_TAG_LABELS } from '../../constants/alertTag';
 import { listAdminProjects } from '../../services/api';
 import type { Project, ProjectStatus } from '../../types';
 import styles from './ProjectListPage.module.scss';
+import { ProjectFeesConfigPage } from '../ProjectFeesConfigPage/ProjectFeesConfigPage';
 
 interface Props {
   onAdd: () => void;
@@ -24,6 +25,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [configProject, setConfigProject] = useState<Project | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -32,18 +34,34 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
         setError(null);
         setProjects(await listAdminProjects(filter || undefined));
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Não foi possível carregar os projetos.');
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Não foi possível carregar os projetos.'
+        );
       } finally {
         setLoading(false);
       }
     }
+
     void load();
   }, [filter]);
+
+  if (configProject) {
+    return (
+      <ProjectFeesConfigPage
+        projectId={configProject.id}
+        projectName={configProject.companyName}
+        onBack={() => setConfigProject(null)}
+      />
+    );
+  }
 
   const handleFilterSelect = (val: ProjectStatus | '') => {
     setFilter(val);
     setDropdownOpen(false);
   };
+
 
   return (
     <div className={styles.page}>
@@ -98,8 +116,10 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                     <td data-label="Estande">{p.category}</td>
                     <td data-label="Prazo PDF">{formatDate(p.pdfDeadline)}</td>
                     <td data-label="Prazo pagamento">{formatDate(p.paymentDeadline)}</td>
-                    <td data-label="Taxas" title="Os vínculos de taxas não fazem parte do contrato GET /projects/admin.">
-                      -
+                    <td data-label="Taxas">
+                      {p.status === 'APROVADO' || p.status === 'AGUARDANDO_PAGAMENTO'
+                        ? <button type="button" onClick={() => setConfigProject(p)}>Configurar taxas</button>
+                        : 'Disponível após aprovação do PDF'}
                     </td>
                     <td data-label="Status"><span className={styles.status}>{STATUS_LABELS[p.status]}</span></td>
                     <td data-label="Alerta">
@@ -107,7 +127,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                         {p.alertTag ? ALERT_TAG_LABELS[p.alertTag] : ALERT_TAG_LABELS.EM_DIA}
                       </span>
                     </td>
-                    <td data-label="Ações">-</td>
+                    <td data-label="Ações">{p.status === 'APROVADO' || p.status === 'AGUARDANDO_PAGAMENTO' ? <button type="button" onClick={() => setConfigProject(p)}>Ver taxas</button> : '—'}</td>
                   </tr>
                 ))}
               </tbody>

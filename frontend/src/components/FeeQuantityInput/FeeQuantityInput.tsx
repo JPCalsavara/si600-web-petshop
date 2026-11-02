@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { submitFeeQuantity } from '../../services/api';
 import { parseQuantity } from '../../services/feeQuantity';
-import type { ProjectFee, ProjectFeeStatus } from '../../types';
+import { FEE_STATUS_LABELS } from '../../constants/feeStatus';
+import type { ProjectFee } from '../../types';
 import styles from './FeeQuantityInput.module.scss';
 
 interface Props {
@@ -10,17 +11,12 @@ interface Props {
   fee: ProjectFee;
   /** Chamado com a taxa atualizada pela API, para a lista (US-05) refletir o novo status. */
   onUpdated?: (fee: ProjectFee) => void;
+  /** Esconde nome e status quando a linha que contém o input já os mostra. */
+  compact?: boolean;
 }
 
-const STATUS_LABEL: Record<ProjectFeeStatus, string> = {
-  AGUARDANDO_QUANTIDADE: 'Aguardando quantidade',
-  AGUARDANDO_COTACAO: 'Aguardando cotação',
-  COTADA: 'Cotada',
-  PAGAMENTO_GERADO: 'Pagamento gerado',
-};
-
 /** US-06: input de quantidade de uma taxa variável (ex.: energia em kVA) e envio para cotação. */
-export function FeeQuantityInput({ projectId, fee, onUpdated }: Props) {
+export function FeeQuantityInput({ projectId, fee, onUpdated, compact = false }: Props) {
   const [value, setValue] = useState(fee.quantity === null ? '' : String(fee.quantity));
   const [current, setCurrent] = useState(fee);
   const [error, setError] = useState<string | null>(null);
@@ -52,11 +48,13 @@ export function FeeQuantityInput({ projectId, fee, onUpdated }: Props) {
   }
 
   return (
-    <form className={styles.row} onSubmit={(event) => void handleSubmit(event)} noValidate>
-      <div className={styles.info}>
-        <strong>{current.name}</strong>
-        <span className={`${styles.badge} ${styles[current.status]}`}>{STATUS_LABEL[current.status]}</span>
-      </div>
+    <form className={`${styles.row} ${compact ? styles.compact : ''}`} onSubmit={(event) => void handleSubmit(event)} noValidate>
+      {!compact && (
+        <div className={styles.info}>
+          <strong>{current.name}</strong>
+          <span className={`${styles.badge} ${styles[current.status]}`}>{FEE_STATUS_LABELS[current.status]}</span>
+        </div>
+      )}
 
       <label>
         Quantidade{unit && ` (${unit})`}
@@ -75,7 +73,7 @@ export function FeeQuantityInput({ projectId, fee, onUpdated }: Props) {
       </label>
 
       {current.quantityEditable ? (
-        <button className={styles.primaryButton} disabled={saving}>
+        <button type="submit" className={styles.primaryButton} disabled={saving}>
           {saving ? 'Enviando...' : 'Enviar para Cotação'}
         </button>
       ) : (
@@ -83,7 +81,7 @@ export function FeeQuantityInput({ projectId, fee, onUpdated }: Props) {
       )}
 
       {error && <div className={styles.error} role="alert">{error}</div>}
-      {success && <div className={styles.success} role="status">Quantidade enviada para cotação.</div>}
+      {success && <div className={styles.success} role="status">Quantidade enviada para cotação. A taxa voltou para "Aguardando cotação".</div>}
     </form>
   );
 }
