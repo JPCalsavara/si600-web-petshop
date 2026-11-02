@@ -39,11 +39,18 @@ public class ProjectPdfService {
     private final ProjectRepository repository;
     private final ObjectStorage storage;
     private final PdfDecisionNotifier notifier;
+    private final AlertTagCalculator alertTagCalculator;
 
-    public ProjectPdfService(ProjectRepository repository, ObjectStorage storage, PdfDecisionNotifier notifier) {
+    public ProjectPdfService(ProjectRepository repository, ObjectStorage storage,
+                             PdfDecisionNotifier notifier, AlertTagCalculator alertTagCalculator) {
         this.repository = repository;
         this.storage = storage;
         this.notifier = notifier;
+        this.alertTagCalculator = alertTagCalculator;
+    }
+
+    private ProjectResponse toResponse(Project project) {
+        return ProjectResponse.from(project, alertTagCalculator.calculate(project));
     }
 
     @Transactional
@@ -81,7 +88,7 @@ public class ProjectPdfService {
         }
         registerCommitCleanup(key, oldKey);
 
-        return ProjectResponse.from(project);
+        return toResponse(project);
     }
 
     @Transactional(readOnly = true)
@@ -89,7 +96,7 @@ public class ProjectPdfService {
         requireRole(actor, ActorRole.CLIENT);
         Project project = repository.findByIdAndOwnerId(projectId, actor.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
-        return ProjectResponse.from(project);
+        return toResponse(project);
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +105,7 @@ public class ProjectPdfService {
         List<Project> projects = status == null
                 ? repository.findAll(Sort.by(Sort.Order.asc("pdfUploadedAt"), Sort.Order.asc("id")))
                 : repository.findAllByStatusOrderByPdfUploadedAtAsc(status);
-        return projects.stream().map(ProjectResponse::from).toList();
+        return projects.stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -122,7 +129,7 @@ public class ProjectPdfService {
         project.approve(actor.id(), OffsetDateTime.now(), request.approvedAreaM2());
         Project saved = repository.save(project);
         notifier.notifyApproved(saved);
-        return ProjectResponse.from(saved);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -138,7 +145,7 @@ public class ProjectPdfService {
         project.reject(actor.id(), OffsetDateTime.now(), justification);
         Project saved = repository.save(project);
         notifier.notifyRejected(saved);
-        return ProjectResponse.from(saved);
+        return toResponse(saved);
     }
 
     /**

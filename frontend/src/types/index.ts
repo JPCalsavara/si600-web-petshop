@@ -21,6 +21,8 @@ export type ProjectStatus =
   | 'AGUARDANDO_PAGAMENTO'
   | 'CONCLUIDO';
 
+export type AlertTag = 'ATRASADO' | 'PRAZO_PROXIMO' | 'PENDENTE' | 'EM_DIA';
+
 export interface Project {
   id: string;
   companyName: string;
@@ -39,6 +41,7 @@ export interface Project {
   address: string;
   contactEmail: string;
   paymentDeadline: string | null;
+  alertTag?: AlertTag;
 }
 
 // ---- US-03: criação de projeto do cliente ----

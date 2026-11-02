@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
+import { ALERT_TAG_LABELS } from '../../constants/alertTag';
 import { listAdminProjects } from '../../services/api';
 import type { Project, ProjectStatus } from '../../types';
 import styles from './ProjectListPage.module.scss';
@@ -103,6 +104,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                   <th>Prazo pagamento</th>
                   <th>Taxas</th>
                   <th>Status</th>
+                  <th>Alerta</th>
                   <th />
                 </tr>
               </thead>
@@ -120,6 +122,11 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                         : 'Disponível após aprovação do PDF'}
                     </td>
                     <td data-label="Status"><span className={styles.status}>{STATUS_LABELS[p.status]}</span></td>
+                    <td data-label="Alerta">
+                      <span className={`${styles.alertBadge} ${styles[p.alertTag ? p.alertTag.toLowerCase() : 'em_dia']}`}>
+                        {p.alertTag ? ALERT_TAG_LABELS[p.alertTag] : ALERT_TAG_LABELS.EM_DIA}
+                      </span>
+                    </td>
                     <td data-label="Ações">{p.status === 'APROVADO' || p.status === 'AGUARDANDO_PAGAMENTO' ? <button type="button" onClick={() => setConfigProject(p)}>Ver taxas</button> : '—'}</td>
                   </tr>
                 ))}

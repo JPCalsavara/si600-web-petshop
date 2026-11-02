@@ -22,6 +22,7 @@ sonar-report.json
 coverage/
 .nyc_output/
 .pytest_cache/
+frontend/.env.test
 
 # OS and Editor
 .DS_Store
