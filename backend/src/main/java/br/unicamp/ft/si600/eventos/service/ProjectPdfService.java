@@ -1,7 +1,10 @@
 package br.unicamp.ft.si600.eventos.service;
 
+import br.unicamp.ft.si600.eventos.dto.AdminDashboardResponse;
 import br.unicamp.ft.si600.eventos.dto.DecisionRequest;
 import br.unicamp.ft.si600.eventos.dto.DownloadUrlResponse;
+import br.unicamp.ft.si600.eventos.dto.InactiveExhibitorResponse;
+import br.unicamp.ft.si600.eventos.dto.PendingApprovalResponse;
 import br.unicamp.ft.si600.eventos.dto.ProjectResponse;
 import br.unicamp.ft.si600.eventos.entity.Project;
 import br.unicamp.ft.si600.eventos.entity.ProjectStatus;
@@ -10,6 +13,7 @@ import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
 import br.unicamp.ft.si600.eventos.security.Actor;
 import br.unicamp.ft.si600.eventos.security.ActorRole;
 import br.unicamp.ft.si600.eventos.storage.ObjectStorage;
+import br.unicamp.ft.si600.eventos.util.TimeHelper;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
@@ -24,6 +28,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,17 +45,29 @@ public class ProjectPdfService {
     private final ObjectStorage storage;
     private final PdfDecisionNotifier notifier;
     private final AlertTagCalculator alertTagCalculator;
+<<<<<<< HEAD
+    private final TimeHelper timeHelper;
+
+    public ProjectPdfService(ProjectRepository repository, ObjectStorage storage,
+                             PdfDecisionNotifier notifier, AlertTagCalculator alertTagCalculator,
+                             TimeHelper timeHelper) {
+=======
 
     public ProjectPdfService(ProjectRepository repository, ObjectStorage storage,
                              PdfDecisionNotifier notifier, AlertTagCalculator alertTagCalculator) {
+>>>>>>> origin/dev
         this.repository = repository;
         this.storage = storage;
         this.notifier = notifier;
         this.alertTagCalculator = alertTagCalculator;
+<<<<<<< HEAD
+        this.timeHelper = timeHelper;
+=======
     }
 
     private ProjectResponse toResponse(Project project) {
         return ProjectResponse.from(project, alertTagCalculator.calculate(project));
+>>>>>>> origin/dev
     }
 
     @Transactional
@@ -88,14 +105,20 @@ public class ProjectPdfService {
         }
         registerCommitCleanup(key, oldKey);
 
+<<<<<<< HEAD
+        return ProjectResponse.from(project, alertTagCalculator.calculate(project));
+=======
         return toResponse(project);
+>>>>>>> origin/dev
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ProjectResponse getClientProject(UUID projectId, Actor actor) {
         requireRole(actor, ActorRole.CLIENT);
         Project project = repository.findByIdAndOwnerId(projectId, actor.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
+        project.recordAccess(timeHelper.now());
+        repository.save(project);
         return toResponse(project);
     }
 
@@ -106,6 +129,48 @@ public class ProjectPdfService {
                 ? repository.findAll(Sort.by(Sort.Order.asc("pdfUploadedAt"), Sort.Order.asc("id")))
                 : repository.findAllByStatusOrderByPdfUploadedAtAsc(status);
         return projects.stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public AdminDashboardResponse getAdminDashboard(Actor actor) {
+        requireRole(actor, ActorRole.ADMIN);
+        List<Project> projects = repository.findAll(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id")));
+        OffsetDateTime now = timeHelper.now();
+
+        List<InactiveExhibitorResponse> inactiveExhibitors = projects.stream()
+                .map(p -> {
+                    boolean neverAccessed = p.getLastAccessAt() == null;
+                    Long daysSinceLastAccess = neverAccessed ? null : Math.max(0, ChronoUnit.DAYS.between(p.getLastAccessAt(), now));
+                    return new InactiveExhibitorResponse(
+                            p.getId(),
+                            p.getCompanyName(),
+                            p.getRepresentativeName(),
+                            p.getContactEmail(),
+                            p.getCreatedAt(),
+                            p.getLastAccessAt(),
+                            daysSinceLastAccess,
+                            neverAccessed
+                    );
+                })
+                .toList();
+
+        List<ProjectResponse> pendingDeadlines = projects.stream()
+                .map(this::toResponse)
+                .toList();
+
+        List<PendingApprovalResponse> pendingApprovals = projects.stream()
+                .filter(p -> p.getStatus() == ProjectStatus.PDF_EM_ANALISE)
+                .map(p -> new PendingApprovalResponse(
+                        p.getId(),
+                        p.getCompanyName(),
+                        p.getPdfOriginalFilename(),
+                        p.getPdfUploadedAt(),
+                        p.getBoothAreaM2(),
+                        p.getStatus()
+                ))
+                .toList();
+
+        return new AdminDashboardResponse(inactiveExhibitors, pendingDeadlines, pendingApprovals);
     }
 
     @Transactional(readOnly = true)
@@ -129,7 +194,11 @@ public class ProjectPdfService {
         project.approve(actor.id(), OffsetDateTime.now(), request.approvedAreaM2());
         Project saved = repository.save(project);
         notifier.notifyApproved(saved);
+<<<<<<< HEAD
+        return ProjectResponse.from(saved, alertTagCalculator.calculate(saved));
+=======
         return toResponse(saved);
+>>>>>>> origin/dev
     }
 
     @Transactional
@@ -145,7 +214,11 @@ public class ProjectPdfService {
         project.reject(actor.id(), OffsetDateTime.now(), justification);
         Project saved = repository.save(project);
         notifier.notifyRejected(saved);
+<<<<<<< HEAD
+        return ProjectResponse.from(saved, alertTagCalculator.calculate(saved));
+=======
         return toResponse(saved);
+>>>>>>> origin/dev
     }
 
     /**
