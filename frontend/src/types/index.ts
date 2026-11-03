@@ -21,6 +21,8 @@ export type ProjectStatus =
   | 'AGUARDANDO_PAGAMENTO'
   | 'CONCLUIDO';
 
+export type AlertTag = 'ATRASADO' | 'PRAZO_PROXIMO' | 'PENDENTE' | 'EM_DIA';
+
 export interface Project {
   id: string;
   companyName: string;
@@ -41,8 +43,6 @@ export interface Project {
   paymentDeadline: string | null;
   alertTag?: AlertTag;
 }
-
-export type AlertTag = 'ATRASADO' | 'PRAZO_PROXIMO' | 'PENDENTE' | 'EM_DIA';
 
 export interface InactiveExhibitor {
   projectId: string;

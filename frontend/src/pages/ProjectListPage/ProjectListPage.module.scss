@@ -522,3 +522,17 @@
     align-items: flex-start;
   }
 }
+
+.alertBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: $radius-pill;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.atrasado { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+.prazo_proximo { background: #ffedd5; color: #9a3412; border: 1px solid #fb923c; }
+.pendente { background: #dbeafe; color: #1e40af; border: 1px solid #60a5fa; }
+.em_dia { background: #dcfce7; color: #166534; border: 1px solid #4ade80; }
