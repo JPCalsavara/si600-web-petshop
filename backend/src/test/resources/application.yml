@@ -19,3 +19,8 @@ spring:
 storage:
   b2:
     enabled: false
+
+notification:
+  deadlines:
+    # US-10: nos testes o job é disparado manualmente (DeadlineNotificationService.run()).
+    enabled: false

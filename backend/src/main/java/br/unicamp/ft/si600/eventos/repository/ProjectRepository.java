@@ -13,4 +13,7 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     boolean existsByDocumentDigits(String documentDigits);
     boolean existsByContactEmail(String contactEmail);
     List<Project> findAllByStatusOrderByPdfUploadedAtAsc(ProjectStatus status);
+
+    /** US-10: projetos em andamento, candidatos a notificação de prazo. */
+    List<Project> findAllByStatusIn(java.util.Collection<ProjectStatus> statuses);
 }

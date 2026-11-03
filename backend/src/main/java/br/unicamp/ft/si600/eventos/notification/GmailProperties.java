@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class GmailProperties {
     private boolean enabled = false;
     private String sender;
+    private String adminEmail;
     private String clientId;
     private String clientSecret;
     private String refreshToken;
@@ -20,6 +21,15 @@ public class GmailProperties {
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public String getSender() { return sender; }
     public void setSender(String sender) { this.sender = sender; }
+    public String getAdminEmail() { return adminEmail; }
+    public void setAdminEmail(String adminEmail) { this.adminEmail = adminEmail; }
+
+    /** US-10: destinatário dos avisos ao Admin: GMAIL_ADMIN, ou GMAIL_SENDER quando não definido. */
+    public String resolveAdminRecipient() {
+        if (adminEmail != null && !adminEmail.isBlank()) return adminEmail.trim();
+        return (sender == null || sender.isBlank()) ? null : sender.trim();
+    }
+
     public String getClientId() { return clientId; }
     public void setClientId(String clientId) { this.clientId = clientId; }
     public String getClientSecret() { return clientSecret; }
