@@ -45,29 +45,20 @@ public class ProjectPdfService {
     private final ObjectStorage storage;
     private final PdfDecisionNotifier notifier;
     private final AlertTagCalculator alertTagCalculator;
-<<<<<<< HEAD
     private final TimeHelper timeHelper;
 
     public ProjectPdfService(ProjectRepository repository, ObjectStorage storage,
                              PdfDecisionNotifier notifier, AlertTagCalculator alertTagCalculator,
                              TimeHelper timeHelper) {
-=======
-
-    public ProjectPdfService(ProjectRepository repository, ObjectStorage storage,
-                             PdfDecisionNotifier notifier, AlertTagCalculator alertTagCalculator) {
->>>>>>> origin/dev
         this.repository = repository;
         this.storage = storage;
         this.notifier = notifier;
         this.alertTagCalculator = alertTagCalculator;
-<<<<<<< HEAD
         this.timeHelper = timeHelper;
-=======
     }
 
     private ProjectResponse toResponse(Project project) {
         return ProjectResponse.from(project, alertTagCalculator.calculate(project));
->>>>>>> origin/dev
     }
 
     @Transactional
@@ -105,11 +96,7 @@ public class ProjectPdfService {
         }
         registerCommitCleanup(key, oldKey);
 
-<<<<<<< HEAD
-        return ProjectResponse.from(project, alertTagCalculator.calculate(project));
-=======
         return toResponse(project);
->>>>>>> origin/dev
     }
 
     @Transactional
@@ -194,11 +181,7 @@ public class ProjectPdfService {
         project.approve(actor.id(), OffsetDateTime.now(), request.approvedAreaM2());
         Project saved = repository.save(project);
         notifier.notifyApproved(saved);
-<<<<<<< HEAD
-        return ProjectResponse.from(saved, alertTagCalculator.calculate(saved));
-=======
         return toResponse(saved);
->>>>>>> origin/dev
     }
 
     @Transactional
@@ -214,11 +197,7 @@ public class ProjectPdfService {
         project.reject(actor.id(), OffsetDateTime.now(), justification);
         Project saved = repository.save(project);
         notifier.notifyRejected(saved);
-<<<<<<< HEAD
-        return ProjectResponse.from(saved, alertTagCalculator.calculate(saved));
-=======
         return toResponse(saved);
->>>>>>> origin/dev
     }
 
     /**
