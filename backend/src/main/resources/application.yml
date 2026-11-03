@@ -48,6 +48,12 @@ notification:
     # Desligado por padrão: em dev nenhum e-mail é enviado. Ver docs/us-08-notificacao-email-gmail.md.
     enabled: ${GMAIL_ENABLED:false}
     sender: ${GMAIL_SENDER:}
+    # US-10: destinatário dos avisos ao Admin. Se vazio, usa GMAIL_SENDER.
+    admin-email: ${GMAIL_ADMIN:}
     client-id: ${GMAIL_CLIENT_ID:}
     client-secret: ${GMAIL_CLIENT_SECRET:}
     refresh-token: ${GMAIL_REFRESH_TOKEN:}
+  deadlines:
+    # US-10: rotina diária de avisos de prazo (3 dias antes, 1 dia antes, no dia e atrasado).
+    enabled: ${DEADLINE_JOB_ENABLED:true}
+    cron: ${DEADLINE_CRON:0 0 8 * * *}
