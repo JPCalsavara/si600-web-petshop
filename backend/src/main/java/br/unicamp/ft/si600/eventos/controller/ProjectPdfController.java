@@ -1,5 +1,6 @@
 package br.unicamp.ft.si600.eventos.controller;
 
+import br.unicamp.ft.si600.eventos.dto.AdminDashboardResponse;
 import br.unicamp.ft.si600.eventos.dto.CreateProjectRequest;
 import br.unicamp.ft.si600.eventos.dto.DecisionRequest;
 import br.unicamp.ft.si600.eventos.dto.DownloadUrlResponse;
@@ -75,6 +76,11 @@ public class ProjectPdfController {
     @GetMapping("/{projectId}/pdf/download")
     public DownloadUrlResponse downloadPdf(@PathVariable UUID projectId, HttpServletRequest request) {
         return service.createDownloadUrl(projectId, actorResolver.resolve(request));
+    }
+
+    @GetMapping("/admin/dashboard")
+    public AdminDashboardResponse getAdminDashboard(HttpServletRequest request) {
+        return service.getAdminDashboard(actorResolver.resolve(request));
     }
 
     @GetMapping("/admin")

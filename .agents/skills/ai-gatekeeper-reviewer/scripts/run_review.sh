@@ -86,7 +86,7 @@ if [[ "$SKIP_TESTS" == false ]]; then
     npm --prefix "$PKG_DIR" test >> "${TARGET_DIR}/tests.log" 2>&1 || true
     if [[ -d "${PKG_DIR}/cypress" ]] && grep -q "cypress" "${PKG_DIR}/package.json"; then
       echo "[INFO] Running Cypress tests in ${PKG_DIR}..."
-      npx --prefix "$PKG_DIR" cypress run >> "${TARGET_DIR}/tests.log" 2>&1 || true
+      (cd "$PKG_DIR" && npx cypress run >> "${TARGET_DIR}/tests.log" 2>&1 || true)
     fi
   elif [[ -f "${TARGET_DIR}/pytest.ini" || -d "${TARGET_DIR}/tests" ]]; then
     echo "[INFO] Detected Python project."
@@ -157,6 +157,13 @@ if [[ "$SKIP_HARNESS" == false ]]; then
       [[ -f "$spec" ]] && DOCS_ARGS+=("$spec")
     done
 
+    PYTHON_BIN="python3"
+    if [[ -x "${TARGET_DIR}/.venv/bin/python" ]]; then
+      PYTHON_BIN="${TARGET_DIR}/.venv/bin/python"
+    elif [[ -x "${GATEKEEPER_ROOT}/.venv/bin/python" ]]; then
+      PYTHON_BIN="${GATEKEEPER_ROOT}/.venv/bin/python"
+    fi
+
     BUILD_HARNESS_SCRIPT="${GATEKEEPER_ROOT}/docs/gatekeeper/build_harness.py"
     [[ ! -f "$BUILD_HARNESS_SCRIPT" ]] && BUILD_HARNESS_SCRIPT="${GATEKEEPER_ROOT}/build_harness.py"
 
@@ -178,6 +185,13 @@ fi
 # 5. Execute LangGraph Gatekeeper
 echo "[STEP 5/5] Executing AI Quality Gatekeeper..."
 EXIT_CODE=0
+PYTHON_BIN="python3"
+if [[ -x "${TARGET_DIR}/.venv/bin/python" ]]; then
+  PYTHON_BIN="${TARGET_DIR}/.venv/bin/python"
+elif [[ -x "${GATEKEEPER_ROOT}/.venv/bin/python" ]]; then
+  PYTHON_BIN="${GATEKEEPER_ROOT}/.venv/bin/python"
+fi
+
 GATEKEEPER_ARGS=(--target /target)
 [[ "$APPLY_PATCH" == true ]] && GATEKEEPER_ARGS+=(--apply-patch)
 

@@ -1,0 +1,437 @@
+@use '../../styles/variables' as *;
+@use '../../styles/figma' as *;
+
+.page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.backButton {
+  border: none;
+  background: transparent;
+  color: #3b82f6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: #1d4ed8;
+    transform: translateX(-2px);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $sp-4;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  @include figma-title;
+  margin: 0;
+  font-size: 24px;
+  color: #0f172a;
+}
+
+.projectBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.subtitle {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: #64748b;
+  max-width: 780px;
+  line-height: 1.5;
+}
+
+.saveButtonHeader {
+  @include figma-pill-button;
+  background: #3b82f6;
+  color: #ffffff;
+  border: 1px solid #2563eb;
+  padding: 9px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.alertError {
+  margin-bottom: 18px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+.alertSuccess {
+  margin-bottom: 18px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  color: #64748b;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   2-Column Fees Grid
+   ========================================================================== */
+.sectionTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.selectionCount {
+  font-size: 13px;
+  color: #64748b;
+
+  strong {
+    color: #3b82f6;
+  }
+}
+
+.feesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.feeCard {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+
+  &:hover:not(.cardDisabled) {
+    border-color: #93c5fd;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.08);
+  }
+}
+
+.feeCardSelected {
+  background: #f8faff;
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
+}
+
+.cardDisabled {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.checkboxWrap {
+  padding-top: 2px;
+}
+
+.checkboxInput {
+  width: 18px;
+  height: 18px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.cardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.feeName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.feeTypeBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.feeTypeFixa {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.feeTypeMetragem {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.feeTypeVariavel {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.feePricing {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.feeDescription {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.lockedNotice {
+  font-size: 11px;
+  color: #d97706;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.inactiveNotice {
+  font-size: 11px;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Pagination Component (10 por página)
+   ========================================================================== */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  margin-bottom: 28px;
+}
+
+.paginationInfo {
+  font-size: 13px;
+  color: #64748b;
+
+  strong {
+    color: #0f172a;
+  }
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pageButton {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.pageCounter {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 0 4px;
+}
+
+/* ==========================================================================
+   Current Linked Fees Panel
+   ========================================================================== */
+.linkedSection {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.linkedList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.linkedItem {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.linkedInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.linkedName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.linkedDetails {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.linkedStatusBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 14px;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.bottomActionRow {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .feesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+
+  .saveButtonHeader {
+    width: 100%;
+  }
+
+  .pagination {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

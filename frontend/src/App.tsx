@@ -8,14 +8,14 @@ import { AdminPdfPage } from './pages/AdminPdfPage/AdminPdfPage';
 import { ProjectListPage } from './pages/ProjectListPage/ProjectListPage';
 import { ProjectFormPage } from './pages/ProjectFormPage/ProjectFormPage';
 import { QuoteFeesPage } from './pages/QuoteFeesPage/QuoteFeesPage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage/AdminDashboardPage';
 
 type AdminView =
   | { name: 'lista' }
   | { name: 'novo' }
   | { name: 'analise-pdf' };
 
-function AdminProjects() {
-  const [view, setView] = useState<AdminView>({ name: 'lista' });
+function AdminProjects({ view, setView }: { view: AdminView; setView: (v: AdminView) => void }) {
   const toList = () => setView({ name: 'lista' });
 
   switch (view.name) {
@@ -41,14 +41,27 @@ function AdminProjects() {
 export default function App() {
   const role = getCurrentActorRole();
   const projectId = (typeof window !== 'undefined' ? localStorage.getItem('MOCK_PROJECT_ID') : null) || import.meta.env.VITE_PROJECT_ID;
-  const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios'>('projetos');
+  const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios'>('resumo');
+  const [projectView, setProjectView] = useState<AdminView>({ name: 'lista' });
 
   return (
     <AppShell active={role === 'ADMIN' ? adminSection : 'projetos'} onNavigate={setAdminSection}>
       {role === 'ADMIN' ? (
+        adminSection === 'resumo' ? (
+          <AdminDashboardPage
+            onOpenPdfReview={() => {
+              setAdminSection('projetos');
+              setProjectView({ name: 'analise-pdf' });
+            }}
+            onNavigateToProjects={() => {
+              setAdminSection('projetos');
+              setProjectView({ name: 'lista' });
+            }}
+          />
+        ) :
         adminSection === 'taxas' ? <FeeCatalogPage /> :
         adminSection === 'cotacoes' ? <QuoteFeesPage /> :
-        adminSection === 'projetos' ? <AdminProjects /> :
+        adminSection === 'projetos' ? <AdminProjects view={projectView} setView={setProjectView} /> :
         <div style={{ padding: '4rem', textAlign: 'center', color: '#666' }}>
           <h2>Em breve</h2>
           <p>A seção de {adminSection} ainda não foi implementada.</p>
