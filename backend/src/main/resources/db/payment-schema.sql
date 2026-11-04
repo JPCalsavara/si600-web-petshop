@@ -1,0 +1,32 @@
+-- Schema inicial revisável para Etapa 2. Não é executado automaticamente em produção.
+-- Aplicar com mudança de schema autorizada antes de usar ddl-auto=validate.
+CREATE TABLE IF NOT EXISTS payments (
+    id UUID PRIMARY KEY,
+    version BIGINT,
+    integration_id VARCHAR(100) NOT NULL,
+    obligation_reference VARCHAR(160) NOT NULL,
+    request_id UUID NOT NULL,
+    idempotency_key UUID NOT NULL,
+    request_fingerprint VARCHAR(64) NOT NULL,
+    amount NUMERIC(16,2) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
+    status VARCHAR(30) NOT NULL,
+    mp_order_id VARCHAR(128),
+    mp_payment_id VARCHAR(128),
+    mp_status VARCHAR(128),
+    mp_status_detail VARCHAR(128),
+    mp_payment_status VARCHAR(128),
+    mp_payment_status_detail VARCHAR(128),
+    last_error_code VARCHAR(64),
+    last_http_status INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT uq_payment_request UNIQUE (integration_id, request_id),
+    CONSTRAINT uq_payment_obligation UNIQUE (integration_id, obligation_reference),
+    CONSTRAINT uq_payment_idempotency UNIQUE (idempotency_key),
+    CONSTRAINT uq_payment_order UNIQUE (mp_order_id),
+    CONSTRAINT uq_payment_external UNIQUE (mp_payment_id),
+    CONSTRAINT ck_payment_amount_currency CHECK (amount > 0 AND currency = 'BRL'),
+    CONSTRAINT ck_payment_state CHECK (status IN ('CRIANDO','GERADO','INCERTO','FALHOU','PAGO','CANCELADO','EXPIRADO'))
+);

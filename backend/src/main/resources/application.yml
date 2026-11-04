@@ -11,9 +11,10 @@ spring:
   application:
     name: eventos-backend
   config:
-    # Carrega backend/.env.local (formato KEY=VALUE, sem aspas) quando rodar a partir de backend/.
-    # Variáveis de ambiente reais continuam tendo prioridade.
-    import: optional:file:.env.local[.properties]
+    # Carregamento nativo de .env; mantém o .env.local legado com prioridade sobre .env.
+    import:
+      - classpath:mercadopago.yml
+      - optional:file:.env.local[.properties]
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/eventos_db}
     username: ${SPRING_DATASOURCE_USERNAME:eventos_user}

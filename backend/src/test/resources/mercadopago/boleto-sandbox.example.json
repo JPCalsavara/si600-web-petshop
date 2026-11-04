@@ -1,0 +1,22 @@
+{
+  "externalReference": "c1b2a3d4-0000-4000-8000-000000000001",
+  "idempotencyKey": "6f1d2c0e-3b7a-4c58-9a41-2d5f8e7b1a90",
+  "amount": "50.00",
+  "description": "Teste isolado de boleto SI600",
+  "expirationDays": 7,
+  "payer": {
+    "email": "test@example.com",
+    "firstName": "Pessoa",
+    "lastName": "Teste",
+    "identificationType": "CPF",
+    "identificationNumber": "99999999999",
+    "address": {
+      "zipCode": "06233903",
+      "streetName": "Rua Teste",
+      "streetNumber": "S/N",
+      "neighborhood": "Bairro",
+      "city": "Osasco",
+      "state": "SP"
+    }
+  }
+}

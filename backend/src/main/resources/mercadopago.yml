@@ -1,0 +1,18 @@
+# Imports relativos ao diretório de execução: raiz do projeto ou backend/.
+# .env do backend prevalece sobre .env da raiz; ambiente do processo prevalece sobre arquivos.
+spring:
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
+      - optional:file:backend/.env[.properties]
+
+mercadopago:
+  enabled: ${MP_ENABLED:false}
+  base-url: ${MP_BASE_URL:https://api.mercadopago.com}
+  access-token: ${MP_ACCESS_TOKEN:}
+  connect-timeout: ${MP_CONNECT_TIMEOUT:3s}
+  read-timeout: ${MP_READ_TIMEOUT:10s}
+
+payment:
+  fingerprint-secret: ${PAYMENT_FINGERPRINT_SECRET:}
