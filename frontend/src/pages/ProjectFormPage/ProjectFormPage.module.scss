@@ -60,10 +60,11 @@
   border: 0;
 }
 
-.panel {
+.formFields {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  background: transparent;
 }
 
 .row {

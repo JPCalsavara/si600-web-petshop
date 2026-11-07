@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   approveProject,
   getPdfDownloadUrl,
@@ -13,6 +13,8 @@ interface Props {
   onBack?: () => void;
 }
 
+const PAGE_SIZE = 15;
+
 function dateTime(value: string | null) {
   return value ? new Date(value).toLocaleString('pt-BR') : '-';
 }
@@ -20,12 +22,13 @@ function dateTime(value: string | null) {
 export function AdminPdfPage({ onBack }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filter, setFilter] = useState<ProjectStatus | ''>('PDF_EM_ANALISE');
+  const [projectSearch, setProjectSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [selected, setSelected] = useState<Project | null>(null);
   const [justification, setJustification] = useState('');
   const [approvedAreas, setApprovedAreas] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   async function load() {
     try {
@@ -42,6 +45,40 @@ export function AdminPdfPage({ onBack }: Props) {
   useEffect(() => {
     void load();
   }, [filter]);
+
+  const filteredProjects = useMemo(() => {
+    const matches = projects.filter((p) => {
+      if (projectSearch.trim()) {
+        const q = projectSearch.toLowerCase().trim();
+        const matchCompany = (p.companyName || '').toLowerCase().includes(q);
+        const matchDoc = (p.document || '').toLowerCase().includes(q);
+        const matchRep = (p.representativeName || '').toLowerCase().includes(q);
+        if (!matchCompany && !matchDoc && !matchRep) return false;
+      }
+      return true;
+    });
+    return [...matches].sort((a, b) => {
+      const timeA = a.pdfUploadedAt ? new Date(a.pdfUploadedAt).getTime() : 0;
+      const timeB = b.pdfUploadedAt ? new Date(b.pdfUploadedAt).getTime() : 0;
+      return timeB - timeA;
+    });
+  }, [projects, projectSearch]);
+
+  const hasActiveFilters = Boolean(projectSearch.trim() || filter !== 'PDF_EM_ANALISE');
+
+  const clearFilters = () => {
+    setProjectSearch('');
+    setFilter('PDF_EM_ANALISE');
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const pagedProjects = useMemo(() => {
+    const start = (safeCurrentPage - 1) * PAGE_SIZE;
+    return filteredProjects.slice(start, start + PAGE_SIZE);
+  }, [filteredProjects, safeCurrentPage]);
 
   async function download(projectId: string) {
     try {
@@ -91,11 +128,6 @@ export function AdminPdfPage({ onBack }: Props) {
     }
   }
 
-  const handleFilterSelect = (val: ProjectStatus | '') => {
-    setFilter(val);
-    setDropdownOpen(false);
-  };
-
   return (
     <main className={styles.page}>
       {onBack && (
@@ -113,24 +145,70 @@ export function AdminPdfPage({ onBack }: Props) {
             Analise os projetos com PDF em análise. Aprove a metragem oficial ou solicite ajustes.
           </p>
         </div>
+      </header>
 
-        <div className={styles.dropdownWrap}>
-          <div className={styles.dropdownHeader} onClick={() => setDropdownOpen(!dropdownOpen)}>
-            <span>{filter === '' ? 'Todos os status' : STATUS_LABELS[filter]}</span>
-            <span className={styles.caret}>▼</span>
+      {/* Barra de Filtros */}
+      <section className={styles.filtersSection} aria-label="Filtros de análise de plantas">
+        <div className={styles.filtersGrid}>
+          <div className={styles.filterGroup}>
+            <label htmlFor="filter-pdf-project" className={styles.filterLabel}>
+              Empresa / CNPJ / Expositor
+            </label>
+            <input
+              id="filter-pdf-project"
+              type="text"
+              className={styles.filterInput}
+              placeholder="Buscar por nome da empresa, CNPJ ou expositor..."
+              value={projectSearch}
+              onChange={(e) => {
+                setProjectSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              data-testid="input-filter-pdf-project"
+            />
           </div>
-          {dropdownOpen && (
-            <ul className={styles.dropdownList}>
-              <li onClick={() => handleFilterSelect('')}>Todos os status</li>
+
+          <div className={styles.filterGroup}>
+            <label htmlFor="filter-pdf-status" className={styles.filterLabel}>
+              Status do Projeto
+            </label>
+            <select
+              id="filter-pdf-status"
+              className={styles.filterSelect}
+              value={filter}
+              onChange={(e) => {
+                setFilter(e.target.value as ProjectStatus | '');
+                setCurrentPage(1);
+              }}
+              data-testid="select-filter-pdf-status"
+            >
+              <option value="">Todos os status</option>
               {STATUS_ORDER.map((status) => (
-                <li key={status} onClick={() => handleFilterSelect(status)}>
+                <option key={status} value={status}>
                   {STATUS_LABELS[status]}
-                </li>
+                </option>
               ))}
-            </ul>
+            </select>
+          </div>
+        </div>
+
+        <div className={styles.filterMetaRow}>
+          <div className={styles.resultsCount}>
+            Exibindo <strong>{filteredProjects.length}</strong> de <strong>{projects.length}</strong> projetos
+            {projectSearch.trim() && ' (filtrados por busca)'}
+          </div>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              className={styles.clearFilterButton}
+              onClick={clearFilters}
+              data-testid="btn-clear-pdf-filters"
+            >
+              ✕ Restaurar filtros
+            </button>
           )}
         </div>
-      </header>
+      </section>
 
       {error && (
         <div className={styles.alertDanger} role="alert">
@@ -138,10 +216,10 @@ export function AdminPdfPage({ onBack }: Props) {
         </div>
       )}
 
-      <section className={styles.card}>
+      <section className={styles.panel}>
         {loading ? (
           <div className={styles.loadingState}>Carregando projetos para análise...</div>
-        ) : projects.length === 0 ? (
+        ) : filteredProjects.length === 0 ? (
           <p className={styles.empty}>Nenhum projeto encontrado para o filtro selecionado.</p>
         ) : (
           <div className={styles.tableWrap}>
@@ -154,11 +232,11 @@ export function AdminPdfPage({ onBack }: Props) {
                   <th>Estande</th>
                   <th>Enviado em</th>
                   <th>Status</th>
-                  <th>Ações</th>
+                  <th className={styles.actionsHeader}>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {projects.map((project) => (
+                {pagedProjects.map((project) => (
                   <tr key={project.id}>
                     <td data-label="Empresa">
                       <strong className={styles.companyName}>{project.companyName}</strong>
@@ -174,7 +252,7 @@ export function AdminPdfPage({ onBack }: Props) {
                         {STATUS_LABELS[project.status]}
                       </span>
                     </td>
-                    <td data-label="Ações">
+                    <td data-label="Ações" className={styles.actionsCell}>
                       <div className={styles.actions}>
                         {project.pdfOriginalFilename && (
                           <button
@@ -227,6 +305,35 @@ export function AdminPdfPage({ onBack }: Props) {
                 ))}
               </tbody>
             </table>
+
+            {totalPages > 1 && (
+              <div className={styles.pagination} data-testid="pdf-pagination">
+                <div className={styles.paginationInfo}>
+                  Página <strong>{safeCurrentPage}</strong> de <strong>{totalPages}</strong>
+                </div>
+                <div className={styles.paginationControls}>
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={safeCurrentPage <= 1}
+                  >
+                    ← Anterior
+                  </button>
+                  <span className={styles.pageCounter}>
+                    {safeCurrentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safeCurrentPage >= totalPages}
+                  >
+                    Próximo →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>

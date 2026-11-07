@@ -87,13 +87,14 @@
   border: 0;
 }
 
-.panel {
+.formFields {
   border: 0;
   padding: 0;
   margin: 0;
   display: grid;
   gap: 16px;
   min-width: 0;
+  background: transparent;
 }
 
 .legend {

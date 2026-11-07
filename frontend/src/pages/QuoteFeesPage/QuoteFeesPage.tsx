@@ -99,9 +99,9 @@ export function QuoteFeesPage() {
       ) : (
         <div className={styles.grid}>
           {fees.map((fee) => (
-            <article key={fee.projectFeeId} className={styles.card}>
+            <article key={fee.projectFeeId} className={styles.quoteCard}>
               <div className={styles.cardHeader}>
-                <h2 className={styles.feeTitle}>{fee.feeName}</h2>
+                <h2 className={styles.feeHeading}>{fee.feeName}</h2>
                 <span
                   className={`${styles.statusBadge} ${
                     fee.status === 'COTADA' ? styles.statusQuoted : styles.statusPending
@@ -112,38 +112,37 @@ export function QuoteFeesPage() {
               </div>
 
               <div className={styles.metaList}>
-                <p className={styles.metaRow}>
-                  <span>
-                    <strong>Projeto:</strong> {fee.projectName}
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Projeto:</span>
+                  <span className={styles.metaValue}>{fee.projectName}</span>
+                </div>
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Cliente:</span>
+                  <span className={styles.metaValue}>{fee.clientEmail ?? '—'}</span>
+                </div>
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Quantidade:</span>
+                  <span className={styles.metaValue}>
+                    {fee.quantity ?? '—'} {fee.measurementUnit ?? ''}
                   </span>
-                  <span>
-                    <strong>Cliente:</strong> {fee.clientEmail ?? '—'}
-                  </span>
-                </p>
-                <p className={styles.metaRow}>
-                  <span>
-                    <strong>Quantidade:</strong> {fee.quantity ?? '—'} {fee.measurementUnit ?? ''}
-                  </span>
-                  <span>
-                    <strong>Valor atual:</strong>{' '}
-                    <span className={styles.currentAmount}>{money(fee.quotedAmount)}</span>
-                  </span>
-                </p>
+                </div>
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Valor atual:</span>
+                  <span className={styles.currentAmount}>{money(fee.quotedAmount)}</span>
+                </div>
                 {fee.quotedBy && (
-                  <p className={styles.metaRow}>
-                    <span>
-                      <strong>Última cotação:</strong> {fee.quotedBy}
+                  <div className={styles.metaRow}>
+                    <span className={styles.metaLabel}>Última cotação ({fee.quotedBy}):</span>
+                    <span className={styles.metaValue}>
+                      {fee.quotedAt ? new Date(fee.quotedAt).toLocaleString('pt-BR') : '—'}
                     </span>
-                    <span>
-                      {fee.quotedAt ? new Date(fee.quotedAt).toLocaleString('pt-BR') : ''}
-                    </span>
-                  </p>
+                  </div>
                 )}
               </div>
 
               <div className={styles.formFooter}>
                 <label className={styles.inputLabel}>
-                  Novo valor (R$)
+                  <span>Novo valor (R$)</span>
                   <input
                     type="number"
                     inputMode="decimal"

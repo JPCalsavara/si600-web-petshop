@@ -24,6 +24,23 @@ code {
 }
 
 /* ==========================================================================
+   Distinct Popup / Overlay Modals (Light & Dark Mode)
+   ========================================================================== */
+[class*='modalOverlay'],
+[class*='modalBackdrop'] {
+  background: rgba(2, 6, 23, 0.72) !important;
+  backdrop-filter: blur(5px) !important;
+}
+
+[class*='modalCard'],
+[class*='modalCardWide'],
+dialog {
+  background: #f0f6ff !important;
+  border: 2px solid #3b82f6 !important;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.45), 0 0 0 4px rgba(59, 130, 246, 0.12) !important;
+}
+
+/* ==========================================================================
    Dark Mode Theme Overrides (html[data-theme='dark'])
    ========================================================================== */
 html[data-theme='dark'] {
@@ -31,7 +48,7 @@ html[data-theme='dark'] {
 
   body {
     background-color: #090d16;
-    color: #e2e8f0;
+    color: #ffffff;
   }
 
   /* AppShell containers */
@@ -62,10 +79,11 @@ html[data-theme='dark'] {
   }
 
   [class*='profile'] strong,
+  [class*='profile'] span,
   [class*='brandDesktop'],
   [class*='brandMobile'],
   [class*='hamburger'] {
-    color: #f8fafc !important;
+    color: #ffffff !important;
   }
 
   [class*='avatar'] {
@@ -75,16 +93,16 @@ html[data-theme='dark'] {
   }
 
   [class*='navItem'] {
-    color: #94a3b8 !important;
+    color: #ffffff !important;
 
     &:hover {
       background: #1e293b !important;
-      color: #f8fafc !important;
+      color: #ffffff !important;
     }
 
     &[class*='active'] {
-      background: rgba(37, 99, 235, 0.18) !important;
-      color: #60a5fa !important;
+      background: rgba(37, 99, 235, 0.25) !important;
+      color: #ffffff !important;
       border-left-color: #3b82f6 !important;
     }
   }
@@ -92,7 +110,7 @@ html[data-theme='dark'] {
   [class*='themeToggle'] {
     background: #1e293b !important;
     border-color: #334155 !important;
-    color: #e2e8f0 !important;
+    color: #ffffff !important;
 
     &:hover {
       background: #334155 !important;
@@ -104,62 +122,71 @@ html[data-theme='dark'] {
     color: #fbbf24 !important;
   }
 
+  [class*='logout'] {
+    color: #ffffff !important;
+  }
+
   [class*='content'] {
     background: #111827 !important;
     border-color: #1e293b !important;
   }
 
-  /* Headings & Typography */
+  /* Make ALL text crisp White (#ffffff) in Dark Mode */
   h1,
   h2,
   h3,
+  p,
   strong,
   legend,
+  caption,
+  label,
   [class*='title'],
+  [class*='feeHeading'],
   [class*='companyName'],
   [class*='feeName'],
   [class*='feePricing'],
   [class*='linkedName'],
-  [class*='value'] {
-    color: #f8fafc !important;
-  }
-
-  p,
-  caption,
+  [class*='value'],
+  [class*='currentAmount'],
   [class*='subtitle'],
   [class*='columnDescription'],
   [class*='metaLabel'],
+  [class*='metaValue'],
+  [class*='documentText'],
+  [class*='dateCell'],
   [class*='representativeName'],
+  [class*='feeNotice'],
   [class*='paginationInfo'],
   [class*='resultsCount'],
   [class*='feeDescription'],
   [class*='linkedDetails'],
-  [class*='filterLabel'] {
-    color: #94a3b8 !important;
-  }
-
+  [class*='filterLabel'],
+  [class*='inputLabel'],
   [class*='pageCounter'],
-  [class*='pageInfo'] {
-    color: #e2e8f0 !important;
+  [class*='pageInfo'],
+  [class*='modalCompany'],
+  [class*='modalField'],
+  [class*='hint'] {
+    color: #ffffff !important;
   }
 
-  /* Panels, Cards, Modals & Kanban */
+  /* Panels, Cards & Kanban Columns */
   [class*='panel'],
-  [class*='card']:not([class*='cardHeader']):not([class*='cardBody']):not([class*='cardFooter']):not([class*='cardContent']):not([class*='cardCompanyName']),
+  [class*='quoteCard'],
+  [class*='loadingCard'],
+  [class*='emptyCard'],
   [class*='filtersSection'],
   [class*='kanbanColumn'],
-  [class*='modal'],
-  [class*='modalCard'],
-  [class*='modalCardWide'],
   [class*='container'],
-  [class*='linkedSection'],
-  dialog {
+  [class*='linkedSection'] {
     background: #1e293b !important;
     border-color: #334155 !important;
-    color: #e2e8f0 !important;
+    color: #ffffff !important;
   }
 
+  /* Inner Boxes & Cards */
   [class*='kanbanCard'],
+  [class*='metaList'],
   [class*='feeItem'],
   [class*='feeCard'],
   [class*='linkedItem'],
@@ -169,37 +196,54 @@ html[data-theme='dark'] {
   [class*='metaItem'] {
     background: #0f172a !important;
     border-color: #334155 !important;
-    color: #e2e8f0 !important;
+    color: #ffffff !important;
+  }
+
+  /* Popups / Modals: Distinct background (#070c18) + Bright Blue Accent Border */
+  [class*='modalCard'],
+  [class*='modalCardWide'],
+  [class*='modalBackdrop'] > div,
+  dialog {
+    background: #070c18 !important;
+    border: 2px solid #3b82f6 !important;
+    box-shadow: 0 28px 75px rgba(0, 0, 0, 0.92), 0 0 28px rgba(59, 130, 246, 0.28) !important;
+    color: #ffffff !important;
+  }
+
+  [class*='formFields'] {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
   }
 
   [class*='pagination'] {
     background: rgba(15, 23, 42, 0.5) !important;
     border-color: #334155 !important;
-    color: #e2e8f0 !important;
+    color: #ffffff !important;
   }
 
   [class*='feeCardSelected'] {
-    background: rgba(37, 99, 235, 0.16) !important;
+    background: rgba(37, 99, 235, 0.22) !important;
     border-color: #3b82f6 !important;
   }
 
   /* Distinct Fee Type Colors in Dark Mode */
   [class*='typeFixa'] {
-    background: rgba(14, 165, 233, 0.18) !important;
-    color: #38bdf8 !important;
-    border-color: rgba(56, 189, 248, 0.45) !important;
+    background: rgba(14, 165, 233, 0.22) !important;
+    color: #7dd3fc !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
   }
 
   [class*='typeMetragem'] {
-    background: rgba(168, 85, 247, 0.18) !important;
-    color: #c084fc !important;
-    border-color: rgba(192, 132, 252, 0.45) !important;
+    background: rgba(168, 85, 247, 0.22) !important;
+    color: #e9d5ff !important;
+    border-color: rgba(192, 132, 252, 0.5) !important;
   }
 
   [class*='typeVariavel'] {
-    background: rgba(245, 158, 11, 0.18) !important;
-    color: #fbbf24 !important;
-    border-color: rgba(251, 191, 36, 0.45) !important;
+    background: rgba(245, 158, 11, 0.22) !important;
+    color: #fde68a !important;
+    border-color: rgba(251, 191, 36, 0.5) !important;
   }
 
   [class*='typePillAllActive'] {
@@ -211,9 +255,9 @@ html[data-theme='dark'] {
   /* Yellow Pencil & Red Trash Buttons in Dark Mode */
   [class*='editIconBtn'],
   [class*='configFeeBtn'] {
-    background: rgba(245, 158, 11, 0.16) !important;
+    background: rgba(245, 158, 11, 0.2) !important;
     border-color: #f59e0b !important;
-    color: #fbbf24 !important;
+    color: #fde68a !important;
 
     &:hover:not(:disabled) {
       background: #f59e0b !important;
@@ -222,9 +266,9 @@ html[data-theme='dark'] {
   }
 
   [class*='deleteIconBtn'] {
-    background: rgba(239, 68, 68, 0.16) !important;
+    background: rgba(239, 68, 68, 0.2) !important;
     border-color: #ef4444 !important;
-    color: #f87171 !important;
+    color: #fecaca !important;
 
     &:hover:not(:disabled) {
       background: #ef4444 !important;
@@ -235,18 +279,18 @@ html[data-theme='dark'] {
   /* Tables */
   table th {
     background: #0f172a !important;
-    color: #94a3b8 !important;
+    color: #ffffff !important;
     border-color: #334155 !important;
   }
 
   table td {
-    color: #e2e8f0 !important;
+    color: #ffffff !important;
     border-color: #334155 !important;
     background: transparent !important;
   }
 
   table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.04) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
   }
 
   /* Inputs, Selects, Textareas & Dropdowns */
@@ -255,17 +299,17 @@ html[data-theme='dark'] {
   textarea,
   [class*='dropdownHeader'],
   [class*='dropdownList'] {
-    background: #0f172a !important;
-    border-color: #334155 !important;
-    color: #f8fafc !important;
+    background: #111827 !important;
+    border-color: #475569 !important;
+    color: #ffffff !important;
 
     &::placeholder {
-      color: #64748b !important;
+      color: #94a3b8 !important;
     }
   }
 
   [class*='dropdownList'] li {
-    color: #e2e8f0 !important;
+    color: #ffffff !important;
 
     &:hover {
       background: #1e293b !important;
@@ -283,9 +327,9 @@ html[data-theme='dark'] {
   [class*='closeModalBtn'],
   [class*='closeDialogBtn'],
   [class*='actions'] button:not([class*='save']):not([class*='approve']):not([class*='reject']):not([class*='payButton']):not([class*='primaryButton']):not([class*='editIconBtn']):not([class*='deleteIconBtn']) {
-    background: #0f172a !important;
-    border-color: #334155 !important;
-    color: #e2e8f0 !important;
+    background: #1e293b !important;
+    border-color: #475569 !important;
+    color: #ffffff !important;
 
     &:hover:not(:disabled) {
       background: #334155 !important;

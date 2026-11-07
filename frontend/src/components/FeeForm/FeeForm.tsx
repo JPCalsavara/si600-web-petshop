@@ -160,7 +160,7 @@ export function FeeForm({ fee, onSaved, onCancel }: Props) {
         </div>
       )}
 
-      <fieldset disabled={saving} className={styles.panel}>
+      <fieldset disabled={saving} className={styles.formFields}>
         <legend className={styles.legend}>Dados da taxa</legend>
         <label className={styles.field}>
           <span>Nome *</span>

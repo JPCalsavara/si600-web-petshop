@@ -104,7 +104,7 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
             <span aria-hidden="true">✕</span>
           </button>
         </header>
-        <section className={styles.panel}>
+        <section className={styles.formFields}>
           <p className={styles.success}>
             Projeto criado com sucesso. O login do cliente é o e-mail cadastrado.
           </p>
@@ -141,7 +141,7 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
         </button>
       </header>
 
-      <section className={styles.panel}>
+      <section className={styles.formFields}>
         {error && (
           <div className={styles.alert} role="alert">
             {error}
