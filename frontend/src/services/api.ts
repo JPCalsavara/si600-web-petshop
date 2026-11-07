@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest, ProjectFee, CalculatedFee, ProjectHistoryEvent } from '../types';
+import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest, ProjectFee, CalculatedFee, AdminDashboardData, ProjectHistoryEvent } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -264,4 +264,8 @@ export async function getProjectHistory(projectId: string): Promise<ProjectHisto
     method: 'GET',
     url: `/projects/${encodeURIComponent(projectId)}/history`,
   });
+}
+
+export async function getAdminDashboard(): Promise<AdminDashboardData> {
+  return request<AdminDashboardData>({ method: 'GET', url: '/projects/admin/dashboard' });
 }

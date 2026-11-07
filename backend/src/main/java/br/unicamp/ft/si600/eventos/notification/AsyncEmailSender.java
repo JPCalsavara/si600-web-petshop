@@ -35,6 +35,14 @@ public class AsyncEmailSender implements EmailSender, AutoCloseable {
         });
     }
 
+    /**
+     * US-10: o job diário precisa saber se o envio funcionou antes de registrar o marco como enviado,
+     * então usa o remetente real (síncrono), que lança {@link EmailDeliveryException} em caso de falha.
+     */
+    public EmailSender delegate() {
+        return delegate;
+    }
+
     @Override
     public void close() {
         executor.shutdown();

@@ -44,6 +44,32 @@ export interface Project {
   alertTag?: AlertTag;
 }
 
+export interface InactiveExhibitor {
+  projectId: string;
+  companyName: string;
+  representativeName: string;
+  contactEmail: string;
+  createdAt: string;
+  lastAccessAt: string | null;
+  daysSinceLastAccess: number | null;
+  neverAccessed: boolean;
+}
+
+export interface PendingApproval {
+  projectId: string;
+  companyName: string;
+  pdfOriginalFilename: string | null;
+  pdfUploadedAt: string | null;
+  boothAreaM2: number | null;
+  status: ProjectStatus;
+}
+
+export interface AdminDashboardData {
+  inactiveExhibitors: InactiveExhibitor[];
+  pendingDeadlines: Project[];
+  pendingApprovals: PendingApproval[];
+}
+
 // ---- US-03: criação de projeto do cliente ----
 export type AreaEstande = 'B2C' | 'Music Hub' | 'Music Sport' | 'Internacional';
 

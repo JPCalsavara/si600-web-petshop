@@ -32,7 +32,8 @@ import java.util.stream.Collectors;
 public class ProjectService {
     private static final String DUPLICATE_MESSAGE = "Já existe um projeto cadastrado com este e-mail ou CPF/CNPJ.";
     // Prazos valem até o fim do dia no fuso do evento.
-    private static final ZoneId EVENT_ZONE = ZoneId.of("America/Sao_Paulo");
+    /** Fuso do evento: os prazos são gravados como fim do dia neste fuso e a US-10 os avalia nele. */
+    public static final ZoneId EVENT_ZONE = ZoneId.of("America/Sao_Paulo");
 
     private final ProjectRepository repository;
     private final FeeRepository feeRepository;

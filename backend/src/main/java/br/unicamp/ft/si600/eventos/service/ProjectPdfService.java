@@ -1,7 +1,10 @@
 package br.unicamp.ft.si600.eventos.service;
 
+import br.unicamp.ft.si600.eventos.dto.AdminDashboardResponse;
 import br.unicamp.ft.si600.eventos.dto.DecisionRequest;
 import br.unicamp.ft.si600.eventos.dto.DownloadUrlResponse;
+import br.unicamp.ft.si600.eventos.dto.InactiveExhibitorResponse;
+import br.unicamp.ft.si600.eventos.dto.PendingApprovalResponse;
 import br.unicamp.ft.si600.eventos.dto.ProjectResponse;
 import br.unicamp.ft.si600.eventos.entity.Project;
 import br.unicamp.ft.si600.eventos.entity.ProjectHistoryEventType;
@@ -11,6 +14,7 @@ import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
 import br.unicamp.ft.si600.eventos.security.Actor;
 import br.unicamp.ft.si600.eventos.security.ActorRole;
 import br.unicamp.ft.si600.eventos.storage.ObjectStorage;
+import br.unicamp.ft.si600.eventos.util.TimeHelper;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
@@ -25,6 +29,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,15 +46,17 @@ public class ProjectPdfService {
     private final ObjectStorage storage;
     private final PdfDecisionNotifier notifier;
     private final AlertTagCalculator alertTagCalculator;
+    private final TimeHelper timeHelper;
     private final ProjectHistoryService historyService;
 
     public ProjectPdfService(ProjectRepository repository, ObjectStorage storage,
                              PdfDecisionNotifier notifier, AlertTagCalculator alertTagCalculator,
-                             ProjectHistoryService historyService) {
+                             TimeHelper timeHelper, ProjectHistoryService historyService) {
         this.repository = repository;
         this.storage = storage;
         this.notifier = notifier;
         this.alertTagCalculator = alertTagCalculator;
+        this.timeHelper = timeHelper;
         this.historyService = historyService;
     }
 
@@ -103,11 +110,13 @@ public class ProjectPdfService {
         return toResponse(project);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ProjectResponse getClientProject(UUID projectId, Actor actor) {
         requireRole(actor, ActorRole.CLIENT);
         Project project = repository.findByIdAndOwnerId(projectId, actor.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
+        project.recordAccess(timeHelper.now());
+        repository.save(project);
         return toResponse(project);
     }
 
@@ -118,6 +127,48 @@ public class ProjectPdfService {
                 ? repository.findAll(Sort.by(Sort.Order.asc("pdfUploadedAt"), Sort.Order.asc("id")))
                 : repository.findAllByStatusOrderByPdfUploadedAtAsc(status);
         return projects.stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public AdminDashboardResponse getAdminDashboard(Actor actor) {
+        requireRole(actor, ActorRole.ADMIN);
+        List<Project> projects = repository.findAll(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id")));
+        OffsetDateTime now = timeHelper.now();
+
+        List<InactiveExhibitorResponse> inactiveExhibitors = projects.stream()
+                .map(p -> {
+                    boolean neverAccessed = p.getLastAccessAt() == null;
+                    Long daysSinceLastAccess = neverAccessed ? null : Math.max(0, ChronoUnit.DAYS.between(p.getLastAccessAt(), now));
+                    return new InactiveExhibitorResponse(
+                            p.getId(),
+                            p.getCompanyName(),
+                            p.getRepresentativeName(),
+                            p.getContactEmail(),
+                            p.getCreatedAt(),
+                            p.getLastAccessAt(),
+                            daysSinceLastAccess,
+                            neverAccessed
+                    );
+                })
+                .toList();
+
+        List<ProjectResponse> pendingDeadlines = projects.stream()
+                .map(this::toResponse)
+                .toList();
+
+        List<PendingApprovalResponse> pendingApprovals = projects.stream()
+                .filter(p -> p.getStatus() == ProjectStatus.PDF_EM_ANALISE)
+                .map(p -> new PendingApprovalResponse(
+                        p.getId(),
+                        p.getCompanyName(),
+                        p.getPdfOriginalFilename(),
+                        p.getPdfUploadedAt(),
+                        p.getBoothAreaM2(),
+                        p.getStatus()
+                ))
+                .toList();
+
+        return new AdminDashboardResponse(inactiveExhibitors, pendingDeadlines, pendingApprovals);
     }
 
     @Transactional(readOnly = true)

@@ -11,7 +11,8 @@ describe('TEC-06 - criação e listagem de projeto integradas ao backend', () =>
       },
     });
 
-    cy.contains('button', 'Adicionar').should('be.visible').click();
+    cy.contains('button', 'Projetos').click({ force: true });
+    cy.get('[data-testid="btn-add-project"]').should('be.visible').click();
     cy.contains('h1', 'Novo Projeto').should('be.visible');
 
     cy.contains('span', 'Nome / Razão social *').parent().find('input').type(company);

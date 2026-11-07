@@ -74,6 +74,8 @@ viewports.forEach((viewport) => {
         },
       });
 
+      cy.contains('button', 'Projetos').click({ force: true });
+
       cy.contains('tr', projectName, { timeout: 10000 })
         .contains('button', 'Histórico')
         .click();

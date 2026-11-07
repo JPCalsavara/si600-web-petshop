@@ -292,4 +292,19 @@ describe('API Service - contratos Frontend/Backend', () => {
     );
     expect(result).toEqual(mockEvents);
   });
+
+  it('chama a rota de dashboard do admin esperada pelo backend', async () => {
+    const mockDashboardData = {
+      inactiveExhibitors: [],
+      pendingDeadlines: [],
+      pendingApprovals: [],
+    };
+    apiClient.mockResolvedValueOnce({ status: 200, data: mockDashboardData });
+
+    const result = await api.getAdminDashboard();
+    expect(result).toEqual(mockDashboardData);
+    expect(apiClient).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'GET', url: '/projects/admin/dashboard' })
+    );
+  });
 });
