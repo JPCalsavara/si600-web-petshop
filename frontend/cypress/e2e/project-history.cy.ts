@@ -59,13 +59,16 @@ viewports.forEach((viewport) => {
       cy.get('ol li').first().should('contain.text', 'Projeto criado');
       cy.get('ol li').eq(1).should('contain.text', 'Envio de PDF da planta');
 
-      // Garante ausência de botões de edição ou exclusão na linha do tempo
+      // Garante ausência de botões de edição, exclusão ou exportação CSV para Cliente
       cy.get('[aria-label="Histórico do projeto"]').within(() => {
         cy.contains('button', /editar|excluir|apagar|remover/i).should('not.exist');
+        cy.get('[data-testid="btn-export-csv-timeline"]').should('not.exist');
       });
     });
 
-    it('Administrador consulta o histórico completo do projeto a partir da listagem', () => {
+    it('Administrador consulta o histórico completo do projeto e exporta os dados em CSV (US-16 e US-17)', () => {
+      cy.intercept('GET', `**/api/projects/${projectId}/export/csv`).as('exportCsv');
+
       cy.visit('/', {
         onBeforeLoad(win) {
           win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
@@ -76,7 +79,21 @@ viewports.forEach((viewport) => {
 
       cy.contains('button', 'Projetos').click({ force: true });
 
+      cy.get('[data-testid="input-filter-project"]', { timeout: 10000 })
+        .clear()
+        .type(projectName);
+
+      // Exporta CSV diretamente na listagem de projetos
       cy.contains('tr', projectName, { timeout: 10000 })
+        .contains('button', 'Exportar em CSV')
+        .click();
+
+      cy.wait('@exportCsv').then((interception) => {
+        expect(interception.response?.statusCode).to.equal(200);
+        expect(interception.response?.headers['content-type']).to.include('text/csv');
+      });
+
+      cy.contains('tr', projectName)
         .contains('button', 'Histórico')
         .click();
 
@@ -84,6 +101,14 @@ viewports.forEach((viewport) => {
       cy.contains('span', 'Somente leitura').should('be.visible');
       cy.contains('span', 'Projeto criado').should('be.visible');
       cy.contains('span', 'Envio de PDF da planta').should('be.visible');
+
+      // Exporta CSV também pela tela de Histórico do projeto
+      cy.get('[data-testid="btn-export-csv-timeline"]')
+        .should('be.visible')
+        .and('contain.text', 'Exportar em CSV')
+        .click();
+
+      cy.wait('@exportCsv').its('response.statusCode').should('eq', 200);
 
       cy.contains('button', '← Voltar aos projetos').click();
       cy.contains('h1', 'Projetos').should('be.visible');

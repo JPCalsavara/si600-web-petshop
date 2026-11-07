@@ -293,6 +293,22 @@ describe('API Service - contratos Frontend/Backend', () => {
     expect(result).toEqual(mockEvents);
   });
 
+  it('exporta os dados e histórico do projeto em CSV via GET /projects/{id}/export/csv com responseType blob', async () => {
+    const csvBlob = new Blob(['\uFEFFDADOS DO PROJETO\r\n'], { type: 'text/csv;charset=utf-8' });
+    apiClient.mockResolvedValueOnce({ status: 200, data: csvBlob });
+
+    const result = await api.exportProjectCsv('p1');
+
+    expect(apiClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/projects/p1/export/csv',
+        responseType: 'blob',
+      }),
+    );
+    expect(result).toBe(csvBlob);
+  });
+
   it('chama a rota de dashboard do admin esperada pelo backend', async () => {
     const mockDashboardData = {
       inactiveExhibitors: [],

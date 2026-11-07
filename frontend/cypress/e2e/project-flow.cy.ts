@@ -27,6 +27,9 @@ describe('TEC-06 - criação e listagem de projeto integradas ao backend', () =>
     cy.contains('strong', email).should('be.visible');
 
     cy.contains('button', 'Voltar à lista').click();
+    cy.get('[data-testid="input-filter-project"]', { timeout: 10000 })
+      .clear()
+      .type(company);
     cy.contains('td', company, { timeout: 10000 }).should('be.visible');
     cy.contains('tr', company).should('contain.text', 'Aguardando PDF');
     cy.contains('tr', company).should('contain.text', 'Em dia');
