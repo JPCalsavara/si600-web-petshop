@@ -267,4 +267,29 @@ describe('API Service - contratos Frontend/Backend', () => {
       message: expect.stringContaining('O valor deve ser maior que zero.'),
     });
   });
+
+  it('consulta o histórico cronológico do projeto via GET /projects/{id}/history', async () => {
+    const mockEvents = [
+      {
+        id: 'ev-1',
+        projectId: 'p1',
+        eventType: 'PROJETO_CRIADO',
+        actorId: 'admin-1',
+        actorRole: 'ADMIN',
+        description: 'Projeto cadastrado para a empresa Empresa A.',
+        createdAt: '2026-11-07T15:00:00Z',
+      },
+    ];
+    apiClient.mockResolvedValueOnce({ status: 200, data: mockEvents });
+
+    const result = await api.getProjectHistory('p1');
+
+    expect(apiClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/projects/p1/history',
+      }),
+    );
+    expect(result).toEqual(mockEvents);
+  });
 });

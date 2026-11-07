@@ -29,5 +29,11 @@ describe('TEC-06 - criação e listagem de projeto integradas ao backend', () =>
     cy.contains('td', company, { timeout: 10000 }).should('be.visible');
     cy.contains('tr', company).should('contain.text', 'Aguardando PDF');
     cy.contains('tr', company).should('contain.text', 'Em dia');
+
+    cy.contains('tr', company).contains('button', 'Histórico').click();
+    cy.contains('h2', 'Histórico do Projeto').should('be.visible');
+    cy.contains('span', 'Somente leitura').should('be.visible');
+    cy.contains('span', 'Projeto criado').should('be.visible');
+    cy.contains('button', '← Voltar aos projetos').click();
   });
 });
