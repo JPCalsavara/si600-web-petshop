@@ -1,0 +1,14 @@
+package br.unicamp.ft.si600.eventos.entity;
+
+public enum ProjectHistoryEventType {
+    PROJETO_CRIADO,
+    PDF_ENVIADO,
+    PDF_APROVADO,
+    PDF_REPROVADO,
+    TAXAS_CONFIGURADAS,
+    QUANTIDADE_INFORMADA,
+    TAXA_COTADA,
+    PAGAMENTO_GERADO,
+    PAGAMENTO_CONFIRMADO,
+    PAGAMENTO_CANCELADO
+}

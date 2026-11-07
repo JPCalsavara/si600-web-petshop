@@ -134,3 +134,26 @@ export interface CalculatedFee {
   quantityEditable: boolean;
   paymentDeadline: string | null;
 }
+
+// US-16: histórico cronológico e imutável de eventos do projeto.
+export type ProjectHistoryEventType =
+  | 'PROJETO_CRIADO'
+  | 'PDF_ENVIADO'
+  | 'PDF_APROVADO'
+  | 'PDF_REPROVADO'
+  | 'TAXAS_CONFIGURADAS'
+  | 'QUANTIDADE_INFORMADA'
+  | 'TAXA_COTADA'
+  | 'PAGAMENTO_GERADO'
+  | 'PAGAMENTO_CONFIRMADO'
+  | 'PAGAMENTO_CANCELADO';
+
+export interface ProjectHistoryEvent {
+  id: string;
+  projectId: string;
+  eventType: ProjectHistoryEventType;
+  actorId: string;
+  actorRole: 'ADMIN' | 'CLIENT' | string;
+  description: string;
+  createdAt: string;
+}

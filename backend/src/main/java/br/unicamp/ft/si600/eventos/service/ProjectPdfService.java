@@ -4,6 +4,7 @@ import br.unicamp.ft.si600.eventos.dto.DecisionRequest;
 import br.unicamp.ft.si600.eventos.dto.DownloadUrlResponse;
 import br.unicamp.ft.si600.eventos.dto.ProjectResponse;
 import br.unicamp.ft.si600.eventos.entity.Project;
+import br.unicamp.ft.si600.eventos.entity.ProjectHistoryEventType;
 import br.unicamp.ft.si600.eventos.entity.ProjectStatus;
 import br.unicamp.ft.si600.eventos.exception.ApiException;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
@@ -40,13 +41,16 @@ public class ProjectPdfService {
     private final ObjectStorage storage;
     private final PdfDecisionNotifier notifier;
     private final AlertTagCalculator alertTagCalculator;
+    private final ProjectHistoryService historyService;
 
     public ProjectPdfService(ProjectRepository repository, ObjectStorage storage,
-                             PdfDecisionNotifier notifier, AlertTagCalculator alertTagCalculator) {
+                             PdfDecisionNotifier notifier, AlertTagCalculator alertTagCalculator,
+                             ProjectHistoryService historyService) {
         this.repository = repository;
         this.storage = storage;
         this.notifier = notifier;
         this.alertTagCalculator = alertTagCalculator;
+        this.historyService = historyService;
     }
 
     private ProjectResponse toResponse(Project project) {
@@ -79,9 +83,17 @@ public class ProjectPdfService {
         }
 
         try {
-            project.submitPdf(key, sanitizeFilename(file.getOriginalFilename()),
-                    PDF_CONTENT_TYPE, file.getSize(), areaM2.setScale(2, RoundingMode.HALF_UP), OffsetDateTime.now());
+            String safeFilename = sanitizeFilename(file.getOriginalFilename());
+            BigDecimal scaledArea = areaM2.setScale(2, RoundingMode.HALF_UP);
+            project.submitPdf(key, safeFilename,
+                    PDF_CONTENT_TYPE, file.getSize(), scaledArea, OffsetDateTime.now());
             repository.saveAndFlush(project);
+            historyService.recordEvent(
+                    project.getId(),
+                    ProjectHistoryEventType.PDF_ENVIADO,
+                    actor,
+                    "Planta do estande enviada (" + safeFilename + ", área informada: " + scaledArea + " m²)."
+            );
         } catch (RuntimeException ex) {
             deleteQuietly(key); // o registro não aponta para o novo objeto: evita órfão
             throw ex;
@@ -126,8 +138,15 @@ public class ProjectPdfService {
         Project project = repository.findById(projectId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
         requireStatusForDecision(project);
-        project.approve(actor.id(), OffsetDateTime.now(), request.approvedAreaM2());
+        BigDecimal scaledArea = request.approvedAreaM2().setScale(2, RoundingMode.HALF_UP);
+        project.approve(actor.id(), OffsetDateTime.now(), scaledArea);
         Project saved = repository.save(project);
+        historyService.recordEvent(
+                saved.getId(),
+                ProjectHistoryEventType.PDF_APROVADO,
+                actor,
+                "Planta do estande aprovada com metragem homologada de " + scaledArea + " m²."
+        );
         notifier.notifyApproved(saved);
         return toResponse(saved);
     }
@@ -144,6 +163,12 @@ public class ProjectPdfService {
         }
         project.reject(actor.id(), OffsetDateTime.now(), justification);
         Project saved = repository.save(project);
+        historyService.recordEvent(
+                saved.getId(),
+                ProjectHistoryEventType.PDF_REPROVADO,
+                actor,
+                "Planta do estande reprovada. Justificativa: " + justification
+        );
         notifier.notifyRejected(saved);
         return toResponse(saved);
     }

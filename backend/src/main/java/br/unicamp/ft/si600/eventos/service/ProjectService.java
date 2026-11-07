@@ -9,6 +9,7 @@ import br.unicamp.ft.si600.eventos.repository.FeeRepository;
 import br.unicamp.ft.si600.eventos.repository.ProjectFeeRepository;
 import br.unicamp.ft.si600.eventos.entity.Fee;
 import br.unicamp.ft.si600.eventos.entity.ProjectFee;
+import br.unicamp.ft.si600.eventos.entity.ProjectHistoryEventType;
 import br.unicamp.ft.si600.eventos.security.Actor;
 import br.unicamp.ft.si600.eventos.security.ActorRole;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,13 +38,16 @@ public class ProjectService {
     private final FeeRepository feeRepository;
     private final ProjectFeeRepository projectFeeRepository;
     private final AlertTagCalculator alertTagCalculator;
+    private final ProjectHistoryService historyService;
 
     public ProjectService(ProjectRepository repository, FeeRepository feeRepository,
-                          ProjectFeeRepository projectFeeRepository, AlertTagCalculator alertTagCalculator) {
+                          ProjectFeeRepository projectFeeRepository, AlertTagCalculator alertTagCalculator,
+                          ProjectHistoryService historyService) {
         this.repository = repository;
         this.feeRepository = feeRepository;
         this.projectFeeRepository = projectFeeRepository;
         this.alertTagCalculator = alertTagCalculator;
+        this.historyService = historyService;
     }
 
     @Transactional
@@ -92,6 +96,12 @@ public class ProjectService {
                 }
                 projectFeeRepository.saveAll(fees.stream().map(f -> new ProjectFee(saved, f)).toList());
             }
+            historyService.recordEvent(
+                    saved.getId(),
+                    ProjectHistoryEventType.PROJETO_CRIADO,
+                    actor,
+                    "Projeto cadastrado para a empresa " + saved.getCompanyName() + " (área: " + saved.getCategory() + ")."
+            );
             return ProjectResponse.from(saved, alertTagCalculator.calculate(saved));
         } catch (DataIntegrityViolationException ex) {
             // Corrida entre duas criações simultâneas: a constraint unique do banco é a palavra final.

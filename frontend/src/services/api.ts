@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest, ProjectFee, CalculatedFee } from '../types';
+import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest, ProjectFee, CalculatedFee, ProjectHistoryEvent } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -256,5 +256,12 @@ export async function configureProjectFees(projectId: string, feeIds: string[]):
   return request<ProjectFeeConfiguration[]>({
     method: 'PUT', url: `/projects/${encodeURIComponent(projectId)}/fees/configuration`,
     headers: { 'Content-Type': 'application/json' }, data: { feeIds },
+  });
+}
+
+export async function getProjectHistory(projectId: string): Promise<ProjectHistoryEvent[]> {
+  return request<ProjectHistoryEvent[]>({
+    method: 'GET',
+    url: `/projects/${encodeURIComponent(projectId)}/history`,
   });
 }

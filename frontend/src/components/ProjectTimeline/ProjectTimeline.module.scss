@@ -1,0 +1,124 @@
+@use '../../styles/variables' as *;
+
+.timelineCard {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: $sp-5;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: $sp-4;
+  flex-wrap: wrap;
+  margin-bottom: $sp-4;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $sp-1;
+
+  h2 {
+    margin: 0;
+    color: $color-primary;
+    font-size: $font-size-xl;
+  }
+
+  p {
+    margin: 0;
+    color: $color-text-muted;
+    font-size: $font-size-sm;
+  }
+}
+
+.readOnlyBadge {
+  display: inline-block;
+  padding: $sp-2 $sp-3;
+  border-radius: $radius-pill;
+  background: $color-gray-100;
+  color: $color-gray-700;
+  border: 1px solid $color-gray-300;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.alertDanger {
+  padding: $sp-4;
+  border-radius: $radius-md;
+  margin-bottom: $sp-4;
+  background: $color-danger-bg;
+  border: 1px solid $color-danger-border;
+  color: $color-danger;
+}
+
+.empty {
+  padding: $sp-6;
+  text-align: center;
+  color: $color-text-muted;
+}
+
+.timelineList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $sp-3;
+}
+
+.timelineItem {
+  position: relative;
+  padding: $sp-4;
+  border-radius: $radius-md;
+  background: $color-white;
+  border: 1px solid $color-gray-200;
+  border-left: 4px solid $color-primary;
+  display: flex;
+  flex-direction: column;
+  gap: $sp-2;
+}
+
+.itemTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: $sp-3;
+  flex-wrap: wrap;
+}
+
+.eventLabel {
+  font-weight: $font-weight-semibold;
+  color: $color-gray-900;
+  font-size: $font-size-md;
+}
+
+.timestamp {
+  color: $color-text-muted;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.description {
+  margin: 0;
+  color: $color-gray-800;
+  font-size: $font-size-sm;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: $sp-2;
+  color: $color-text-muted;
+  font-size: $font-size-xs;
+}
+
+.roleBadge {
+  padding: 2px 8px;
+  border-radius: $radius-pill;
+  background: $color-info-bg;
+  color: $color-info;
+  font-weight: $font-weight-semibold;
+}

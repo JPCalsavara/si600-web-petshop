@@ -22,6 +22,9 @@ input { padding: $sp-3; border: 1px solid $color-gray-300; border-radius: $radiu
 .info { background: $color-info-bg; border: 1px solid $color-info-border; color: $color-info; }
 .rejection p { margin: $sp-2 0 0; }
 .badges { display: flex; align-items: center; gap: $sp-2; flex-wrap: wrap; }
+.tabs { display: flex; gap: $sp-2; margin-bottom: $sp-5; border-bottom: 1px solid $color-gray-200; padding-bottom: $sp-2; }
+.tabButton { border: 0; background: transparent; padding: $sp-2 $sp-4; border-radius: $radius-md; font: inherit; font-weight: $font-weight-semibold; color: $color-text-muted; cursor: pointer; }
+.tabActive { background: $color-primary; color: $color-white; }
 .status { padding: $sp-2 $sp-3; border-radius: $radius-pill; font-size: $font-size-sm; font-weight: $font-weight-semibold; }
 .alertBadge { padding: $sp-2 $sp-3; border-radius: $radius-pill; font-size: $font-size-sm; font-weight: $font-weight-semibold; }
 .atrasado { background: $color-danger-bg; color: $color-danger; border: 1px solid $color-danger-border; }

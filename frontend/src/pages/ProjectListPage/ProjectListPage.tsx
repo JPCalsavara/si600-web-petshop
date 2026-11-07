@@ -5,6 +5,7 @@ import { listAdminProjects } from '../../services/api';
 import type { Project, ProjectStatus } from '../../types';
 import styles from './ProjectListPage.module.scss';
 import { ProjectFeesConfigPage } from '../ProjectFeesConfigPage/ProjectFeesConfigPage';
+import { ProjectTimeline } from '../../components/ProjectTimeline/ProjectTimeline';
 
 interface Props {
   onAdd: () => void;
@@ -26,6 +27,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [configProject, setConfigProject] = useState<Project | null>(null);
+  const [historyProject, setHistoryProject] = useState<Project | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -54,6 +56,24 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
         projectName={configProject.companyName}
         onBack={() => setConfigProject(null)}
       />
+    );
+  }
+
+  if (historyProject) {
+    return (
+      <div className={styles.page}>
+        <button
+          type="button"
+          className={styles.backButton}
+          onClick={() => setHistoryProject(null)}
+        >
+          ← Voltar aos projetos
+        </button>
+        <ProjectTimeline
+          projectId={historyProject.id}
+          projectName={historyProject.companyName}
+        />
+      </div>
     );
   }
 
@@ -127,7 +147,14 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                         {p.alertTag ? ALERT_TAG_LABELS[p.alertTag] : ALERT_TAG_LABELS.EM_DIA}
                       </span>
                     </td>
-                    <td data-label="Ações">{p.status === 'APROVADO' || p.status === 'AGUARDANDO_PAGAMENTO' ? <button type="button" onClick={() => setConfigProject(p)}>Ver taxas</button> : '—'}</td>
+                    <td data-label="Ações">
+                      <div className={styles.actionButtons}>
+                        {(p.status === 'APROVADO' || p.status === 'AGUARDANDO_PAGAMENTO') && (
+                          <button type="button" onClick={() => setConfigProject(p)}>Ver taxas</button>
+                        )}
+                        <button type="button" onClick={() => setHistoryProject(p)}>Histórico</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
