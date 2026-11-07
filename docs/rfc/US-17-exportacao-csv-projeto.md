@@ -173,15 +173,15 @@ flowchart TD
 
 - [x] **1. Especificação e RFC (Docs-Driven ADR 0006)**:
   - [x] Elaborar e commitar `docs/rfc/US-17-exportacao-csv-projeto.md`.
-- [ ] **2. Testes de Integração Tripartite no Backend (TDD Red Phase)**:
-  - [ ] Criar `ProjectCsvExportIntegrationTest` cobrindo Casos Bons (projeto completo e projeto inicial), Casos Ruins (`401`, `403` para `CLIENT`, `404` projeto inexistente) e Casos Incompletos/Borda (`400` UUID inválido, `405` método inválido, escape de `;` e `"` em campos).
-- [ ] **3. Implementação Backend (Green Phase)**:
-  - [ ] Criar `ProjectCsvExportService` compilando dados cadastrais, taxas e histórico em CSV UTF-8 com BOM e separador `;`.
-  - [ ] Expor `GET /projects/{projectId}/export/csv` em `ProjectCsvExportController` com headers `Content-Type: text/csv;charset=UTF-8` e `Content-Disposition`.
-- [ ] **4. Implementação Frontend e Testes (React + Cypress)**:
-  - [ ] Adicionar `exportProjectCsv(projectId)` e helper de download em `frontend/src/services/api.ts`.
-  - [ ] Adicionar botão "Exportar em CSV" na listagem de projetos do Admin (`ProjectListPage.tsx`) e no cabeçalho de `ProjectTimeline.tsx` (quando Admin).
-  - [ ] Adicionar testes de contrato em `frontend/src/services/api.test.ts` e teste E2E em `frontend/cypress/e2e/project-history.cy.ts`.
-- [ ] **5. Validação Final (Quality Gate)**:
-  - [ ] Executar `./mvnw test` no backend e `npm run test` no frontend.
-  - [ ] Executar AI Gatekeeper Reviewer (`run_review.sh`).
+- [x] **2. Testes de Integração Tripartite no Backend (TDD Red Phase)**:
+  - [x] Criar `ProjectCsvExportIntegrationTest` cobrindo Casos Bons (projeto completo e projeto inicial), Casos Ruins (`401`, `403` para `CLIENT`, `404` projeto inexistente) e Casos Incompletos/Borda (`400` UUID inválido, `405` método inválido, escape de `;` e `"` em campos).
+- [x] **3. Implementação Backend (Green Phase)**:
+  - [x] Criar `ProjectCsvExportService` compilando dados cadastrais, taxas e histórico em CSV UTF-8 com BOM e separador `;`.
+  - [x] Expor `GET /projects/{projectId}/export/csv` em `ProjectCsvExportController` com headers `Content-Type: text/csv;charset=UTF-8` e `Content-Disposition`.
+- [x] **4. Implementação Frontend e Testes (React + Cypress)**:
+  - [x] Adicionar `exportProjectCsv(projectId)` e helper de download em `frontend/src/services/api.ts`.
+  - [x] Adicionar botão "Exportar em CSV" na listagem de projetos do Admin (`ProjectListPage.tsx`) e no cabeçalho de `ProjectTimeline.tsx` (quando Admin).
+  - [x] Adicionar testes de contrato em `frontend/src/services/api.test.ts` e teste E2E em `frontend/cypress/e2e/project-history.cy.ts`.
+- [x] **5. Validação Final (Quality Gate)**:
+  - [x] Executar `./mvnw test` no backend e `npm run test` no frontend.
+  - [x] Executar AI Gatekeeper Reviewer (`run_review.sh`).

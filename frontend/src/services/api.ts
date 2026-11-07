@@ -266,6 +266,29 @@ export async function getProjectHistory(projectId: string): Promise<ProjectHisto
   });
 }
 
+export async function exportProjectCsv(projectId: string): Promise<Blob> {
+  return request<Blob>({
+    method: 'GET',
+    url: `/projects/${encodeURIComponent(projectId)}/export/csv`,
+    responseType: 'blob',
+  });
+}
+
+export async function downloadProjectCsv(projectId: string): Promise<void> {
+  const blobData = await exportProjectCsv(projectId);
+  const blob = blobData instanceof Blob
+    ? blobData
+    : new Blob([blobData], { type: 'text/csv;charset=utf-8;' });
+  const objectUrl = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = `projeto-${projectId}.csv`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.URL.revokeObjectURL(objectUrl);
+}
+
 export async function getAdminDashboard(): Promise<AdminDashboardData> {
   return request<AdminDashboardData>({ method: 'GET', url: '/projects/admin/dashboard' });
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProjectHistory } from '../../services/api';
+import { downloadProjectCsv, getCurrentActorRole, getProjectHistory } from '../../services/api';
 import { ACTOR_ROLE_LABELS, HISTORY_EVENT_LABELS } from '../../constants/projectHistory';
 import type { ProjectHistoryEvent } from '../../types';
 import styles from './ProjectTimeline.module.scss';
@@ -20,7 +20,22 @@ function formatDateTime(value: string) {
 export function ProjectTimeline({ projectId, projectName }: Props) {
   const [events, setEvents] = useState<ProjectHistoryEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isAdmin = (typeof window !== 'undefined' && window.localStorage.getItem('MOCK_ROLE')?.toUpperCase() === 'ADMIN')
+    || getCurrentActorRole() === 'ADMIN';
+
+  async function handleExportCsv() {
+    try {
+      setExportingCsv(true);
+      setError(null);
+      await downloadProjectCsv(projectId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível exportar o CSV do projeto.');
+    } finally {
+      setExportingCsv(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -61,7 +76,20 @@ export function ProjectTimeline({ projectId, projectName }: Props) {
               : 'Linha do tempo cronológica de ações registradas no projeto.'}
           </p>
         </div>
-        <span className={styles.readOnlyBadge}>Somente leitura</span>
+        <div className={styles.headerActions}>
+          {isAdmin && (
+            <button
+              type="button"
+              className={styles.exportCsvBtn}
+              disabled={exportingCsv}
+              onClick={() => void handleExportCsv()}
+              data-testid="btn-export-csv-timeline"
+            >
+              {exportingCsv ? 'Exportando...' : 'Exportar em CSV'}
+            </button>
+          )}
+          <span className={styles.readOnlyBadge}>Somente leitura</span>
+        </div>
       </header>
 
       {error && (

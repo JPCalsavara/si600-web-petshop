@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
 import { ALERT_TAG_LABELS } from '../../constants/alertTag';
-import { listAdminProjects } from '../../services/api';
+import { downloadProjectCsv, listAdminProjects } from '../../services/api';
 import type { Project, ProjectStatus } from '../../types';
 import styles from './ProjectListPage.module.scss';
 import { ProjectFeesConfigPage } from '../ProjectFeesConfigPage/ProjectFeesConfigPage';
@@ -31,6 +31,23 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [configProject, setConfigProject] = useState<Project | null>(null);
   const [historyProject, setHistoryProject] = useState<Project | null>(null);
+  const [exportingProjectId, setExportingProjectId] = useState<string | null>(null);
+
+  async function handleExportCsv(projectId: string) {
+    try {
+      setExportingProjectId(projectId);
+      setError(null);
+      await downloadProjectCsv(projectId);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível exportar o CSV do projeto.'
+      );
+    } finally {
+      setExportingProjectId(null);
+    }
+  }
 
   // Filtros em texto
   const [projectSearch, setProjectSearch] = useState('');
@@ -454,6 +471,15 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                           onClick={() => setHistoryProject(p)}
                         >
                           Histórico
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.actionLinkBtn}
+                          disabled={exportingProjectId === p.id}
+                          onClick={() => void handleExportCsv(p.id)}
+                          data-testid={`btn-export-csv-${p.id}`}
+                        >
+                          {exportingProjectId === p.id ? 'Exportando...' : 'Exportar em CSV'}
                         </button>
                       </div>
                     </td>

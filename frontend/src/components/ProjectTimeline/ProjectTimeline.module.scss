@@ -34,6 +34,34 @@
   }
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: $sp-3;
+  flex-wrap: wrap;
+}
+
+.exportCsvBtn {
+  padding: $sp-2 $sp-3;
+  border-radius: $radius-md;
+  background: $color-primary;
+  color: $color-white;
+  border: 1px solid $color-primary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .readOnlyBadge {
   display: inline-block;
   padding: $sp-2 $sp-3;
