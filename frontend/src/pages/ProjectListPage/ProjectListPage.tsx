@@ -1,14 +1,15 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
 import { ALERT_TAG_LABELS } from '../../constants/alertTag';
 import { downloadProjectCsv, listAdminProjects } from '../../services/api';
 import type { Project, ProjectStatus } from '../../types';
 import styles from './ProjectListPage.module.scss';
 import { ProjectFeesConfigPage } from '../ProjectFeesConfigPage/ProjectFeesConfigPage';
+import { ProjectFormPage } from '../ProjectFormPage/ProjectFormPage';
 import { ProjectTimeline } from '../../components/ProjectTimeline/ProjectTimeline';
 
 interface Props {
-  onAdd: () => void;
+  onAdd?: () => void;
   onOpenPdfReview: () => void;
 }
 
@@ -25,10 +26,11 @@ export function formatDate(value: string | null) {
   return y && m && d ? `${d}/${m}/${y}` : '-';
 }
 
-export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
+export function ProjectListPage({ onOpenPdfReview }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [creatingProject, setCreatingProject] = useState(false);
   const [configProject, setConfigProject] = useState<Project | null>(null);
   const [historyProject, setHistoryProject] = useState<Project | null>(null);
   const [exportingProjectId, setExportingProjectId] = useState<string | null>(null);
@@ -61,26 +63,26 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
   // Paginação (15 projetos por página)
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await listAdminProjects();
-        setProjects(data);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Não foi possível carregar os projetos.'
-        );
-      } finally {
-        setLoading(false);
-      }
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await listAdminProjects();
+      setProjects(data);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível carregar os projetos.'
+      );
+    } finally {
+      setLoading(false);
     }
-
-    void load();
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -196,33 +198,6 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
     }
   };
 
-  if (configProject) {
-    return (
-      <ProjectFeesConfigPage
-        projectId={configProject.id}
-        projectName={configProject.companyName || 'Projeto'}
-        onBack={() => setConfigProject(null)}
-      />
-    );
-  }
-
-  if (historyProject) {
-    return (
-      <div className={styles.page}>
-        <button
-          type="button"
-          className={styles.backButton}
-          onClick={() => setHistoryProject(null)}
-        >
-          ← Voltar aos projetos
-        </button>
-        <ProjectTimeline
-          projectId={historyProject.id}
-          projectName={historyProject.companyName}
-        />
-      </div>
-    );
-  }
   return (
     <div className={styles.page} data-testid="project-list-page">
       <header className={styles.header}>
@@ -244,7 +219,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
           <button
             type="button"
             className={styles.addButton}
-            onClick={onAdd}
+            onClick={() => setCreatingProject(true)}
             data-testid="btn-add-project"
           >
             + Novo Projeto
@@ -522,6 +497,58 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
           </div>
         )}
       </section>
+
+      {creatingProject && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" data-testid="project-form-modal">
+          <div className={styles.modalCard}>
+            <ProjectFormPage
+              onCreated={() => void load()}
+              onDone={() => {
+                setCreatingProject(false);
+                void load();
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {configProject && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" data-testid="project-fees-modal">
+          <div className={styles.modalCardWide}>
+            <ProjectFeesConfigPage
+              projectId={configProject.id}
+              projectName={configProject.companyName || 'Projeto'}
+              onBack={() => {
+                setConfigProject(null);
+                void load();
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {historyProject && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" data-testid="project-history-modal">
+          <div className={styles.modalCardWide}>
+            <div className={styles.historyModalHeader}>
+              <button
+                type="button"
+                className={styles.closeModalBtn}
+                onClick={() => setHistoryProject(null)}
+                aria-label="Fechar histórico"
+                title="Fechar"
+              >
+                <span aria-hidden="true">✕</span>
+                <span className={styles.srOnly}>← Voltar aos projetos</span>
+              </button>
+            </div>
+            <ProjectTimeline
+              projectId={historyProject.id}
+              projectName={historyProject.companyName}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

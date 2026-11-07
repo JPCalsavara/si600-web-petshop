@@ -235,8 +235,23 @@ export function AdminPdfPage({ onBack }: Props) {
         <div className={styles.modalBackdrop}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
-              <h2>Reprovar PDF</h2>
-              <p className={styles.modalCompany}>{selected.companyName}</p>
+              <div>
+                <h2>Reprovar PDF</h2>
+                <p className={styles.modalCompany}>{selected.companyName}</p>
+              </div>
+              <button
+                type="button"
+                className={styles.closeModalBtn}
+                onClick={() => {
+                  setSelected(null);
+                  setJustification('');
+                }}
+                aria-label="Cancelar"
+                title="Cancelar e fechar"
+              >
+                <span aria-hidden="true">✕</span>
+                <span className={styles.srOnly}>Cancelar</span>
+              </button>
             </div>
             <label className={styles.modalField}>
               <span>Justificativa dos ajustes necessários *</span>
@@ -248,16 +263,6 @@ export function AdminPdfPage({ onBack }: Props) {
               />
             </label>
             <div className={styles.modalActions}>
-              <button
-                type="button"
-                className={styles.cancelBtn}
-                onClick={() => {
-                  setSelected(null);
-                  setJustification('');
-                }}
-              >
-                Cancelar
-              </button>
               <button type="button" className={styles.rejectConfirm} onClick={() => void reject()}>
                 Confirmar reprovação
               </button>

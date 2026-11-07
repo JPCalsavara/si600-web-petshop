@@ -120,27 +120,37 @@ export function ProjectFeesConfigPage({ projectId, projectName, onBack }: Projec
 
   return (
     <section className={styles.page} data-testid="project-fees-config-page">
-      <button type="button" className={styles.backButton} onClick={onBack}>
-        ← Voltar aos projetos
-      </button>
-
       <header className={styles.header}>
         <div className={styles.titleArea}>
-          <h1 className={styles.title}>Configurar Taxas do Projeto</h1>
-          <span className={styles.projectBadge}>Projeto: {projectName}</span>
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>Configurar Taxas do Projeto</h1>
+            <span className={styles.projectBadge}>Projeto: {projectName}</span>
+          </div>
           <p className={styles.subtitle}>
             Selecione as taxas do catálogo que se aplicam a este projeto. Taxas fixas e por metragem têm o valor calculado automaticamente; as variáveis são cotadas na tela de cotação após o cliente informar a quantidade.
           </p>
         </div>
 
-        <button
-          type="button"
-          className={styles.saveButtonHeader}
-          disabled={saving || loading}
-          onClick={() => void save()}
-        >
-          {saving ? 'Salvando...' : 'Salvar configuração'}
-        </button>
+        <div className={styles.headerRight}>
+          <button
+            type="button"
+            className={styles.saveButtonHeader}
+            disabled={saving || loading}
+            onClick={() => void save()}
+          >
+            {saving ? 'Salvando...' : 'Salvar configuração'}
+          </button>
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={onBack}
+            aria-label="Cancelar"
+            title="Fechar"
+          >
+            <span aria-hidden="true">✕</span>
+            <span className={styles.srOnly}> ← Voltar aos projetos</span>
+          </button>
+        </div>
       </header>
 
       {error && (

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ProjectValidationError, updateClientProject } from '../../services/projectRegistry';
 import { ApiRequestError, createProject, listFees } from '../../services/api';
+import { maskCpfCnpj, projectFormSchema } from '../../utils/masks';
 import type { AreaEstande, ClientProject } from '../../types';
 import styles from './ProjectFormPage.module.scss';
 
@@ -11,12 +12,13 @@ interface Props {
   /** Quando informado, a tela edita prazos e taxas deste projeto. */
   project?: ClientProject;
   onDone: () => void;
+  onCreated?: () => void;
 }
 
-export function ProjectFormPage({ project, onDone }: Props) {
+export function ProjectFormPage({ project, onDone, onCreated }: Props) {
   const editing = Boolean(project);
   const [name, setName] = useState(project?.name ?? '');
-  const [document, setDocument] = useState(project?.document ?? '');
+  const [document, setDocument] = useState(project?.document ? maskCpfCnpj(project.document) : '');
   const [email, setEmail] = useState(project?.email ?? '');
   const [area, setArea] = useState<AreaEstande>(project?.area ?? 'B2C');
   const [address, setAddress] = useState(project?.address ?? '');
@@ -31,7 +33,9 @@ export function ProjectFormPage({ project, onDone }: Props) {
     if (!editing) {
       listFees()
         .then((items) => setFees(items.filter((fee) => fee.active)))
-        .catch((err) => setError(err instanceof Error ? err.message : 'Não foi possível carregar as taxas.'));
+        .catch((err) =>
+          setError(err instanceof Error ? err.message : 'Não foi possível carregar as taxas.')
+        );
     }
   }, [editing]);
 
@@ -47,15 +51,39 @@ export function ProjectFormPage({ project, onDone }: Props) {
         onDone();
         return;
       }
+
+      const parsed = projectFormSchema.safeParse({
+        name,
+        document,
+        email,
+        address,
+        area,
+        pdfDeadline,
+        paymentDeadline,
+      });
+
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? 'Verifique os dados informados.');
+        return;
+      }
+
       const created = await createProject({
-        name, document, address, area, email, pdfDeadline, paymentDeadline, feeIds,
+        name,
+        document,
+        address,
+        area,
+        email,
+        pdfDeadline,
+        paymentDeadline,
+        feeIds,
       });
       setCredentials({ login: created.contactEmail });
+      onCreated?.();
     } catch (err) {
       setError(
         err instanceof ApiRequestError || err instanceof ProjectValidationError
           ? err.message
-          : 'Não foi possível salvar o projeto.',
+          : 'Não foi possível salvar o projeto.'
       );
     }
   }
@@ -64,14 +92,34 @@ export function ProjectFormPage({ project, onDone }: Props) {
   if (credentials) {
     return (
       <div className={styles.page}>
-        <h1>Projeto criado</h1>
+        <header className={styles.modalHeader}>
+          <h1>Projeto criado</h1>
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={onDone}
+            aria-label="Fechar"
+            title="Fechar"
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+        </header>
         <section className={styles.panel}>
-          <p className={styles.success}>Projeto criado com sucesso. O login do cliente é o e-mail cadastrado.</p>
-          <div className={styles.row}><span>Usuário</span><strong>{credentials.login}</strong></div>
-          <p className={styles.hint}>A criação de senha/autenticação não faz parte do contrato atual do backend.</p>
+          <p className={styles.success}>
+            Projeto criado com sucesso. O login do cliente é o e-mail cadastrado.
+          </p>
+          <div className={styles.row}>
+            <span>Usuário</span>
+            <strong>{credentials.login}</strong>
+          </div>
+          <p className={styles.hint}>
+            A criação de senha/autenticação não faz parte do contrato atual do backend.
+          </p>
         </section>
         <div className={styles.actions}>
-          <button type="button" className={styles.save} onClick={onDone}>Voltar à lista</button>
+          <button type="button" className={styles.save} onClick={onDone}>
+            Voltar à lista
+          </button>
         </div>
       </div>
     );
@@ -79,40 +127,104 @@ export function ProjectFormPage({ project, onDone }: Props) {
 
   return (
     <form className={styles.page} onSubmit={submit}>
-      <h1>{editing ? 'Editar Projeto' : 'Novo Projeto'}</h1>
+      <header className={styles.modalHeader}>
+        <h1>{editing ? 'Editar Projeto' : 'Novo Projeto'}</h1>
+        <button
+          type="button"
+          className={styles.closeButton}
+          onClick={onDone}
+          aria-label="Cancelar"
+          title="Cancelar e fechar"
+        >
+          <span aria-hidden="true">✕</span>
+          <span className={styles.srOnly}>Cancelar</span>
+        </button>
+      </header>
 
       <section className={styles.panel}>
-        {error && <div className={styles.alert} role="alert">{error}</div>}
+        {error && (
+          <div className={styles.alert} role="alert">
+            {error}
+          </div>
+        )}
 
         <label className={styles.row}>
           <span>Nome / Razão social *</span>
-          <input required disabled={editing} value={name} onChange={(e) => setName(e.target.value)} />
+          <input
+            required
+            disabled={editing}
+            placeholder="Ex.: Empresa Expositora Ltda."
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </label>
         <label className={styles.row}>
           <span>CPF / CNPJ *</span>
-          <input required disabled={editing} value={document} onChange={(e) => setDocument(e.target.value)} />
+          <input
+            required
+            disabled={editing}
+            inputMode="numeric"
+            maxLength={18}
+            placeholder="000.000.000-00 ou 00.000.000/0000-00"
+            value={document}
+            onChange={(e) => setDocument(maskCpfCnpj(e.target.value))}
+          />
         </label>
         <label className={styles.row}>
           <span>E-mail (login) *</span>
-          <input required disabled={editing} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input
+            required
+            disabled={editing}
+            type="email"
+            placeholder="contato@empresa.com.br"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </label>
         <label className={styles.row}>
           <span>Endereço *</span>
-          <input required disabled={editing} value={address} onChange={(e) => setAddress(e.target.value)} />
+          <input
+            required
+            disabled={editing}
+            placeholder="Rua, número, cidade - UF"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
         </label>
         <label className={styles.row}>
           <span>Área do estande *</span>
-          <select disabled={editing} value={area} onChange={(e) => setArea(e.target.value as AreaEstande)}>
-            {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
+          <select
+            disabled={editing}
+            value={area}
+            onChange={(e) => setArea(e.target.value as AreaEstande)}
+          >
+            {AREAS.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
           </select>
         </label>
         <label className={styles.row}>
           <span>Limite envio do PDF *</span>
-          <input required type="date" value={pdfDeadline} onChange={(e) => setPdfDeadline(e.target.value)} />
+          <input
+            required
+            type="date"
+            placeholder="dd/mm/aaaa"
+            value={pdfDeadline}
+            onChange={(e) => setPdfDeadline(e.target.value)}
+          />
         </label>
         <label className={styles.row}>
           <span>Limite de pagamento *</span>
-          <input required type="date" value={paymentDeadline} min={pdfDeadline || undefined} onChange={(e) => setPaymentDeadline(e.target.value)} />
+          <input
+            required
+            type="date"
+            placeholder="dd/mm/aaaa"
+            value={paymentDeadline}
+            min={pdfDeadline || undefined}
+            onChange={(e) => setPaymentDeadline(e.target.value)}
+          />
         </label>
 
         <fieldset className={styles.fees}>
@@ -120,8 +232,13 @@ export function ProjectFormPage({ project, onDone }: Props) {
           <div className={styles.feeGrid}>
             {fees.map((fee) => (
               <label key={fee.id} className={styles.fee}>
-                <input type="checkbox" checked={feeIds.includes(fee.id)} onChange={() => toggleFee(fee.id)} />
-                {fee.name}{fee.type === 'FIXA' && <em> (fixa)</em>}
+                <input
+                  type="checkbox"
+                  checked={feeIds.includes(fee.id)}
+                  onChange={() => toggleFee(fee.id)}
+                />
+                {fee.name}
+                {fee.type === 'FIXA' && <em> (fixa)</em>}
               </label>
             ))}
           </div>
@@ -129,8 +246,9 @@ export function ProjectFormPage({ project, onDone }: Props) {
       </section>
 
       <div className={styles.actions}>
-        <button type="button" className={styles.cancel} onClick={onDone}>Cancelar</button>
-        <button type="submit" className={styles.save}>Salvar</button>
+        <button type="submit" className={styles.save}>
+          Salvar
+        </button>
       </div>
     </form>
   );
