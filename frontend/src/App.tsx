@@ -22,12 +22,7 @@ function AdminProjects({ view, setView }: { view: AdminView; setView: (v: AdminV
     case 'novo':
       return <ProjectFormPage onDone={toList} />;
     case 'analise-pdf':
-      return (
-        <>
-          <button type="button" onClick={toList}>← Voltar aos projetos</button>
-          <AdminPdfPage />
-        </>
-      );
+      return <AdminPdfPage onBack={toList} />;
     default:
       return (
         <ProjectListPage

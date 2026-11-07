@@ -9,16 +9,20 @@ import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
 import type { Project, ProjectStatus } from '../../types';
 import styles from './AdminPdfPage.module.scss';
 
+interface Props {
+  onBack?: () => void;
+}
+
 function dateTime(value: string | null) {
   return value ? new Date(value).toLocaleString('pt-BR') : '-';
 }
 
-export function AdminPdfPage() {
+export function AdminPdfPage({ onBack }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filter, setFilter] = useState<ProjectStatus | ''>('PDF_EM_ANALISE');
   const [selected, setSelected] = useState<Project | null>(null);
   const [justification, setJustification] = useState('');
-  const [approvedAreaM2, setApprovedAreaM2] = useState('');
+  const [approvedAreas, setApprovedAreas] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -35,7 +39,9 @@ export function AdminPdfPage() {
     }
   }
 
-  useEffect(() => { void load(); }, [filter]);
+  useEffect(() => {
+    void load();
+  }, [filter]);
 
   async function download(projectId: string) {
     try {
@@ -48,7 +54,8 @@ export function AdminPdfPage() {
   }
 
   async function approve(project: Project) {
-    const area = Number(approvedAreaM2);
+    const rawArea = approvedAreas[project.id] ?? '';
+    const area = Number(rawArea);
     if (!Number.isFinite(area) || area <= 0) {
       setError('Informe a metragem aprovada em m².');
       return;
@@ -56,7 +63,11 @@ export function AdminPdfPage() {
     try {
       setError(null);
       await approveProject(project.id, area);
-      setApprovedAreaM2('');
+      setApprovedAreas((prev) => {
+        const next = { ...prev };
+        delete next[project.id];
+        return next;
+      });
       await load();
       setSelected(null);
     } catch (err) {
@@ -87,42 +98,61 @@ export function AdminPdfPage() {
 
   return (
     <main className={styles.page}>
+      {onBack && (
+        <div className={styles.topNav}>
+          <button type="button" className={styles.backBtn} onClick={onBack}>
+            ← Voltar aos projetos
+          </button>
+        </div>
+      )}
+
       <header className={styles.header}>
         <div>
-          <h1>Projetos</h1>
-          <p>Analise os projetos com PDF em análise.</p>
+          <h1 className={styles.title}>Análise de Plantas (PDF)</h1>
+          <p className={styles.subtitle}>
+            Analise os projetos com PDF em análise. Aprove a metragem oficial ou solicite ajustes.
+          </p>
         </div>
+
         <div className={styles.dropdownWrap}>
           <div className={styles.dropdownHeader} onClick={() => setDropdownOpen(!dropdownOpen)}>
-            {filter === '' ? 'Todos os status' : STATUS_LABELS[filter]}
+            <span>{filter === '' ? 'Todos os status' : STATUS_LABELS[filter]}</span>
             <span className={styles.caret}>▼</span>
           </div>
           {dropdownOpen && (
             <ul className={styles.dropdownList}>
               <li onClick={() => handleFilterSelect('')}>Todos os status</li>
-              {STATUS_ORDER.map(status => (
-                <li key={status} onClick={() => handleFilterSelect(status)}>{STATUS_LABELS[status]}</li>
+              {STATUS_ORDER.map((status) => (
+                <li key={status} onClick={() => handleFilterSelect(status)}>
+                  {STATUS_LABELS[status]}
+                </li>
               ))}
             </ul>
           )}
         </div>
       </header>
 
-      {error && <div className={styles.alertDanger}>{error}</div>}
+      {error && (
+        <div className={styles.alertDanger} role="alert">
+          {error}
+        </div>
+      )}
 
       <section className={styles.card}>
-        {loading ? <p>Carregando...</p> : projects.length === 0 ? (
-          <p className={styles.empty}>Nenhum projeto encontrado.</p>
+        {loading ? (
+          <div className={styles.loadingState}>Carregando projetos para análise...</div>
+        ) : projects.length === 0 ? (
+          <p className={styles.empty}>Nenhum projeto encontrado para o filtro selecionado.</p>
         ) : (
           <div className={styles.tableWrap}>
-            <table>
+            <table className={styles.table}>
               <thead>
                 <tr>
                   <th>Empresa</th>
                   <th>CNPJ</th>
                   <th>Expositor</th>
-                  <th>Estante</th>
-                  <th>Data</th>
+                  <th>Estande</th>
+                  <th>Enviado em</th>
                   <th>Status</th>
                   <th>Ações</th>
                 </tr>
@@ -130,16 +160,30 @@ export function AdminPdfPage() {
               <tbody>
                 {projects.map((project) => (
                   <tr key={project.id}>
-                    <td data-label="Empresa"><strong>{project.companyName}</strong></td>
+                    <td data-label="Empresa">
+                      <strong className={styles.companyName}>{project.companyName}</strong>
+                    </td>
                     <td data-label="CNPJ">{project.document}</td>
                     <td data-label="Expositor">{project.representativeName}</td>
-                    <td data-label="Estante">{project.category}</td>
+                    <td data-label="Estande">
+                      <span className={styles.categoryBadge}>{project.category}</span>
+                    </td>
                     <td data-label="Data">{dateTime(project.pdfUploadedAt)}</td>
-                    <td data-label="Status"><span className={styles.status}>{STATUS_LABELS[project.status]}</span></td>
+                    <td data-label="Status">
+                      <span className={`${styles.status} ${styles[project.status] ?? ''}`}>
+                        {STATUS_LABELS[project.status]}
+                      </span>
+                    </td>
                     <td data-label="Ações">
                       <div className={styles.actions}>
                         {project.pdfOriginalFilename && (
-                          <button onClick={() => download(project.id)}>Baixar PDF</button>
+                          <button
+                            type="button"
+                            className={styles.downloadBtn}
+                            onClick={() => void download(project.id)}
+                          >
+                            Baixar PDF
+                          </button>
                         )}
                         {project.status === 'PDF_EM_ANALISE' && (
                           <>
@@ -147,13 +191,34 @@ export function AdminPdfPage() {
                               type="number"
                               min="0.01"
                               step="0.01"
+                              className={styles.areaInput}
                               placeholder="m² aprovado"
                               aria-label={`Metragem aprovada para ${project.companyName}`}
-                              value={approvedAreaM2}
-                              onChange={(event) => setApprovedAreaM2(event.target.value)}
+                              value={approvedAreas[project.id] ?? ''}
+                              onChange={(event) =>
+                                setApprovedAreas((prev) => ({
+                                  ...prev,
+                                  [project.id]: event.target.value,
+                                }))
+                              }
                             />
-                            <button className={styles.approve} onClick={() => approve(project)}>Aprovar</button>
-                            <button className={styles.reject} onClick={() => { setError(null); setSelected(project); }}>Reprovar</button>
+                            <button
+                              type="button"
+                              className={styles.approve}
+                              onClick={() => void approve(project)}
+                            >
+                              Aprovar
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.reject}
+                              onClick={() => {
+                                setError(null);
+                                setSelected(project);
+                              }}
+                            >
+                              Reprovar
+                            </button>
                           </>
                         )}
                       </div>
@@ -169,10 +234,12 @@ export function AdminPdfPage() {
       {selected && (
         <div className={styles.modalBackdrop}>
           <div className={styles.modal}>
-            <h2>Reprovar PDF</h2>
-            <p><strong>{selected.companyName}</strong></p>
-            <label>
-              Justificativa dos ajustes necessários *
+            <div className={styles.modalHeader}>
+              <h2>Reprovar PDF</h2>
+              <p className={styles.modalCompany}>{selected.companyName}</p>
+            </div>
+            <label className={styles.modalField}>
+              <span>Justificativa dos ajustes necessários *</span>
               <textarea
                 value={justification}
                 onChange={(e) => setJustification(e.target.value)}
@@ -181,8 +248,19 @@ export function AdminPdfPage() {
               />
             </label>
             <div className={styles.modalActions}>
-              <button onClick={() => { setSelected(null); setJustification(''); }}>Cancelar</button>
-              <button className={styles.reject} onClick={reject}>Confirmar reprovação</button>
+              <button
+                type="button"
+                className={styles.cancelBtn}
+                onClick={() => {
+                  setSelected(null);
+                  setJustification('');
+                }}
+              >
+                Cancelar
+              </button>
+              <button type="button" className={styles.rejectConfirm} onClick={() => void reject()}>
+                Confirmar reprovação
+              </button>
             </div>
           </div>
         </div>

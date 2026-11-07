@@ -60,7 +60,9 @@ export function FeeQuantityInput({ projectId, fee, onUpdated, compact = false }:
         Quantidade{unit && ` (${unit})`}
         <div className={styles.inputWrap}>
           <input
-            type="text"
+            type="number"
+            min="0.01"
+            step="0.01"
             inputMode="decimal"
             value={value}
             disabled={!current.quantityEditable || saving}
@@ -74,7 +76,7 @@ export function FeeQuantityInput({ projectId, fee, onUpdated, compact = false }:
 
       {current.quantityEditable ? (
         <button type="submit" className={styles.primaryButton} disabled={saving}>
-          {saving ? 'Enviando...' : 'Enviar para Cotação'}
+          {saving ? 'Salvando...' : 'Salvar'}
         </button>
       ) : (
         <span className={styles.locked}>Pagamento gerado: quantidade bloqueada</span>

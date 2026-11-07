@@ -2,52 +2,73 @@
 @use '../../styles/figma' as *;
 
 .container {
-  @include figma-panel;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
   margin-top: $sp-6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .title {
   @include figma-title;
-  margin-bottom: $sp-4;
+  margin: 0 0 18px 0;
+  font-size: 20px;
+  color: #0f172a;
 }
 
 .alertDanger {
-  padding: $sp-4;
-  margin-bottom: $sp-4;
-  border-radius: $radius-md;
-  background: $color-danger-bg;
-  border: 1px solid $color-danger-border;
-  color: $color-danger;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 14px;
 }
 
 .feeList {
   display: flex;
   flex-direction: column;
-  gap: $sp-4;
+  gap: 14px;
 }
 
 .feeItem {
-  background: $figma-row-bg;
-  padding: $sp-4;
-  border-radius: $radius-lg;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 18px 20px;
+  border-radius: 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: $sp-4;
+  gap: 16px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  }
 
   .info {
     flex: 1;
+    min-width: 240px;
 
     h3 {
-      margin: 0 0 $sp-2;
-      font-size: $font-size-lg;
+      margin: 0 0 6px 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
     }
 
     p {
-      margin: 0;
-      color: $color-text-muted;
-      font-size: $font-size-sm;
+      margin: 0 0 4px 0;
+      color: #475569;
+      font-size: 13px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
     }
   }
 
@@ -55,25 +76,28 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: $sp-4;
+    gap: 14px;
 
     .value {
-      font-weight: $font-weight-bold;
-      font-size: $font-size-xl;
-    }
-
-    .variableInput {
-      @include figma-input;
-      width: 100px;
-    }
-
-    .saveButton {
-      @include figma-pill-button($color-primary);
-      padding: $sp-2 $sp-4;
+      font-weight: 700;
+      font-size: 18px;
+      color: #0f172a;
     }
 
     .payButton {
-      @include figma-pill-button($figma-orange);
+      @include figma-pill-button;
+      background: #16a34a;
+      border: 1px solid #16a34a;
+      color: #ffffff;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover {
+        background: #15803d;
+        border-color: #15803d;
+      }
     }
   }
 }

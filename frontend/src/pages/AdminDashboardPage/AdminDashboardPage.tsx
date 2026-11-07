@@ -92,6 +92,16 @@ export function AdminDashboardPage({ onOpenPdfReview }: Props) {
         </div>
 
         <div className={styles.headerControls}>
+          {onOpenPdfReview && (
+            <button
+              type="button"
+              className={styles.pdfReviewButton}
+              onClick={() => onOpenPdfReview()}
+              data-testid="btn-open-pdf-review"
+            >
+              Análise de PDFs
+            </button>
+          )}
           <button
             type="button"
             className={styles.refreshButton}
