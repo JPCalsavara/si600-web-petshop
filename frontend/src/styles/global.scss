@@ -52,8 +52,9 @@ html[data-theme='dark'] {
 
   [class*='sidebarFooter'],
   [class*='profile'],
-  [class*='mobileHeader'] {
-    border-color: #1e293b !important;
+  [class*='mobileHeader'],
+  [class*='filterMetaRow'] {
+    border-color: #334155 !important;
   }
 
   [class*='mobileHeader'] {
@@ -132,8 +133,14 @@ html[data-theme='dark'] {
   [class*='paginationInfo'],
   [class*='resultsCount'],
   [class*='feeDescription'],
-  [class*='linkedDetails'] {
+  [class*='linkedDetails'],
+  [class*='filterLabel'] {
     color: #94a3b8 !important;
+  }
+
+  [class*='pageCounter'],
+  [class*='pageInfo'] {
+    color: #e2e8f0 !important;
   }
 
   /* Panels, Cards, Modals & Kanban */
@@ -159,9 +166,14 @@ html[data-theme='dark'] {
   [class*='fees'],
   [class*='fee'],
   [class*='summaryGrid'] > div,
-  [class*='metaItem'],
-  [class*='pagination'] {
+  [class*='metaItem'] {
     background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+  }
+
+  [class*='pagination'] {
+    background: rgba(15, 23, 42, 0.5) !important;
     border-color: #334155 !important;
     color: #e2e8f0 !important;
   }
@@ -169,6 +181,55 @@ html[data-theme='dark'] {
   [class*='feeCardSelected'] {
     background: rgba(37, 99, 235, 0.16) !important;
     border-color: #3b82f6 !important;
+  }
+
+  /* Distinct Fee Type Colors in Dark Mode */
+  [class*='typeFixa'] {
+    background: rgba(14, 165, 233, 0.18) !important;
+    color: #38bdf8 !important;
+    border-color: rgba(56, 189, 248, 0.45) !important;
+  }
+
+  [class*='typeMetragem'] {
+    background: rgba(168, 85, 247, 0.18) !important;
+    color: #c084fc !important;
+    border-color: rgba(192, 132, 252, 0.45) !important;
+  }
+
+  [class*='typeVariavel'] {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+    border-color: rgba(251, 191, 36, 0.45) !important;
+  }
+
+  [class*='typePillAllActive'] {
+    background: #2563eb !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+  }
+
+  /* Yellow Pencil & Red Trash Buttons in Dark Mode */
+  [class*='editIconBtn'],
+  [class*='configFeeBtn'] {
+    background: rgba(245, 158, 11, 0.16) !important;
+    border-color: #f59e0b !important;
+    color: #fbbf24 !important;
+
+    &:hover:not(:disabled) {
+      background: #f59e0b !important;
+      color: #0f172a !important;
+    }
+  }
+
+  [class*='deleteIconBtn'] {
+    background: rgba(239, 68, 68, 0.16) !important;
+    border-color: #ef4444 !important;
+    color: #f87171 !important;
+
+    &:hover:not(:disabled) {
+      background: #ef4444 !important;
+      color: #ffffff !important;
+    }
   }
 
   /* Tables */
@@ -221,7 +282,7 @@ html[data-theme='dark'] {
   [class*='closeButton'],
   [class*='closeModalBtn'],
   [class*='closeDialogBtn'],
-  [class*='actions'] button:not([class*='save']):not([class*='approve']):not([class*='reject']):not([class*='payButton']):not([class*='primaryButton']) {
+  [class*='actions'] button:not([class*='save']):not([class*='approve']):not([class*='reject']):not([class*='payButton']):not([class*='primaryButton']):not([class*='editIconBtn']):not([class*='deleteIconBtn']) {
     background: #0f172a !important;
     border-color: #334155 !important;
     color: #e2e8f0 !important;

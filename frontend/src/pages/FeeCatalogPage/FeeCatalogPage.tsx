@@ -10,6 +10,8 @@ const TYPE_LABELS: Record<FeeType, string> = {
   VARIAVEL: 'Variável',
 };
 
+const FEE_TYPES: FeeType[] = ['FIXA', 'POR_METRAGEM', 'VARIAVEL'];
+
 const PAGE_SIZE = 10;
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -29,6 +31,17 @@ function configuration(fee: Fee) {
   } por unidade`;
 }
 
+function getTypeBadgeClass(type: FeeType): string {
+  switch (type) {
+    case 'FIXA':
+      return styles.typeFixa;
+    case 'POR_METRAGEM':
+      return styles.typeMetragem;
+    case 'VARIAVEL':
+      return styles.typeVariavel;
+  }
+}
+
 export function FeeCatalogPage() {
   const [fees, setFees] = useState<Fee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +51,11 @@ export function FeeCatalogPage() {
   const [selected, setSelected] = useState<Fee | null>(null);
   const [pending, setPending] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Filtros
+  const [nameSearch, setNameSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<FeeType | ''>('');
+
   const dialog = useRef<HTMLDialogElement>(null);
 
   const load = useCallback(async (focusName?: string) => {
@@ -72,13 +90,36 @@ export function FeeCatalogPage() {
     if (selected) dialog.current?.showModal();
   }, [selected]);
 
-  const totalPages = Math.max(1, Math.ceil(fees.length / PAGE_SIZE));
+  const filteredFees = useMemo(() => {
+    return fees.filter((fee) => {
+      if (nameSearch.trim()) {
+        const q = nameSearch.toLowerCase().trim();
+        const matchName = fee.name.toLowerCase().includes(q);
+        const matchDesc = (fee.description ?? '').toLowerCase().includes(q);
+        if (!matchName && !matchDesc) return false;
+      }
+      if (typeFilter && fee.type !== typeFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [fees, nameSearch, typeFilter]);
+
+  const hasActiveFilters = Boolean(nameSearch.trim() || typeFilter);
+
+  const clearFilters = () => {
+    setNameSearch('');
+    setTypeFilter('');
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.max(1, Math.ceil(filteredFees.length / PAGE_SIZE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
 
   const pagedFees = useMemo(() => {
     const start = (safeCurrentPage - 1) * PAGE_SIZE;
-    return fees.slice(start, start + PAGE_SIZE);
-  }, [fees, safeCurrentPage]);
+    return filteredFees.slice(start, start + PAGE_SIZE);
+  }, [filteredFees, safeCurrentPage]);
 
   async function edit(fee: Fee) {
     setPending(true);
@@ -130,9 +171,86 @@ export function FeeCatalogPage() {
             setForm({});
           }}
         >
-          Nova Taxa
+          + Nova Taxa
         </button>
       </header>
+
+      {/* Barra de Filtros do Catálogo de Taxas */}
+      <section className={styles.filtersSection} aria-label="Filtros do catálogo de taxas">
+        <div className={styles.filtersGrid}>
+          <div className={styles.filterGroup}>
+            <label htmlFor="filter-fee-name" className={styles.filterLabel}>
+              Nome da Taxa
+            </label>
+            <input
+              id="filter-fee-name"
+              type="text"
+              className={styles.filterInput}
+              placeholder="Buscar por nome ou descrição da taxa..."
+              value={nameSearch}
+              onChange={(e) => {
+                setNameSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              data-testid="input-filter-fee-name"
+            />
+          </div>
+
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Filtrar por Tipo</span>
+            <div className={styles.typeFilterPills}>
+              <button
+                type="button"
+                className={`${styles.typePill} ${typeFilter === '' ? styles.typePillAllActive : ''}`}
+                onClick={() => {
+                  setTypeFilter('');
+                  setCurrentPage(1);
+                }}
+                data-testid="filter-type-ALL"
+              >
+                Todos ({fees.length})
+              </button>
+              {FEE_TYPES.map((t) => {
+                const isActive = typeFilter === t;
+                const count = fees.filter((f) => f.type === t).length;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`${styles.typePill} ${getTypeBadgeClass(t)} ${
+                      isActive ? styles.typePillActive : styles.typePillInactive
+                    }`}
+                    onClick={() => {
+                      setTypeFilter(isActive ? '' : t);
+                      setCurrentPage(1);
+                    }}
+                    data-testid={`filter-type-${t}`}
+                  >
+                    {TYPE_LABELS[t]} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.filterMetaRow}>
+          <div className={styles.resultsCount}>
+            Exibindo <strong>{filteredFees.length}</strong> de <strong>{fees.length}</strong> taxas cadastradas
+            {hasActiveFilters && ' (filtros aplicados)'}
+          </div>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              className={styles.clearFilterButton}
+              onClick={clearFilters}
+              data-testid="btn-clear-fee-filters"
+            >
+              ✕ Limpar filtros
+            </button>
+          )}
+        </div>
+      </section>
 
       {notice && (
         <p role="status" className={styles.success}>
@@ -152,8 +270,19 @@ export function FeeCatalogPage() {
       <div className={styles.panel} aria-busy={loading}>
         {loading ? (
           <p role="status">Carregando taxas...</p>
-        ) : fees.length === 0 ? (
-          <p>Nenhuma taxa cadastrada.</p>
+        ) : filteredFees.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p>
+              {hasActiveFilters
+                ? 'Nenhuma taxa encontrada para os filtros selecionados.'
+                : 'Nenhuma taxa cadastrada.'}
+            </p>
+            {hasActiveFilters && (
+              <button type="button" className={styles.clearFilterButton} onClick={clearFilters}>
+                Limpar filtros
+              </button>
+            )}
+          </div>
         ) : (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -165,7 +294,7 @@ export function FeeCatalogPage() {
                   <th>Tipo</th>
                   <th>Configuração / valor</th>
                   <th>Status</th>
-                  <th>Ações</th>
+                  <th className={styles.actionsHeader}>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,31 +304,69 @@ export function FeeCatalogPage() {
                       <strong>{fee.name}</strong>
                     </td>
                     <td data-label="Descrição">{fee.description || '—'}</td>
-                    <td data-label="Tipo">{TYPE_LABELS[fee.type]}</td>
+                    <td data-label="Tipo">
+                      <span className={`${styles.typeBadge} ${getTypeBadgeClass(fee.type)}`}>
+                        {TYPE_LABELS[fee.type]}
+                      </span>
+                    </td>
                     <td data-label="Configuração / valor">{configuration(fee)}</td>
                     <td data-label="Status">
                       <span className={fee.active ? styles.active : styles.inactive}>
                         {fee.active ? 'Ativa' : 'Inativa'}
                       </span>
                     </td>
-                    <td data-label="Ações">
+                    <td data-label="Ações" className={styles.actionsCell}>
                       <div className={styles.actions}>
                         <button
                           type="button"
+                          className={styles.editIconBtn}
                           disabled={pending}
                           onClick={() => void edit(fee)}
                           aria-label={`Editar ${fee.name}`}
+                          title={`Editar ${fee.name}`}
                         >
-                          Editar
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="16"
+                            height="16"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
+                          <span className={styles.srOnly}>Editar</span>
                         </button>
                         {fee.active && (
                           <button
                             type="button"
+                            className={styles.deleteIconBtn}
                             disabled={pending}
                             onClick={() => setSelected(fee)}
                             aria-label={`Desativar ${fee.name}`}
+                            title={`Desativar ${fee.name}`}
                           >
-                            Desativar
+                            <svg
+                              viewBox="0 0 24 24"
+                              width="16"
+                              height="16"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                            <span className={styles.srOnly}>Desativar</span>
                           </button>
                         )}
                       </div>
@@ -218,8 +385,8 @@ export function FeeCatalogPage() {
                 <div className={styles.paginationInfo}>
                   Página <strong>{safeCurrentPage}</strong> de <strong>{totalPages}</strong> (Exibindo{' '}
                   <strong>{(safeCurrentPage - 1) * PAGE_SIZE + 1}</strong> a{' '}
-                  <strong>{Math.min(safeCurrentPage * PAGE_SIZE, fees.length)}</strong> de{' '}
-                  <strong>{fees.length}</strong> taxas)
+                  <strong>{Math.min(safeCurrentPage * PAGE_SIZE, filteredFees.length)}</strong> de{' '}
+                  <strong>{filteredFees.length}</strong> taxas)
                 </div>
                 <div className={styles.paginationControls}>
                   <button

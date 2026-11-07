@@ -13,7 +13,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: $sp-4;
-  margin-bottom: $sp-6;
+  margin-bottom: $sp-5;
 
   h1 {
     @include figma-title;
@@ -48,12 +48,188 @@
   }
 }
 
+/* ==========================================================================
+   Filters Bar
+   ========================================================================== */
+.filtersSection {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.filtersGrid {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  gap: 20px;
+  align-items: end;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.filterInput {
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  font-size: 13px;
+  color: #1e293b;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    background: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+}
+
+.typeFilterPills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.typePill {
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.typePillAllActive {
+  background: #0f172a !important;
+  border-color: #0f172a !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+}
+
+.typePillInactive {
+  opacity: 0.72;
+
+  &:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+}
+
+.typePillActive {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px currentColor;
+}
+
+.filterMetaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 12px;
+}
+
+.resultsCount {
+  color: #64748b;
+
+  strong {
+    color: #0f172a;
+    font-weight: 600;
+  }
+}
+
+.clearFilterButton {
+  border: none;
+  background: transparent;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.12);
+  }
+}
+
+/* ==========================================================================
+   Fee Type Badges (Distinct Colors per Type)
+   ========================================================================== */
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* Fixa -> Azul / Ciano */
+.typeFixa {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #7dd3fc !important;
+}
+
+/* Por metragem -> Roxo / Violeta */
+.typeMetragem {
+  background: #f3e8ff !important;
+  color: #7e22ce !important;
+  border: 1px solid #d8b4fe !important;
+}
+
+/* Variável -> Âmbar / Laranja */
+.typeVariavel {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1px solid #fcd34d !important;
+}
+
+/* ==========================================================================
+   Table & Panel
+   ========================================================================== */
 .panel {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.emptyState {
+  padding: 40px 24px;
+  text-align: center;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
 .tableWrap {
@@ -69,23 +245,24 @@
     color: #64748b;
     font-size: 13px;
     font-weight: 500;
-    padding: 0 0 14px 0;
+    padding: 16px 20px 10px;
   }
 
   th {
     text-align: left;
-    padding: 12px 14px;
-    font-size: 12px;
+    padding: 12px 18px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: #64748b;
-    border-bottom: 2px solid #f1f5f9;
+    letter-spacing: 0.5px;
+    color: #475569;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
     white-space: nowrap;
   }
 
   td {
-    padding: 14px;
+    padding: 14px 18px;
     text-align: left;
     font-size: 13px;
     color: #334155;
@@ -105,6 +282,11 @@
       border-bottom: none;
     }
   }
+}
+
+.actionsHeader,
+.actionsCell {
+  text-align: right !important;
 }
 
 .active,
@@ -130,39 +312,69 @@
   border: 1px solid #e2e8f0;
 }
 
+/* ==========================================================================
+   Action Icon Buttons (Yellow Pencil & Red Trash)
+   ========================================================================== */
 .actions {
-  display: flex;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
-  flex-wrap: wrap;
+}
 
-  button {
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 6px 12px;
-    background: #ffffff;
-    color: #334155;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
+.editIconBtn,
+.deleteIconBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
 
-    &:hover:not(:disabled) {
-      background: #f1f5f9;
-      color: #0f172a;
-      border-color: #94a3b8;
-    }
+.editIconBtn {
+  background: #fef3c7 !important;
+  border: 1px solid #f59e0b !important;
+  color: #d97706 !important;
+
+  &:hover:not(:disabled) {
+    background: #f59e0b !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
   }
 }
 
+.deleteIconBtn {
+  background: #fee2e2 !important;
+  border: 1px solid #ef4444 !important;
+  color: #dc2626 !important;
+
+  &:hover:not(:disabled) {
+    background: #ef4444 !important;
+    border-color: #dc2626 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.3);
+  }
+}
+
+/* ==========================================================================
+   Pagination Bar
+   ========================================================================== */
 .pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  padding-top: 16px;
-  margin-top: 12px;
+  padding: 16px 22px;
   border-top: 1px solid #e2e8f0;
+  background: #fafafa;
 }
 
 .paginationInfo {
@@ -205,10 +417,10 @@
 }
 
 .pageCounter {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: #334155;
-  min-width: 48px;
+  color: #64748b;
+  min-width: 52px;
   text-align: center;
 }
 
@@ -374,6 +586,10 @@
 }
 
 @media (max-width: 900px) {
+  .filtersGrid {
+    grid-template-columns: 1fr;
+  }
+
   .panel {
     padding: 0;
     background: transparent;

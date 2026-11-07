@@ -348,9 +348,12 @@
 }
 
 .configFeeBtn {
-  border: 1px solid #3b82f6;
-  background: #eff6ff;
-  color: #1d4ed8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #f59e0b;
+  background: #fef3c7;
+  color: #b45309;
   padding: 5px 12px;
   border-radius: 16px;
   font-size: 11px;
@@ -360,9 +363,9 @@
   white-space: nowrap;
 
   &:hover {
-    background: #3b82f6;
+    background: #f59e0b;
     color: #ffffff;
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.28);
   }
 }
 
