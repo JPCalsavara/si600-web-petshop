@@ -5,6 +5,7 @@ body {
   font-family: $font-family-base;
   background-color: $color-background;
   color: $color-text-main;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
@@ -20,4 +21,214 @@ code {
   padding: 0.15rem 0.35rem;
   border-radius: $radius-sm;
   color: $color-primary;
+}
+
+/* ==========================================================================
+   Dark Mode Theme Overrides (html[data-theme='dark'])
+   ========================================================================== */
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  body {
+    background-color: #090d16;
+    color: #e2e8f0;
+  }
+
+  /* AppShell containers */
+  [class*='viewport'] {
+    background: #090d16 !important;
+  }
+
+  [class*='shell'] {
+    background: #0f172a !important;
+    border-color: #1e293b !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  [class*='sidebar'] {
+    background: #111827 !important;
+    border-color: #1e293b !important;
+  }
+
+  [class*='sidebarFooter'],
+  [class*='profile'],
+  [class*='mobileHeader'] {
+    border-color: #1e293b !important;
+  }
+
+  [class*='mobileHeader'] {
+    background: #111827 !important;
+  }
+
+  [class*='profile'] strong,
+  [class*='brandDesktop'],
+  [class*='brandMobile'],
+  [class*='hamburger'] {
+    color: #f8fafc !important;
+  }
+
+  [class*='avatar'] {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #60a5fa !important;
+  }
+
+  [class*='navItem'] {
+    color: #94a3b8 !important;
+
+    &:hover {
+      background: #1e293b !important;
+      color: #f8fafc !important;
+    }
+
+    &[class*='active'] {
+      background: rgba(37, 99, 235, 0.18) !important;
+      color: #60a5fa !important;
+      border-left-color: #3b82f6 !important;
+    }
+  }
+
+  [class*='themeToggle'] {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+
+    &:hover {
+      background: #334155 !important;
+      color: #ffffff !important;
+    }
+  }
+
+  [class*='themeIcon'] {
+    color: #fbbf24 !important;
+  }
+
+  [class*='content'] {
+    background: #111827 !important;
+    border-color: #1e293b !important;
+  }
+
+  /* Headings & Typography */
+  h1,
+  h2,
+  h3,
+  strong,
+  legend,
+  [class*='title'],
+  [class*='companyName'],
+  [class*='feeName'],
+  [class*='feePricing'],
+  [class*='linkedName'],
+  [class*='value'] {
+    color: #f8fafc !important;
+  }
+
+  p,
+  caption,
+  [class*='subtitle'],
+  [class*='columnDescription'],
+  [class*='metaLabel'],
+  [class*='representativeName'],
+  [class*='paginationInfo'],
+  [class*='resultsCount'],
+  [class*='feeDescription'],
+  [class*='linkedDetails'] {
+    color: #94a3b8 !important;
+  }
+
+  /* Panels, Cards, Modals & Kanban */
+  [class*='panel'],
+  [class*='card']:not([class*='cardHeader']):not([class*='cardBody']):not([class*='cardFooter']):not([class*='cardContent']):not([class*='cardCompanyName']),
+  [class*='filtersSection'],
+  [class*='kanbanColumn'],
+  [class*='modal'],
+  [class*='modalCard'],
+  [class*='modalCardWide'],
+  [class*='container'],
+  [class*='linkedSection'],
+  dialog {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+  }
+
+  [class*='kanbanCard'],
+  [class*='feeItem'],
+  [class*='feeCard'],
+  [class*='linkedItem'],
+  [class*='fees'],
+  [class*='fee'],
+  [class*='summaryGrid'] > div,
+  [class*='metaItem'],
+  [class*='pagination'] {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+  }
+
+  [class*='feeCardSelected'] {
+    background: rgba(37, 99, 235, 0.16) !important;
+    border-color: #3b82f6 !important;
+  }
+
+  /* Tables */
+  table th {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+    border-color: #334155 !important;
+  }
+
+  table td {
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+    background: transparent !important;
+  }
+
+  table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+  }
+
+  /* Inputs, Selects, Textareas & Dropdowns */
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea,
+  [class*='dropdownHeader'],
+  [class*='dropdownList'] {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+
+    &::placeholder {
+      color: #64748b !important;
+    }
+  }
+
+  [class*='dropdownList'] li {
+    color: #e2e8f0 !important;
+
+    &:hover {
+      background: #1e293b !important;
+      color: #ffffff !important;
+    }
+  }
+
+  /* Secondary / Neutral Buttons */
+  [class*='pageButton'],
+  [class*='refreshButton'],
+  [class*='backBtn'],
+  [class*='downloadBtn'],
+  [class*='secondaryButton'],
+  [class*='closeButton'],
+  [class*='closeModalBtn'],
+  [class*='closeDialogBtn'],
+  [class*='actions'] button:not([class*='save']):not([class*='approve']):not([class*='reject']):not([class*='payButton']):not([class*='primaryButton']) {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+
+    &:hover:not(:disabled) {
+      background: #334155 !important;
+      color: #ffffff !important;
+    }
+  }
 }
