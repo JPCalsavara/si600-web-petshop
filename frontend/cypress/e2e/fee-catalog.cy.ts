@@ -53,7 +53,9 @@ viewports.forEach((viewport) => {
       cy.contains('tr', name).should('contain', 'Inativa');
       cy.contains('tr', name).contains('button', 'Desativar').should('not.exist');
       openCatalog();
+      cy.get('[data-testid="input-filter-fee-name"]').clear().type(name);
       cy.contains('tr', name).should('contain', 'Inativa');
+      cy.get('[data-testid="input-filter-fee-name"]').clear();
 
       newFee();
       cy.get('[name=name]').type(`${name} m²`);

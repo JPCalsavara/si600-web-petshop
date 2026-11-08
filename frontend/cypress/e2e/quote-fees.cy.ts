@@ -115,7 +115,10 @@ viewports.forEach((viewport) => {
     });
 
     it('1. Caso Incompleto / Ruim: bloqueia cotação com valor zero ou inválido na tela de Cotações', () => {
-      cy.contains('button', 'Cotações').click({ force: true });
+      if (viewport === 'iphone-x') {
+        cy.contains('button', '☰').click({ force: true });
+      }
+      cy.contains('button', 'Cotação de taxas').click({ force: true });
       cy.contains('h1', 'Cotação de taxas').should('be.visible');
 
       cy.contains('article', variableFeeName).within(() => {
@@ -129,7 +132,10 @@ viewports.forEach((viewport) => {
     });
 
     it('2. Caso Bom: registra a cotação financeira com sucesso e exibe status Cotada', () => {
-      cy.contains('button', 'Cotações').click({ force: true });
+      if (viewport === 'iphone-x') {
+        cy.contains('button', '☰').click({ force: true });
+      }
+      cy.contains('button', 'Cotação de taxas').click({ force: true });
       cy.contains('h1', 'Cotação de taxas').should('be.visible');
 
       cy.contains('article', variableFeeName).within(() => {
