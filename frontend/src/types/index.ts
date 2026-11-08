@@ -80,37 +80,8 @@ export interface AdminDashboardData {
   financialSummary?: DashboardFinancialSummary;
 }
 
-// ---- US-03: criação de projeto do cliente ----
 export type AreaEstande = 'B2C' | 'Music Hub' | 'Music Sport' | 'Internacional';
 
-export interface ProjectFeeOption {
-  id: string;
-  name: string;
-  amount: number;
-  /** Taxa fixa do catálogo (ex.: aluguel do estande). */
-  fixed: boolean;
-}
-
-export interface ClientProject {
-  id: string;
-  name: string;
-  /** CPF/CNPJ exatamente como digitado. */
-  document: string;
-  address: string;
-  area: AreaEstande;
-  /** E-mail do cliente, usado como login. */
-  email: string;
-  /** Datas no formato yyyy-mm-dd. */
-  pdfDeadline: string;
-  paymentDeadline: string;
-  feeIds: string[];
-  status: ProjectStatus;
-}
-
-export type ClientProjectInput = Omit<ClientProject, 'id' | 'status'>;
-export type ClientProjectUpdate = Pick<ClientProject, 'pdfDeadline' | 'paymentDeadline' | 'feeIds'>;
-
-// US-02: catálogo persistente de taxas.
 export type FeeType = 'FIXA' | 'POR_METRAGEM' | 'VARIAVEL';
 export type AreaPricingMode = 'VALOR_POR_M2' | 'UNIDADES_POR_INTERVALO';
 
@@ -135,8 +106,12 @@ export type FeeRequest = { name: string; description: string } & (
   | { type: 'VARIAVEL'; measurementUnit: string }
 );
 
-// US-06: quantidade das taxas variáveis informada pelo Cliente.
-export type ProjectFeeStatus = 'AGUARDANDO_QUANTIDADE' | 'AGUARDANDO_COTACAO' | 'DISPONIVEL' | 'COTADA' | 'PAGAMENTO_GERADO';
+export type ProjectFeeStatus =
+  | 'AGUARDANDO_QUANTIDADE'
+  | 'AGUARDANDO_COTACAO'
+  | 'DISPONIVEL'
+  | 'COTADA'
+  | 'PAGAMENTO_GERADO';
 
 export interface ProjectFee {
   id: string;
@@ -148,22 +123,16 @@ export interface ProjectFee {
   quantity: number | null;
   status: ProjectFeeStatus;
   quantityUpdatedAt: string | null;
-  /** Falso quando o pagamento já foi gerado ou a taxa não é variável. */
   quantityEditable: boolean;
 }
 
-/** US-05: linha da lista de taxas do Cliente (GET /projects/{id}/fees). */
 export interface CalculatedFee {
-  /** Id do vínculo taxa-projeto: é o id das rotas de quantidade e cotação. */
   projectFeeId: string;
-  /** Id da taxa no catálogo. */
   feeId: string;
   name: string;
   description: string | null;
   type: FeeType;
-  /** Fixa/por metragem: valor calculado. Variável: valor cotado (null até a cotação). */
   calculatedValue: number | null;
-  /** Variável: quantidade informada. Por metragem: m² ou unidades cobradas. */
   quantity: number | null;
   measurementUnit: string | null;
   status: ProjectFeeStatus;
@@ -171,7 +140,40 @@ export interface CalculatedFee {
   paymentDeadline: string | null;
 }
 
-// US-16: histórico cronológico e imutável de eventos do projeto.
+export interface QuoteableProjectFee {
+  projectId: string;
+  projectName: string;
+  clientEmail: string | null;
+  projectFeeId: string;
+  feeName: string;
+  feeType: string;
+  quantity: number | null;
+  measurementUnit: string | null;
+  status: string;
+  quotedAmount: number | null;
+  quotedBy: string | null;
+  quotedAt: string | null;
+}
+
+export interface ProjectFeeConfiguration {
+  projectFeeId: string;
+  feeId: string;
+  name: string;
+  description: string | null;
+  type: string;
+  measurementUnit: string | null;
+  amount: number | null;
+  amountPerM2: number | null;
+  areaPerUnitM2: number | null;
+  unitAmount: number | null;
+  areaPricingMode: string | null;
+  status: string;
+  quantity: number | null;
+  quotedAmount: number | null;
+  quotedBy: string | null;
+  quotedAt: string | null;
+}
+
 export type ProjectHistoryEventType =
   | 'PROJETO_CRIADO'
   | 'PDF_ENVIADO'

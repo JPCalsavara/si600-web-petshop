@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { getQuoteableFees, quoteProjectFee } from '../../services/api';
-import { parseQuoteAmount } from '../../services/feeQuote';
-import { feeStatusLabel } from '../../constants/feeStatus';
-import type { QuoteableProjectFee } from '../../services/api';
+import { feeStatusLabel, parseQuoteAmount } from '../../constants/feeStatus';
+import { formatDateTime } from '../../utils/date';
+import type { QuoteableProjectFee } from '../../types';
 import styles from './QuoteFeesPage.module.scss';
 
 function money(value: number | null) {
@@ -134,7 +134,7 @@ export function QuoteFeesPage() {
                   <div className={styles.metaRow}>
                     <span className={styles.metaLabel}>Última cotação ({fee.quotedBy}):</span>
                     <span className={styles.metaValue}>
-                      {fee.quotedAt ? new Date(fee.quotedAt).toLocaleString('pt-BR') : '—'}
+                      {fee.quotedAt ? formatDateTime(fee.quotedAt) : '—'}
                     </span>
                   </div>
                 )}

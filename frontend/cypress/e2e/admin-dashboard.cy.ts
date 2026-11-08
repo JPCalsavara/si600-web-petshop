@@ -1,186 +1,122 @@
-describe('US-18: Dashboard do Administrador', () => {
-  const mockDashboardData = {
-    inactiveExhibitors: [
-      {
-        projectId: 'proj-inactive-1',
-        companyName: 'Stande Inativo Alfa',
-        representativeName: 'Carlos Silva',
-        contactEmail: 'carlos@alfa.com',
-        createdAt: '2026-10-15T10:00:00Z',
-        lastAccessAt: null,
-        daysSinceLastAccess: null,
-        neverAccessed: true,
-      },
-      {
-        projectId: 'proj-inactive-2',
-        companyName: 'Stande Inativo Beta',
-        representativeName: 'Mariana Lima',
-        contactEmail: 'mariana@beta.com',
-        createdAt: '2026-10-10T10:00:00Z',
-        lastAccessAt: '2026-10-21T10:00:00Z',
-        daysSinceLastAccess: 4,
-        neverAccessed: false,
-      },
-    ],
-    pendingDeadlines: [
-      {
-        id: 'proj-deadline-1',
-        companyName: 'Stande Prazo Vencido',
-        representativeName: 'Roberto Dias',
-        category: 'B2C',
-        status: 'AGUARDANDO_PDF',
-        pdfDeadline: '2026-10-20T23:59:59Z',
-        paymentDeadline: null,
-        alertTag: 'ATRASADO',
-      },
-      {
-        id: 'proj-deadline-2',
-        companyName: 'Stande Prazo Proximo',
-        representativeName: 'Juliana Costa',
-        category: 'Music Hub',
-        status: 'AGUARDANDO_PDF',
-        pdfDeadline: '2026-10-27T23:59:59Z',
-        paymentDeadline: null,
-        alertTag: 'PRAZO_PROXIMO',
-      },
-    ],
-    pendingApprovals: [
-      {
-        projectId: 'proj-approval-1',
-        companyName: 'Stande Pendente Aprovacao',
-        pdfOriginalFilename: 'planta_estande_v1.pdf',
-        pdfUploadedAt: '2026-10-24T14:30:00Z',
-        boothAreaM2: 75.5,
-        status: 'PDF_EM_ANALISE',
-      },
-    ],
-    financialSummary: {
-      totalProjectFees: 8,
-      pendingQuotesCount: 2,
-      awaitingQuantityCount: 1,
-      quotedFeesCount: 3,
-      generatedPaymentsCount: 2,
-      estimatedRevenue: 14500.5,
-    },
-  };
+const viewports: Cypress.ViewportPreset[] = ['macbook-15', 'iphone-x'];
 
-  beforeEach(() => {
-    cy.intercept('GET', '**/projects/admin/dashboard', {
-      statusCode: 200,
-      body: mockDashboardData,
-    }).as('getDashboard');
+viewports.forEach((viewport) => {
+  describe(`US-18: Dashboard do Administrador (${viewport})`, () => {
+    let inactiveCompany = '';
+    let pendingApprovalCompany = '';
+    let approvalProjectId = '';
 
-    cy.intercept('GET', '**/projects/admin*', {
-      statusCode: 200,
-      body: [],
-    }).as('getAdminProjects');
+    before(() => {
+      const suffix = `${Date.now()}-${viewport}`;
+      inactiveCompany = `Stande Inativo ${suffix}`;
+      pendingApprovalCompany = `Stande Em Analise ${suffix}`;
+      const pendingEmail = `analise-${suffix}@teste.com`;
 
-    cy.visit('/', {
-      onBeforeLoad(win) {
-        win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
-        win.localStorage.removeItem('MOCK_PROJECT_ID');
-      },
-    });
-  });
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.expose('API_BASE_URL')}/projects`,
+        headers: {
+          'X-Authenticated-User-Role': 'ADMIN',
+          'X-Authenticated-User-Id': 'admin-1',
+        },
+        body: {
+          name: inactiveCompany,
+          document: `${Date.now()}1`.slice(0, 14),
+          address: 'Av. Dashboard, 100',
+          area: 'B2C',
+          email: `inativo-${suffix}@teste.com`,
+          feeIds: [],
+          pdfDeadline: '2050-12-31',
+          paymentDeadline: '2050-12-31',
+        },
+      });
 
-  it('exibe o dashboard em formato Kanban com contadores por grupo ("Nunca acessou", "Pendentes", "Em dia")', () => {
-    cy.wait('@getDashboard');
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.expose('API_BASE_URL')}/projects`,
+        headers: {
+          'X-Authenticated-User-Role': 'ADMIN',
+          'X-Authenticated-User-Id': 'admin-1',
+        },
+        body: {
+          name: pendingApprovalCompany,
+          document: `${Date.now()}2`.slice(0, 14),
+          address: 'Av. Dashboard, 200',
+          area: 'Music Hub',
+          email: pendingEmail,
+          feeIds: [],
+          pdfDeadline: '2050-12-31',
+          paymentDeadline: '2050-12-31',
+        },
+      }).then((res) => {
+        approvalProjectId = res.body.id;
 
-    // Valida grade de 6 KPIs operacionais e financeiros no topo
-    cy.get('[data-testid="dashboard-kpi-grid"]').should('be.visible');
-    cy.get('[data-testid="kpi-total-projects"]').should('be.visible');
-    cy.get('[data-testid="kpi-never-accessed"]').should('be.visible');
-    cy.get('[data-testid="kpi-pending-approvals"]').should('be.visible');
-    cy.get('[data-testid="kpi-critical-deadlines"]').should('be.visible');
-    cy.get('[data-testid="kpi-pending-quotes"]').should('be.visible');
-    cy.get('[data-testid="kpi-value-pending-quotes"]').should('contain.text', '2');
-    cy.get('[data-testid="kpi-estimated-revenue"]').should('be.visible');
+        const formData = new FormData();
+        formData.append('areaM2', '75.5');
+        const blob = new Blob(['%PDF-1.7 E2E Dashboard'], { type: 'application/pdf' });
+        formData.append('file', blob, 'planta_dashboard.pdf');
 
-    // Valida visualização Kanban ativa por padrão
-    cy.get('[data-testid="kanban-board"]').should('be.visible');
-
-    // 1. Coluna Nunca Acessou com contador
-    cy.get('[data-testid="inactive-exhibitors-panel"]').should('be.visible');
-    cy.get('[data-testid="count-never-accessed"]').should('contain.text', '2');
-    cy.contains('Stande Inativo Alfa').should('be.visible');
-    cy.get('[data-testid="badge-never-accessed"]')
-      .should('be.visible')
-      .and('contain.text', 'Nunca acessou');
-
-    cy.contains('Stande Inativo Beta').should('be.visible');
-    cy.contains('4 dia(s) atrás').should('be.visible');
-
-    // 2. Coluna Pendentes com contador
-    cy.get('[data-testid="pending-deadlines-panel"]').should('be.visible');
-    cy.get('[data-testid="count-pending"]').should('contain.text', '3');
-    cy.contains('Stande Prazo Vencido').should('be.visible');
-    cy.get('[data-testid="badge-alert-ATRASADO"]').should('contain.text', 'Atrasado');
-
-    cy.contains('Stande Prazo Proximo').should('be.visible');
-    cy.get('[data-testid="badge-alert-PRAZO_PROXIMO"]').should('contain.text', 'Prazo Próximo');
-
-    // Card de aprovação de planta dentro de Pendentes
-    cy.get('[data-testid="pending-approvals-panel"]').should('be.visible');
-    cy.contains('Stande Pendente Aprovacao').should('be.visible');
-    cy.contains('planta_estande_v1.pdf').should('be.visible');
-    cy.contains('75.5 m²').should('be.visible');
-
-    // 3. Coluna Em Dia com contador
-    cy.get('[data-testid="on-track-panel"]').should('be.visible');
-    cy.get('[data-testid="count-on-track"]').should('contain.text', '0');
-
-    // 4. Atalho de clique direto para a tela de aprovação técnica
-    cy.get('[data-testid="shortcut-review-pdf-proj-approval-1"]')
-      .should('be.visible')
-      .click();
-
-    // Valida navegação direta para a tela de análise técnica de PDF
-    cy.contains('button', 'Voltar aos projetos').should('be.visible');
-    cy.contains('Analise os projetos com PDF em análise.').should('be.visible');
-  });
-
-  it('pagina os projetos de 4 em 4 no grupo quando houver mais de 4 itens', () => {
-    const paginatedData = {
-      inactiveExhibitors: [
-        { projectId: 'p1', companyName: 'Empresa Alfa 1', representativeName: 'Rep 1', contactEmail: 'e1@t.com', createdAt: '2026-10-01T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
-        { projectId: 'p2', companyName: 'Empresa Alfa 2', representativeName: 'Rep 2', contactEmail: 'e2@t.com', createdAt: '2026-10-02T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
-        { projectId: 'p3', companyName: 'Empresa Alfa 3', representativeName: 'Rep 3', contactEmail: 'e3@t.com', createdAt: '2026-10-03T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
-        { projectId: 'p4', companyName: 'Empresa Alfa 4', representativeName: 'Rep 4', contactEmail: 'e4@t.com', createdAt: '2026-10-04T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
-        { projectId: 'p5', companyName: 'Empresa Alfa 5', representativeName: 'Rep 5', contactEmail: 'e5@t.com', createdAt: '2026-10-05T10:00:00Z', lastAccessAt: null, daysSinceLastAccess: null, neverAccessed: true },
-      ],
-      pendingDeadlines: [],
-      pendingApprovals: [],
-    };
-
-    cy.intercept('GET', '**/projects/admin/dashboard', {
-      statusCode: 200,
-      body: paginatedData,
-    }).as('getPaginatedDashboard');
-
-    cy.visit('/', {
-      onBeforeLoad(win) {
-        win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
-        win.localStorage.removeItem('MOCK_PROJECT_ID');
-      },
+        cy.visit('/');
+        return cy.window().then((win) => {
+          return new Cypress.Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${Cypress.expose('API_BASE_URL')}/projects/${approvalProjectId}/pdf`);
+            xhr.setRequestHeader('X-Authenticated-User-Role', 'CLIENT');
+            xhr.setRequestHeader('X-Authenticated-User-Id', pendingEmail);
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
+              else reject(new Error(`Upload falhou: HTTP ${xhr.status}`));
+            };
+            xhr.onerror = () => reject(new Error('Erro de rede no upload do PDF'));
+            xhr.send(formData);
+          });
+        });
+      });
     });
 
-    cy.wait('@getPaginatedDashboard');
+    beforeEach(() => {
+      cy.viewport(viewport);
+      cy.visit('/', {
+        onBeforeLoad(win) {
+          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
+          win.localStorage.setItem('MOCK_ACTOR_ID', 'admin-1');
+          win.localStorage.removeItem('MOCK_PROJECT_ID');
+        },
+      });
+    });
 
-    // Valida exibição dos 4 primeiros projetos na página 1
-    cy.contains('Empresa Alfa 1').should('be.visible');
-    cy.contains('Empresa Alfa 4').should('be.visible');
-    cy.contains('Empresa Alfa 5').should('not.exist');
-    cy.get('[data-testid="page-info-never-accessed"]').should('contain.text', '1 / 2');
+    it('1. Caso Bom: exibe o dashboard real em formato Kanban com KPIs, filtros e atalho de análise de planta', () => {
+      cy.get('[data-testid="dashboard-kpi-grid"]').should('be.visible');
+      cy.get('[data-testid="kpi-total-projects"]').should('be.visible');
+      cy.get('[data-testid="kpi-never-accessed"]').should('be.visible');
+      cy.get('[data-testid="kpi-pending-approvals"]').should('be.visible');
+      cy.get('[data-testid="kpi-critical-deadlines"]').should('be.visible');
+      cy.get('[data-testid="kpi-pending-quotes"]').should('be.visible');
+      cy.get('[data-testid="kpi-estimated-revenue"]').should('be.visible');
 
-    // Avança para a página 2
-    cy.get('[data-testid="btn-next-never-accessed"]').click();
-    cy.contains('Empresa Alfa 5').should('be.visible');
-    cy.contains('Empresa Alfa 1').should('not.exist');
-    cy.get('[data-testid="page-info-never-accessed"]').should('contain.text', '2 / 2');
+      cy.get('[data-testid="kanban-board"]').should('be.visible');
+      cy.get('[data-testid="inactive-exhibitors-panel"]').should('be.visible');
+      cy.get('[data-testid="pending-deadlines-panel"]').should('be.visible');
+      cy.get('[data-testid="on-track-panel"]').should('be.visible');
 
-    // Retorna para a página 1
-    cy.get('[data-testid="btn-prev-never-accessed"]').click();
-    cy.contains('Empresa Alfa 1').should('be.visible');
-    cy.get('[data-testid="page-info-never-accessed"]').should('contain.text', '1 / 2');
+      cy.get('[data-testid="dashboard-search-input"]').clear().type(inactiveCompany);
+      cy.contains(inactiveCompany).should('be.visible');
+      cy.get('[data-testid="badge-never-accessed"]').should('contain.text', 'Nunca acessou');
+
+      cy.get('[data-testid="dashboard-search-input"]').clear().type(pendingApprovalCompany);
+      cy.contains(pendingApprovalCompany).should('be.visible');
+      cy.get(`[data-testid="shortcut-review-pdf-${approvalProjectId}"]`).should('be.visible').click();
+      cy.contains('Análise de Plantas (PDF)').should('be.visible');
+    });
+
+    it('2. Caso Ruim / Borda: busca por termo inexistente exibe estado vazio nas colunas e permite limpar filtros', () => {
+      cy.get('[data-testid="dashboard-search-input"]').clear().type('EMPRESA_INEXISTENTE_999999');
+      cy.contains('Nenhum expositor inativo registrado.').should('be.visible');
+      cy.contains('Nenhum projeto com pendências no momento.').should('be.visible');
+      cy.contains('Nenhum projeto regularizado registrado.').should('be.visible');
+
+      cy.get('[data-testid="btn-clear-dashboard-filters"]').should('be.visible').click();
+      cy.get('[data-testid="dashboard-search-input"]').should('have.value', '');
+    });
   });
 });

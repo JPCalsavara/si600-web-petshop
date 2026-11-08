@@ -81,7 +81,7 @@ sequenceDiagram
     Dev->>Branch: Commits no padrão: feat(US-XX): descrição
     Dev->>Branch: Executa git-flow (testes + AI Gatekeeper)
     Dev->>GitLabMR: Abre MR Obrigatório 1: branch -> dev
-    GitLabMR->>DevBranch: Code Review + Aprovação dos pares + Squash & Merge
+    GitLabMR->>DevBranch: Code Review + Aprovação dos pares + Merge
     
     Note over DevBranch,MainBranch: Fechamento de Versão / Release
     GitLabMR->>MainBranch: Abre MR Obrigatório 2: dev -> main
@@ -91,15 +91,15 @@ sequenceDiagram
 ### Regras Mandatórias de Merge Request
 
 1. **Título e Descrição**:
-   - Título do MR deve ser igual ao commit principal, ex.: `feat(US-08): geração de pagamento por taxa`.
+   - Título do MR deve ser igual ao commit principal, ex.: `feat(US-08): notificacao de decisao de planta por email`.
    - Descrição: Deve detalhar o que foi feito, como testar (ligando com a issue de QA, se existir) e incluir o link da issue de desenvolvimento.
 
 2. **Regra de Aprovação Obrigatória (`Approvals Required = 1`)**:
    - Todo MR exige no mínimo 1 aprovação formal de outro integrante antes do merge.
    - O autor do MR não pode aprovar a própria entrega.
 
-3. **Squash and Merge**:
-   - O merge para `dev` deve ser feito utilizando *Squash*, consolidando as mudanças em um único commit coerente. Isso mantém o histórico da branch principal limpo e legível. (Ver ADR correspondente).
+3. **Preservação de Histórico (Squash and Merge Cancelado)**:
+   - A política de *Squash and Merge* foi cancelada ([ADR 0003](adr/0003-squash-and-merge.md)). Os commits semânticos da branch são integrados preservando seu histórico original.
 
 4. **MR Obrigatório de Release (`dev` -> `main`)**:
    - A promoção para `main` ocorre por MR, consolidando uma release/sprint.

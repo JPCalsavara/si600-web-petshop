@@ -10,16 +10,13 @@ import styles from './ClientPdfPage.module.scss';
 import { ProjectFees } from './ProjectFees';
 import { ProjectTimeline } from '../../components/ProjectTimeline/ProjectTimeline';
 import { STATUS_LABELS, feesVisible } from '../../constants/projectStatus';
+import { formatDate } from '../../utils/date';
 
 interface Props {
   projectId: string;
 }
 
 const MAX_SIZE = 10 * 1024 * 1024;
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString('pt-BR');
-}
 
 function formatBytes(value: number | null) {
   if (!value) return '-';

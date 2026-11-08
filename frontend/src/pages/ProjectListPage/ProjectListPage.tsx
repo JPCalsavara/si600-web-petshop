@@ -7,6 +7,10 @@ import styles from './ProjectListPage.module.scss';
 import { ProjectFeesConfigPage } from '../ProjectFeesConfigPage/ProjectFeesConfigPage';
 import { ProjectFormPage } from '../ProjectFormPage/ProjectFormPage';
 import { ProjectTimeline } from '../../components/ProjectTimeline/ProjectTimeline';
+import { usePaginatedList } from '../../components/Pagination/Pagination';
+import { formatDate } from '../../utils/date';
+
+export { formatDate };
 
 interface Props {
   onAdd?: () => void;
@@ -17,14 +21,6 @@ const PAGE_SIZE = 15;
 
 type SortField = 'companyName' | 'pdfDeadline' | 'paymentDeadline' | 'status';
 type SortDirection = 'asc' | 'desc';
-
-/** yyyy-mm-dd -> dd/mm/aaaa sem passar por Date (evita deslocar um dia por fuso). */
-export function formatDate(value: string | null) {
-  if (!value) return '-';
-  const datePart = value.slice(0, 10);
-  const [y, m, d] = datePart.split('-');
-  return y && m && d ? `${d}/${m}/${y}` : '-';
-}
 
 export function ProjectListPage({ onOpenPdfReview }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -59,9 +55,6 @@ export function ProjectListPage({ onOpenPdfReview }: Props) {
   // Ordenação
   const [sortField, setSortField] = useState<SortField>('companyName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-
-  // Paginação (15 projetos por página)
-  const [currentPage, setCurrentPage] = useState(1);
 
   const load = useCallback(async () => {
     try {
@@ -167,12 +160,15 @@ export function ProjectListPage({ onOpenPdfReview }: Props) {
     });
   }, [filteredProjects, sortField, sortDirection]);
 
-  // Paginação de 15 por página
-  const totalPages = Math.max(1, Math.ceil(sortedProjects.length / PAGE_SIZE));
-  const pagedProjects = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return sortedProjects.slice(start, start + PAGE_SIZE);
-  }, [sortedProjects, currentPage]);
+  // Paginação de 15 por página com clamp automático
+  const {
+    currentPage,
+    totalPages,
+    pagedItems: pagedProjects,
+    setCurrentPage,
+    prevPage,
+    nextPage,
+  } = usePaginatedList(sortedProjects, PAGE_SIZE);
 
   const renderSortIndicator = (field: SortField) => {
     if (sortField !== field) {
@@ -488,7 +484,7 @@ export function ProjectListPage({ onOpenPdfReview }: Props) {
                   <button
                     type="button"
                     className={styles.pageButton}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={prevPage}
                     disabled={currentPage <= 1}
                     data-testid="btn-prev-projects"
                   >
@@ -500,7 +496,7 @@ export function ProjectListPage({ onOpenPdfReview }: Props) {
                   <button
                     type="button"
                     className={styles.pageButton}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={nextPage}
                     disabled={currentPage >= totalPages}
                     data-testid="btn-next-projects"
                   >

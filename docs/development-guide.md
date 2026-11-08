@@ -191,28 +191,29 @@ public class GlobalExceptionHandler {
 Cada suite de teste de um caso de uso deve obrigatoriamente conter três categorias de testes:
 
 ```java
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class AgendamentoIntegrationTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+class ProjectIntegrationTest {
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private MockMvc mockMvc;
 
     // 1. CASO BOM (Happy Path)
     @Test
-    void deveCriarAgendamentoComSucessoQuandoDadosForemValidos() {
-        // Envia payload válido, espera HTTP 201 Created e confirma no banco
+    void deveCriarProjetoComSucessoQuandoDadosForemValidos() {
+        // Envia payload válido para POST /projects, espera HTTP 201 Created e confirma no banco
     }
 
     // 2. CASO RUIM (Sad Path / Regra de Negócio)
     @Test
-    void deveRecusarAgendamentoQuandoHorarioEstiverOcupado() {
-        // Tenta reservar horário conflitante, espera HTTP 409 Conflict ou 422
+    void deveRecusarCriacaoQuandoDocumentoOuEmailJaExistir() {
+        // Tenta cadastrar CPF/CNPJ ou e-mail duplicado, espera HTTP 409 Conflict (ProblemDetail)
     }
 
     // 3. CASO INCOMPLETO (Boundary / Malformed Payload)
     @Test
     void deveRetornarBadRequestQuandoCamposObrigatoriosEstiveremAusentes() {
-        // Envia payload sem clienteId ou dataHora, espera HTTP 400 Bad Request
+        // Envia payload sem companyName ou feeIds, espera HTTP 400 Bad Request
     }
 }
 ```

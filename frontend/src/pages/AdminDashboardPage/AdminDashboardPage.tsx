@@ -9,6 +9,7 @@ import type {
   ProjectStatus,
 } from '../../types';
 import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
+import { ALERT_TAG_LABELS } from '../../constants/alertTag';
 import { ProjectTimeline } from '../../components/ProjectTimeline/ProjectTimeline';
 import { formatDate } from '../../utils/date';
 import styles from './AdminDashboardPage.module.scss';
@@ -53,10 +54,10 @@ function formatCurrencyBRL(value: number | null | undefined): string {
 }
 
 function getAlertBadgeLabel(alertTag?: string): string {
-  if (alertTag === 'ATRASADO') return 'Atrasado';
-  if (alertTag === 'PRAZO_PROXIMO') return 'Prazo Próximo';
-  if (alertTag === 'PENDENTE') return 'Pendente';
-  return 'Em Dia';
+  if (alertTag && alertTag in ALERT_TAG_LABELS) {
+    return ALERT_TAG_LABELS[alertTag as keyof typeof ALERT_TAG_LABELS];
+  }
+  return ALERT_TAG_LABELS.EM_DIA;
 }
 
 export function AdminDashboardPage({
@@ -275,9 +276,10 @@ export function AdminDashboardPage({
     )
   );
   const totalNeverAccessedPages = Math.max(1, Math.ceil(neverAccessedItems.length / PAGE_SIZE));
+  const effectivePageNeverAccessed = Math.min(pageNeverAccessed, totalNeverAccessedPages);
   const pagedNeverAccessed = neverAccessedItems.slice(
-    (pageNeverAccessed - 1) * PAGE_SIZE,
-    pageNeverAccessed * PAGE_SIZE
+    (effectivePageNeverAccessed - 1) * PAGE_SIZE,
+    effectivePageNeverAccessed * PAGE_SIZE
   );
 
   // 2. Grupo: Pendentes (aprovações de plantas + pendências de prazos)
@@ -305,9 +307,10 @@ export function AdminDashboardPage({
   ];
 
   const totalPendingPages = Math.max(1, Math.ceil(allPendingItems.length / PAGE_SIZE));
+  const effectivePagePending = Math.min(pagePending, totalPendingPages);
   const pagedPendingItems = allPendingItems.slice(
-    (pagePending - 1) * PAGE_SIZE,
-    pagePending * PAGE_SIZE
+    (effectivePagePending - 1) * PAGE_SIZE,
+    effectivePagePending * PAGE_SIZE
   );
 
   // 3. Grupo: Em dia
@@ -322,9 +325,10 @@ export function AdminDashboardPage({
       matchesCommonFilters(p.id, p.companyName, p.representativeName, p.contactEmail)
     );
   const totalOnTrackPages = Math.max(1, Math.ceil(onTrackProjects.length / PAGE_SIZE));
+  const effectivePageOnTrack = Math.min(pageOnTrack, totalOnTrackPages);
   const pagedOnTrack = onTrackProjects.slice(
-    (pageOnTrack - 1) * PAGE_SIZE,
-    pageOnTrack * PAGE_SIZE
+    (effectivePageOnTrack - 1) * PAGE_SIZE,
+    effectivePageOnTrack * PAGE_SIZE
   );
 
   function openProjectModal(projectId: string, fallbackCompanyName: string) {

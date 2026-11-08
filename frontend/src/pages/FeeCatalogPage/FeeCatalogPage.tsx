@@ -1,35 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { deactivateFee, getFee, listFees } from '../../services/api';
 import { FeeForm } from '../../components/FeeForm/FeeForm';
+import { usePaginatedList } from '../../components/Pagination/Pagination';
+import { FEE_TYPE_LABELS, formatFeePricing } from '../../constants/feeStatus';
 import type { Fee, FeeType } from '../../types';
 import styles from './FeeCatalogPage.module.scss';
 
-const TYPE_LABELS: Record<FeeType, string> = {
-  FIXA: 'Fixa',
-  POR_METRAGEM: 'Por metragem',
-  VARIAVEL: 'Variável',
-};
+const TYPE_LABELS: Record<FeeType, string> = FEE_TYPE_LABELS;
 
 const FEE_TYPES: FeeType[] = ['FIXA', 'POR_METRAGEM', 'VARIAVEL'];
 
 const PAGE_SIZE = 10;
-
-const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-
-function configuration(fee: Fee) {
-  if (fee.type === 'VARIAVEL') return `${fee.measurementUnit} — valor a definir`;
-  if (fee.type === 'FIXA') {
-    return fee.amount === null ? 'Valor indisponível' : currency.format(fee.amount);
-  }
-  if (fee.areaPricingMode === 'VALOR_POR_M2') {
-    return fee.amountPerM2 === null
-      ? 'Valor indisponível'
-      : `${currency.format(fee.amountPerM2)} por m²`;
-  }
-  return `1 unidade a cada ${fee.areaPerUnitM2?.toLocaleString('pt-BR')} m²; ${
-    fee.unitAmount === null ? 'valor indisponível' : currency.format(fee.unitAmount)
-  } por unidade`;
-}
 
 function getTypeBadgeClass(type: FeeType): string {
   switch (type) {
@@ -50,45 +31,12 @@ export function FeeCatalogPage() {
   const [form, setForm] = useState<{ fee?: Fee } | null>(null);
   const [selected, setSelected] = useState<Fee | null>(null);
   const [pending, setPending] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
 
   // Filtros
   const [nameSearch, setNameSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<FeeType | ''>('');
 
   const dialog = useRef<HTMLDialogElement>(null);
-
-  const load = useCallback(async (focusName?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await listFees();
-      setFees(data);
-      const targetName =
-        focusName ??
-        (typeof window !== 'undefined'
-          ? window.sessionStorage.getItem('LAST_SAVED_FEE_NAME') ?? undefined
-          : undefined);
-      if (targetName) {
-        const idx = data.findIndex((item) => item.name === targetName);
-        if (idx >= 0) {
-          setCurrentPage(Math.floor(idx / PAGE_SIZE) + 1);
-        }
-      }
-    } catch {
-      setError('Não foi possível carregar o catálogo. Verifique sua conexão e tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  useEffect(() => {
-    if (selected) dialog.current?.showModal();
-  }, [selected]);
 
   const filteredFees = useMemo(() => {
     return fees.filter((fee) => {
@@ -105,21 +53,50 @@ export function FeeCatalogPage() {
     });
   }, [fees, nameSearch, typeFilter]);
 
+  const {
+    currentPage: safeCurrentPage,
+    totalPages,
+    pagedItems: pagedFees,
+    setCurrentPage,
+    prevPage,
+    nextPage,
+    resetPage,
+  } = usePaginatedList(filteredFees, PAGE_SIZE);
+
+  const load = useCallback(async (focusName?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listFees();
+      setFees(data);
+      if (focusName) {
+        const idx = data.findIndex((item) => item.name === focusName);
+        if (idx >= 0) {
+          setCurrentPage(Math.floor(idx / PAGE_SIZE) + 1);
+        }
+      }
+    } catch {
+      setError('Não foi possível carregar o catálogo. Verifique sua conexão e tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  }, [setCurrentPage]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (selected) dialog.current?.showModal();
+  }, [selected]);
+
   const hasActiveFilters = Boolean(nameSearch.trim() || typeFilter);
 
   const clearFilters = () => {
     setNameSearch('');
     setTypeFilter('');
-    setCurrentPage(1);
+    resetPage();
   };
-
-  const totalPages = Math.max(1, Math.ceil(filteredFees.length / PAGE_SIZE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-
-  const pagedFees = useMemo(() => {
-    const start = (safeCurrentPage - 1) * PAGE_SIZE;
-    return filteredFees.slice(start, start + PAGE_SIZE);
-  }, [filteredFees, safeCurrentPage]);
 
   async function edit(fee: Fee) {
     setPending(true);
@@ -309,7 +286,7 @@ export function FeeCatalogPage() {
                         {TYPE_LABELS[fee.type]}
                       </span>
                     </td>
-                    <td data-label="Configuração / valor">{configuration(fee)}</td>
+                    <td data-label="Configuração / valor">{formatFeePricing(fee)}</td>
                     <td data-label="Status">
                       <span className={fee.active ? styles.active : styles.inactive}>
                         {fee.active ? 'Ativa' : 'Inativa'}
@@ -392,7 +369,7 @@ export function FeeCatalogPage() {
                   <button
                     type="button"
                     className={styles.pageButton}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={prevPage}
                     disabled={safeCurrentPage <= 1}
                     data-testid="btn-prev-fees"
                   >
@@ -404,7 +381,7 @@ export function FeeCatalogPage() {
                   <button
                     type="button"
                     className={styles.pageButton}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={nextPage}
                     disabled={safeCurrentPage >= totalPages}
                     data-testid="btn-next-fees"
                   >

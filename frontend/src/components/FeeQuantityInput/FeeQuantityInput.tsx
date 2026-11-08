@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { submitFeeQuantity } from '../../services/api';
-import { parseQuantity } from '../../services/feeQuantity';
-import { FEE_STATUS_LABELS } from '../../constants/feeStatus';
+import { FEE_STATUS_LABELS, parseQuantity } from '../../constants/feeStatus';
 import type { ProjectFee } from '../../types';
 import styles from './FeeQuantityInput.module.scss';
 

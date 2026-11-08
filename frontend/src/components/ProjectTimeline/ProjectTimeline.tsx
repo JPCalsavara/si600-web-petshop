@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { downloadProjectCsv, getCurrentActorRole, getProjectHistory } from '../../services/api';
 import { ACTOR_ROLE_LABELS, HISTORY_EVENT_LABELS } from '../../constants/projectHistory';
+import { formatDateTime } from '../../utils/date';
 import type { ProjectHistoryEvent } from '../../types';
 import styles from './ProjectTimeline.module.scss';
 
@@ -9,21 +10,12 @@ interface Props {
   projectName?: string;
 }
 
-function formatDateTime(value: string) {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-  return parsed.toLocaleString('pt-BR');
-}
-
 export function ProjectTimeline({ projectId, projectName }: Props) {
   const [events, setEvents] = useState<ProjectHistoryEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isAdmin = (typeof window !== 'undefined' && window.localStorage.getItem('MOCK_ROLE')?.toUpperCase() === 'ADMIN')
-    || getCurrentActorRole() === 'ADMIN';
+  const isAdmin = getCurrentActorRole() === 'ADMIN';
 
   async function handleExportCsv() {
     try {

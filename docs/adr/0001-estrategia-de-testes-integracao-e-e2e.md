@@ -8,7 +8,7 @@ Aceito (Accepted)
 
 ## Contexto
 
-No desenvolvimento do **SI600 Web Eventos**, a confiabilidade da aplicação é crítica. O sistema lida com operações transacionais fundamentais, incluindo alocação de horários, regras de concorrência de agenda, integridade relacional entre tutores (`Cliente`), animais (`Pet`), `Servico`s e atendimentos, além de permissões de acesso e validações de dados.
+No desenvolvimento do **SI600 Web Eventos**, a confiabilidade da aplicação é crítica. O sistema lida com operações transacionais fundamentais, incluindo cadastro de expositores (`Cliente`), gestão de estandes (`Projeto`), upload e aprovação de plantas arquitetônicas em PDF (`Planta`), cálculo de taxas por metragem/fixas e cotação de taxas variáveis (`Taxa`), além de permissões de acesso (`ADMIN` vs `CLIENT`) e validações de dados.
 
 Historicamente, a adoção dogmática da pirâmide de testes tradicional foca a maior parte dos esforços em testes unitários isolados com uso massivo de *mocks* e *stubs* (mockando banco de dados, ORM, repositórios e middlewares). No ecossistema de aplicações web orientadas a dados e APIs, essa abordagem apresenta severas patologias:
 1. **Falsos Positivos e Falsa Sensação de Segurança**: Suítes com 100% de cobertura unitária passam com sucesso, mas a aplicação falha miseravelmente em produção devido a *constraints* relacionais do banco (chaves estrangeiras, violação de unicidade), erros de serialização JSON, divergências de tipos em tempo de execução, falhas em migrations e comportamento de middlewares.
@@ -35,8 +35,8 @@ Decidimos adotar uma estratégia de testes baseada no **Troféu de Testes**, foc
 - **Isolamento de Estado (Massa de Dados Isolada)**: Mocks no Cypress (`cy.intercept` com retornos estáticos) são proibidos para a aplicação. Para evitar colisões no banco de dados real sem recorrer a rotas perigosas de truncamento (`TRUNCATE`), os testes E2E adotam a estratégia de **Massa de Dados Isolada**. Cada teste gera entidades com dados randômicos únicos (ex: uso de `Date.now()` para emails e CPFs baseados em timestamp). Isso mantém a velocidade do teste e assegura que um teste nunca quebre o outro devido à persistência de estado.
 - **Validação de Responsividade (Viewports)**: Para garantir a usabilidade em dispositivos móveis e prevenir quebras severas de layout (como botões inacessíveis por vazamento de tela), os testes de fluxo crítico devem ser executados em múltiplas resoluções usando as funcionalidades nativas do Cypress (ex: iterar sobre `macbook-15` e `iphone-x` usando `cy.viewport()`). É vedado o uso de testes de regressão visual pixel a pixel e de testes de componente isolados com mock; a ênfase é garantir usabilidade (`.should('be.visible')`) nos testes E2E.
 - **Fluxos Críticos**:
-  - Jornada do Cliente: Cadastro de tutor -> Registro de pets -> Seleção de serviços -> Escolha de horários disponíveis -> Confirmação de agendamento -> Consulta do status do atendimento.
-  - Jornada Administrativa: Login do atendente/veterinário -> Gestão da agenda -> Recepção do pet (Check-in) -> Atualização de status da Ordem de Serviço -> Finalização do atendimento.
+  - Jornada do Cliente (Expositor): Visualização do `Projeto` -> Envio da `Planta` em PDF com metragem -> Acompanhamento da decisão -> Consulta das `Taxa`s calculadas após aprovação -> Preenchimento de quantidade em taxas variáveis -> Consulta da linha do tempo (`ProjectHistoryEvent`).
+  - Jornada Administrativa: Gestão do catálogo de `Taxa`s -> Criação de `Projeto` e configuração de taxas -> Análise e aprovação/reprovação de `Planta` PDF -> Cotação financeira de taxas variáveis -> Monitoramento no Dashboard Kanban e exportação de relatório CSV.
 - **Ferramental Recomendado**: Playwright ou Cypress para automação de browser, garantindo testes headless rápidos e integrados à pipeline.
 
 ### 3. Exclusão Explícita de Testes Unitários Isolados

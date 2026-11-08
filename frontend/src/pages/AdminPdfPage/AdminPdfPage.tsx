@@ -6,6 +6,8 @@ import {
   rejectProject,
 } from '../../services/api';
 import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
+import { usePaginatedList } from '../../components/Pagination/Pagination';
+import { formatDateTime } from '../../utils/date';
 import type { Project, ProjectStatus } from '../../types';
 import styles from './AdminPdfPage.module.scss';
 
@@ -15,15 +17,10 @@ interface Props {
 
 const PAGE_SIZE = 15;
 
-function dateTime(value: string | null) {
-  return value ? new Date(value).toLocaleString('pt-BR') : '-';
-}
-
 export function AdminPdfPage({ onBack }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filter, setFilter] = useState<ProjectStatus | ''>('PDF_EM_ANALISE');
   const [projectSearch, setProjectSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [selected, setSelected] = useState<Project | null>(null);
   const [justification, setJustification] = useState('');
   const [approvedAreas, setApprovedAreas] = useState<Record<string, string>>({});
@@ -66,19 +63,21 @@ export function AdminPdfPage({ onBack }: Props) {
 
   const hasActiveFilters = Boolean(projectSearch.trim() || filter !== 'PDF_EM_ANALISE');
 
+  const {
+    currentPage: safeCurrentPage,
+    totalPages,
+    pagedItems: pagedProjects,
+    setCurrentPage,
+    prevPage,
+    nextPage,
+    resetPage,
+  } = usePaginatedList(filteredProjects, PAGE_SIZE);
+
   const clearFilters = () => {
     setProjectSearch('');
     setFilter('PDF_EM_ANALISE');
-    setCurrentPage(1);
+    resetPage();
   };
-
-  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-
-  const pagedProjects = useMemo(() => {
-    const start = (safeCurrentPage - 1) * PAGE_SIZE;
-    return filteredProjects.slice(start, start + PAGE_SIZE);
-  }, [filteredProjects, safeCurrentPage]);
 
   async function download(projectId: string) {
     try {
@@ -246,7 +245,7 @@ export function AdminPdfPage({ onBack }: Props) {
                     <td data-label="Estande">
                       <span className={styles.categoryBadge}>{project.category}</span>
                     </td>
-                    <td data-label="Data">{dateTime(project.pdfUploadedAt)}</td>
+                    <td data-label="Data">{formatDateTime(project.pdfUploadedAt)}</td>
                     <td data-label="Status">
                       <span className={`${styles.status} ${styles[project.status] ?? ''}`}>
                         {STATUS_LABELS[project.status]}
@@ -315,7 +314,7 @@ export function AdminPdfPage({ onBack }: Props) {
                   <button
                     type="button"
                     className={styles.pageButton}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={prevPage}
                     disabled={safeCurrentPage <= 1}
                   >
                     ← Anterior
@@ -326,7 +325,7 @@ export function AdminPdfPage({ onBack }: Props) {
                   <button
                     type="button"
                     className={styles.pageButton}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={nextPage}
                     disabled={safeCurrentPage >= totalPages}
                   >
                     Próximo →

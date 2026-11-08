@@ -1,28 +1,27 @@
-# ADR 0006: Obrigatoriedade de RFC antes do Desenvolvimento (Docs-Driven Development)
+# ADR 0006: Documentação Arquitetural Consolidada em RFCs Gerais e Refinamento nos Cards
 
 ## Data
-2026-10-05
+2026-11-08 (Atualizado)
 
 ## Status
-Aceito
+Aceito (Accepted)
 
 ## Contexto
-Durante o desenvolvimento do sistema, identificamos que muitas vezes o escopo de novas funcionalidades (User Stories) e decisões arquiteturais ficam ambíguos ou com detalhes faltando ao iniciar o código. Essa falta de refinamento técnico antes do código gera retrabalho, idas e vindas de código, e discussões longas durante a etapa de Code Review.
-Precisamos de um mecanismo que obrigue o desenvolvedor (ou o agente de Inteligência Artificial assistente) a refinar e especificar todos os detalhes da tarefa antes de escrever a primeira linha de código, assegurando que o domínio, as interfaces e as regras de negócio estejam completamente esclarecidas.
+Inicialmente, o projeto previa a criação de um arquivo de RFC individual (`docs/rfc/US-XX-*.md`) para cada tarefa ou User Story antes do desenvolvimento. Na prática, a fragmentação em dezenas de arquivos por tarefa gerou duplicação, desatualização rápida entre o código evoluído e as RFCs antigas, e ausência de uma visão arquitetural consolidada do Backend, do Frontend e do Modelo Entidade-Relacionamento (MER) global.
+
+Ao mesmo tempo, os refinamentos funcionais e critérios de aceite específicos de cada entrega já ficam registrados diretamente nos cards/issues do projeto, tornando redundante a criação de um arquivo `.md` no repositório para cada card.
 
 ## Decisão
-Estabelecemos a prática obrigatória de elaboração de um **RFC (Request for Comments)** como passo inicial e mandatário para todas as User Stories e tarefas de grande impacto (mudanças arquiteturais) do sistema. O fluxo de trabalho segue as seguintes diretrizes:
+Adotamos o modelo de **RFCs Gerais Consolidadas do Projeto**, eliminando a criação de RFCs individuais por tarefa/card:
 
-1. **Escopo:** A regra se aplica rigorosamente a User Stories e features (`feat/US-XX`). Tarefas triviais de manutenção (`chore`) e pequenos `fixes` não exigem uma RFC formal, mas devem seguir a comunicação clara nas issues.
-2. **Abordagem de Refinamento (Grill-me):** Antes de gerar qualquer código, o desenvolvedor ou agente deve adotar uma abordagem ativa de investigação. Se a issue estiver carente de detalhes, o agente de IA deve iniciar imediatamente uma sessão interativa de perguntas (estilo `/grill-me`) junto ao usuário ou ao Product Owner para sanar quaisquer ambiguidades de design, fluxo, persistência ou UI.
-3. **Template Base:** A especificação refinada deve ser redigida baseada no template oficial (`docs/rfc/rfc-modelo.md`).
-4. **Fluxo do Git:** A RFC em formato Markdown `.md` deve ser o **primeiro commit** na própria branch da feature (`feat/US-XX-...`). Não é necessário abrir um Merge Request exclusivo apenas para a RFC; ela será revisada em conjunto com o código da funcionalidade no mesmo Merge Request, mas garante que o desenvolvimento ocorreu a partir de um planejamento estruturado.
+1. **Três RFCs Gerais Autoritativas (`docs/rfc/`)**:
+   - [`docs/rfc/rfc-backend.md`](../rfc/rfc-backend.md): Especificação técnica completa do Backend (arquitetura em camadas, seams `ObjectStorage` e `EmailSender`, agendador de prazos, catálogo completo de endpoints REST `/api/...`, regras de negócio e o **diagrama MER final em Mermaid**).
+   - [`docs/rfc/rfc-frontend.md`](../rfc/rfc-frontend.md): Especificação técnica completa do Frontend (arquitetura de Deep Domain Modules, justificativa da rejeição de Atomic Design, seam unificado `ActorSession` + HTTP client, páginas, validação e estratégia de testes E2E).
+   - [`docs/rfc/rfc-po-visao-cliente.md`](../rfc/rfc-po-visao-cliente.md): Documento executivo voltado ao Product Owner (PO) e ao Cliente, resumindo de forma acessível e menos técnica o funcionamento integrado do Backend, Frontend e o MER do sistema.
+2. **Refinamento Direto nos Cards**: Para tarefas e User Stories individuais, o refinamento nos próprios cards/issues já basta como especificação da tarefa. As RFCs gerais são atualizadas apenas quando houver mudança estrutural na arquitetura, nos contratos gerais ou no MER.
 
 ## Consequências
-* **Positivas:** 
-  * Garantia de alinhamento e visão técnica clara antes da implementação.
-  * Redução drástica de tempo de retrabalho e de loops prolongados de refatoração de código.
-  * O repositório passa a ter um histórico riquíssimo de decisões de design para cada funcionalidade documentadas dentro de `docs/rfc`.
-  * Os agentes de IA operarão de forma mais autônoma e assertiva (Docs-Driven), pois saberão extamente o que construir com base na RFC validada.
-* **Negativas:**
-  * Adiciona uma etapa extra de documentação antes da escrita de código, o que pode passar a sensação de lentidão no começo da sprint (Trade-off a favor da qualidade e menor refatoração futura).
+- **Positivas**:
+  - **Locality documental**: Desenvolvedores, PO, clientes e o AI Gatekeeper consultam três documentos canônicos sempre atualizados em vez de dezenas de arquivos fragmentados e conflitantes.
+  - Eliminação de burocracia por tarefa, mantendo o foco no refinamento do card e nos testes de integração/E2E ([ADR 0001](0001-estrategia-de-testes-integracao-e-e2e.md) e [ADR 0002](0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)).
+  - Comunicação clara com o cliente e PO por meio da RFC executiva dedicada.

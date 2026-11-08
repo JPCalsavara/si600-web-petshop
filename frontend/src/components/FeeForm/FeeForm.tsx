@@ -81,9 +81,6 @@ export function FeeForm({ fee, onSaved, onCancel }: Props) {
       setSaving(true);
       if (fee) await updateFee(fee.id, body);
       else await createFee(body);
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem('LAST_SAVED_FEE_NAME', normalizedName);
-      }
       onSaved(normalizedName);
     } catch (error) {
       if (error instanceof ApiRequestError) {

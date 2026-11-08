@@ -64,21 +64,20 @@ Due to runner constraints on `gitlab.unicamp.br`, the repository employs a cloud
 
 ### Mandatory Workflow
 1. Integrant checks out `dev`, pulls latest changes, and creates a new branch `<tipo>/<ID-da-issue>-<titulo>`.
-2. **Docs-Driven RFC First (ADR 0006)**: For new features (`feat/`), you MUST refine the issue first (e.g. using `refine-issue` skill and `/grill-me` with the user) and generate an RFC document based on `docs/rfc/rfc-modelo.md`. This RFC must be the **very first commit** on the branch before any code is written.
-3. All feature work and tests are implemented in this branch following the RFC specifications.
+2. **General RFCs & Card Refinements (ADR 0006)**: The repository maintains three general project RFCs (`docs/rfc/rfc-backend.md`, `docs/rfc/rfc-frontend.md`, and `docs/rfc/rfc-po-visao-cliente.md`). Do NOT create a separate RFC file for each individual task/card; the refinements in the issue/card itself are sufficient. Update the general RFCs only when architecture, public contracts, or the MER change.
+3. All feature work and tests are implemented in the feature branch following the card refinements and general RFC specifications.
 4. Commits must follow the adapted Conventional Commits pattern: `<tipo>(<ID-da-issue>): <descrição no imperativo>`.
-4. Before pushing, the developer runs the local Gatekeeper check:
+5. Before pushing, the developer runs the local Gatekeeper check:
    ```bash
    bash .agents/skills/ai-gatekeeper-reviewer/scripts/run_review.sh --target .
    ```
-5. Push to remote:
+6. Push to remote:
    ```bash
    git push origin <nome-da-branch>
    ```
    *(Pushes simultaneously to GitLab Unicamp and GitHub mirror).*
-6. Open a Merge Request on GitLab Unicamp from `<nome-da-branch>` targeting `dev`. The MR title must match the main commit (e.g. `feat(US-08): geração de pagamento por taxa`) and description must link the issue and explain testing.
-7. **Mandatory 1-Approval Rule**: The MR requires at least **1 approval from a different team member** before merging. Author self-approval is forbidden.
-8. **Squash and Merge**: Merge requests to `dev` must be squashed into a single commit to keep the main branch history clean.
+7. Open a Merge Request on GitLab Unicamp from `<nome-da-branch>` targeting `dev`. The MR title must match the main commit (e.g. `feat(US-08): notificacao de decisao de planta por email`) and description must link the issue and explain testing.
+8. **Mandatory Approval Rule**: The MR requires at least **1 approval from a different team member** before merging. Author self-approval is forbidden. (Note: Squash and Merge is cancelled per ADR 0003 and is no longer used).
 9. Sprint / Milestone Release: Open an MR from `dev` to `main`, requiring at least 1 approval and a passing CI Quality Gate.
 
 See full specification in [docs/branching-strategy.md](docs/branching-strategy.md).

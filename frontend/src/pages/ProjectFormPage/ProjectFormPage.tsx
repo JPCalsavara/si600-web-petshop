@@ -1,43 +1,37 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ProjectValidationError, updateClientProject } from '../../services/projectRegistry';
 import { ApiRequestError, createProject, listFees } from '../../services/api';
 import { maskCpfCnpj, projectFormSchema } from '../../utils/masks';
-import type { AreaEstande, ClientProject } from '../../types';
+import type { AreaEstande } from '../../types';
 import styles from './ProjectFormPage.module.scss';
 
 const AREAS: AreaEstande[] = ['B2C', 'Music Hub', 'Music Sport', 'Internacional'];
 
 interface Props {
-  /** Quando informado, a tela edita prazos e taxas deste projeto. */
-  project?: ClientProject;
   onDone: () => void;
   onCreated?: () => void;
 }
 
-export function ProjectFormPage({ project, onDone, onCreated }: Props) {
-  const editing = Boolean(project);
-  const [name, setName] = useState(project?.name ?? '');
-  const [document, setDocument] = useState(project?.document ? maskCpfCnpj(project.document) : '');
-  const [email, setEmail] = useState(project?.email ?? '');
-  const [area, setArea] = useState<AreaEstande>(project?.area ?? 'B2C');
-  const [address, setAddress] = useState(project?.address ?? '');
-  const [pdfDeadline, setPdfDeadline] = useState(project?.pdfDeadline ?? '');
-  const [paymentDeadline, setPaymentDeadline] = useState(project?.paymentDeadline ?? '');
-  const [feeIds, setFeeIds] = useState<string[]>(project?.feeIds ?? []);
+export function ProjectFormPage({ onDone, onCreated }: Props) {
+  const [name, setName] = useState('');
+  const [document, setDocument] = useState('');
+  const [email, setEmail] = useState('');
+  const [area, setArea] = useState<AreaEstande>('B2C');
+  const [address, setAddress] = useState('');
+  const [pdfDeadline, setPdfDeadline] = useState('');
+  const [paymentDeadline, setPaymentDeadline] = useState('');
+  const [feeIds, setFeeIds] = useState<string[]>([]);
   const [fees, setFees] = useState<Array<{ id: string; name: string; type: string }>>([]);
   const [error, setError] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<{ login: string } | null>(null);
 
   useEffect(() => {
-    if (!editing) {
-      listFees()
-        .then((items) => setFees(items.filter((fee) => fee.active)))
-        .catch((err) =>
-          setError(err instanceof Error ? err.message : 'Não foi possível carregar as taxas.')
-        );
-    }
-  }, [editing]);
+    listFees()
+      .then((items) => setFees(items.filter((fee) => fee.active)))
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar as taxas.'),
+      );
+  }, []);
 
   const toggleFee = (id: string) =>
     setFeeIds((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]));
@@ -46,12 +40,6 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
     e.preventDefault();
     setError(null);
     try {
-      if (project) {
-        updateClientProject(project.id, { pdfDeadline, paymentDeadline, feeIds });
-        onDone();
-        return;
-      }
-
       const parsed = projectFormSchema.safeParse({
         name,
         document,
@@ -81,14 +69,13 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
       onCreated?.();
     } catch (err) {
       setError(
-        err instanceof ApiRequestError || err instanceof ProjectValidationError
+        err instanceof ApiRequestError
           ? err.message
-          : 'Não foi possível salvar o projeto.'
+          : 'Não foi possível salvar o projeto.',
       );
     }
   }
 
-  // Tela "Novo Usuário" do Figma: mostra usuário e senha para o Admin repassar.
   if (credentials) {
     return (
       <div className={styles.page}>
@@ -128,7 +115,7 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
   return (
     <form className={styles.page} onSubmit={submit}>
       <header className={styles.modalHeader}>
-        <h1>{editing ? 'Editar Projeto' : 'Novo Projeto'}</h1>
+        <h1>Novo Projeto</h1>
         <button
           type="button"
           className={styles.closeButton}
@@ -152,7 +139,6 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
           <span>Nome / Razão social *</span>
           <input
             required
-            disabled={editing}
             placeholder="Ex.: Empresa Expositora Ltda."
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -162,7 +148,6 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
           <span>CPF / CNPJ *</span>
           <input
             required
-            disabled={editing}
             inputMode="numeric"
             maxLength={18}
             placeholder="000.000.000-00 ou 00.000.000/0000-00"
@@ -174,7 +159,6 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
           <span>E-mail (login) *</span>
           <input
             required
-            disabled={editing}
             type="email"
             placeholder="contato@empresa.com.br"
             value={email}
@@ -185,7 +169,6 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
           <span>Endereço *</span>
           <input
             required
-            disabled={editing}
             placeholder="Rua, número, cidade - UF"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -194,7 +177,6 @@ export function ProjectFormPage({ project, onDone, onCreated }: Props) {
         <label className={styles.row}>
           <span>Área do estande *</span>
           <select
-            disabled={editing}
             value={area}
             onChange={(e) => setArea(e.target.value as AreaEstande)}
           >

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getProjectFees } from '../../services/api';
 import { FeeQuantityInput } from '../../components/FeeQuantityInput/FeeQuantityInput';
 import { FEE_TYPE_LABELS, canGeneratePayment, feeStatusLabel } from '../../constants/feeStatus';
+import { formatDate } from '../../utils/date';
 import type { CalculatedFee, ProjectFee } from '../../types';
 import styles from './ProjectFees.module.scss';
 
@@ -11,11 +12,6 @@ interface Props {
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
-
-function formatDate(value: string | null) {
-  if (!value) return '-';
-  return new Date(value).toLocaleDateString('pt-BR');
-}
 
 /** Dados que o input de quantidade (US-06) precisa, no formato devolvido por PUT .../quantity. */
 function toProjectFee(fee: CalculatedFee): ProjectFee {

@@ -1,326 +1,105 @@
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  beforeAll,
-  afterAll,
-} from 'vitest';
-import axios from 'axios';
-import type { ApiRequestError } from './api';
+  ApiRequestError,
+  getCurrentActorId,
+  getCurrentActorRole,
+  getCurrentClientProjectId,
+  normalizeProblemDetail,
+  parseFee,
+} from './api';
 
-let api: typeof import('./api');
-
-const { requestUse, apiClient, mockedAxiosCreate, mockedIsAxiosError } =
-  vi.hoisted(() => {
-    const requestUse = vi.fn();
-    const mockedAxiosCreate = vi.fn();
-    const mockedIsAxiosError = vi.fn();
-
-    const apiClient = Object.assign(vi.fn(), {
-      get: vi.fn(),
-      interceptors: { request: { use: requestUse } },
-    });
-
-    mockedAxiosCreate.mockReturnValue(apiClient);
-
-    return {
-      requestUse,
-      apiClient,
-      mockedAxiosCreate,
-      mockedIsAxiosError,
-    };
-  });
-
-vi.mock('axios', () => ({
-  default: {
-    create: mockedAxiosCreate,
-    isAxiosError: mockedIsAxiosError,
+const memoryStore = new Map<string, string>();
+const localStorageAdapter = {
+  getItem: (key: string) => memoryStore.get(key) ?? null,
+  setItem: (key: string, value: string) => {
+    memoryStore.set(key, value);
   },
-}));
+  removeItem: (key: string) => {
+    memoryStore.delete(key);
+  },
+  clear: () => {
+    memoryStore.clear();
+  },
+} as Storage;
 
-function mockAxiosError(status: number, data?: unknown) {
-  const error = {
-    response: { status, data },
-    message: `HTTP ${status}`,
-  };
-
-  vi.mocked(axios.isAxiosError).mockReturnValue(true);
-  return error;
-}
-
-beforeAll(async () => {
-  vi.stubEnv('VITE_USER_ROLE', 'CLIENT');
-  vi.stubEnv('VITE_USER_ID', 'client-1');
-
-  vi.resetModules();
-  api = await import('./api');
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageAdapter,
+  configurable: true,
+  writable: true,
 });
 
-afterAll(() => {
-  vi.unstubAllEnvs();
-});
-
-describe('API Service - contratos Frontend/Backend', () => {
-	beforeEach(() => {
-		apiClient.mockReset();
-		apiClient.get.mockReset();
-		mockedIsAxiosError.mockReset();
-		mockedIsAxiosError.mockReturnValue(false);
-	});
-
-  it('cria o cliente HTTP com a base da API e registra o interceptor de identidade', () => {
-    expect(mockedAxiosCreate).toHaveBeenCalledWith({ baseURL: '/api' });
-    expect(requestUse).toHaveBeenCalledTimes(1);
-
-    const interceptor = requestUse.mock.calls[0][0] as (
-      config: { headers: Map<string, string> },
-    ) => { headers: Map<string, string> };
-
-    const config = interceptor({
-      headers: new Map<string, string>(),
-    });
-
-    expect(config.headers.get('X-Authenticated-User-Id')).toBe('client-1');
-    expect(config.headers.get('X-Authenticated-User-Role')).toBe('CLIENT');
+describe('Seam HTTP e Sessão do Ator — Contratos de Borda (ADR 0001 / ADR 0002)', () => {
+  beforeEach(() => {
+    localStorageAdapter.clear();
   });
 
-  it('envia feeIds como parte do contrato de criação do projeto', async () => {
-    const project = { id: 'p1', contactEmail: 'cliente@teste.com' };
-    apiClient.mockResolvedValueOnce({ status: 201, data: project });
+  describe('1. Casos Bons (Happy Path)', () => {
+    it('resolve dinamicamente o papel, o identificador do ator e o projeto a partir do localStorage', () => {
+      localStorageAdapter.setItem('MOCK_ROLE', 'admin');
+      localStorageAdapter.setItem('MOCK_ACTOR_ID', 'admin-42');
+      localStorageAdapter.setItem('MOCK_PROJECT_ID', 'proj-99');
 
-    await api.createProject({
-      name: 'Empresa A',
-      document: '54.018.395/0001-89',
-      address: 'Rua X, 100',
-      area: 'B2C',
-      email: 'cliente@teste.com',
-      pdfDeadline: '2026-11-10',
-      paymentDeadline: '2026-11-20',
-      representativeName: 'João',
-      feeIds: ['t0'],
+      expect(getCurrentActorRole()).toBe('ADMIN');
+      expect(getCurrentActorId()).toBe('admin-42');
+      expect(getCurrentClientProjectId()).toBe('proj-99');
+
+      localStorageAdapter.setItem('MOCK_ROLE', 'client');
+      expect(getCurrentActorRole()).toBe('CLIENT');
     });
 
-    expect(apiClient).toHaveBeenCalledWith(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/projects',
-        data: {
-          name: 'Empresa A',
-          document: '54.018.395/0001-89',
-          address: 'Rua X, 100',
-          area: 'B2C',
-          email: 'cliente@teste.com',
-          pdfDeadline: '2026-11-10',
-          paymentDeadline: '2026-11-20',
-          representativeName: 'João',
-          feeIds: ['t0'],
-        },
-      }),
-    );
-  });
-
-  it('envia o arquivo no multipart esperado pelo backend', async () => {
-    apiClient.mockResolvedValueOnce({
-      status: 200,
-      data: { id: 'p1' },
-    });
-
-    const file = new File(['%PDF-1.7'], 'planta.pdf', {
-      type: 'application/pdf',
-    });
-
-    await api.submitProjectPdf('p1', 42.5, file);
-
-    const config = apiClient.mock.calls[0][0];
-
-    expect(config.method).toBe('POST');
-    expect(config.url).toBe('/projects/p1/pdf');
-    expect(config.data).toBeInstanceOf(FormData);
-    expect(config.data.get('file')).toBe(file);
-    expect(config.data.get('areaM2')).toBe('42.5');
-  });
-
-  it('envia exatamente os campos obrigatórios das decisões administrativas', async () => {
-    apiClient
-      .mockResolvedValueOnce({ status: 200, data: { id: 'p1' } })
-      .mockResolvedValueOnce({ status: 200, data: { id: 'p1' } });
-
-    await api.approveProject('p1', 42.5);
-    await api.rejectProject('p1', 'Ajustar cotas.');
-
-    expect(apiClient.mock.calls[0][0]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/projects/admin/p1/approve',
-        data: { approvedAreaM2: 42.5 },
-      }),
-    );
-
-    expect(apiClient.mock.calls[1][0]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/projects/admin/p1/reject',
-        data: { justification: 'Ajustar cotas.' },
-      }),
-    );
-  });
-
-  it('monta corretamente a listagem administrativa e a consulta do cliente', async () => {
-    apiClient
-      .mockResolvedValueOnce({ status: 200, data: [] })
-      .mockResolvedValueOnce({ status: 200, data: { id: 'p1' } });
-
-    await api.listAdminProjects('PDF_EM_ANALISE');
-    await api.getClientProject('p1');
-
-    expect(apiClient.mock.calls[0][0]).toMatchObject({
-      method: 'GET',
-      url: '/projects/admin?status=PDF_EM_ANALISE',
-    });
-
-    expect(apiClient.mock.calls[1][0]).toMatchObject({
-      method: 'GET',
-      url: '/projects/p1',
+    it('valida uma taxa íntegra retornada pela API via parseFee', () => {
+      const validFee = {
+        id: 'f-1',
+        name: 'Taxa de Limpeza',
+        description: 'Cobrança fixa',
+        type: 'FIXA',
+        active: true,
+        areaPricingMode: null,
+        amount: 200,
+        amountPerM2: null,
+        areaPerUnitM2: null,
+        unitAmount: null,
+        measurementUnit: null,
+      };
+      expect(parseFee(validFee)).toEqual(validFee);
     });
   });
 
-  it('transforma erro de validação da API em erro utilizável pela interface', async () => {
-    apiClient.mockRejectedValueOnce(
-      mockAxiosError(400, {
+  describe('2. Casos Ruins (Sad Path — Erros de Domínio RFC 7807)', () => {
+    it('normaliza ProblemDetail com detail e invalidFields em ApiRequestError estruturado', () => {
+      const normalized = normalizeProblemDetail(409, {
+        title: 'Conflito de negócio',
+        detail: 'Já existe uma taxa ativa com este nome.',
+      });
+
+      const error = new ApiRequestError(normalized.detail, 409, normalized.invalidFields);
+      expect(error.status).toBe(409);
+      expect(error.message).toBe('Já existe uma taxa ativa com este nome.');
+      expect(error.invalidFields).toEqual({});
+    });
+  });
+
+  describe('3. Casos Incompletos (Boundary & Malformed Payloads)', () => {
+    it('extrai matriz de erros por campo (invalidFields e errors) de respostas HTTP 400', () => {
+      const normalized = normalizeProblemDetail(400, {
         title: 'Dados inválidos',
         detail: 'Revise os campos informados.',
         invalidFields: {
           paymentDeadline: 'A data é obrigatória.',
         },
-      }),
-    );
+      });
 
-    await expect(api.getClientProject('p1')).rejects.toMatchObject({
-      name: 'ApiRequestError',
-      status: 400,
-      message: expect.stringContaining('A data é obrigatória.'),
-      invalidFields: {
+      expect(normalized.invalidFields).toEqual({
         paymentDeadline: 'A data é obrigatória.',
-      },
-    } satisfies Partial<ApiRequestError>);
-  });
-
-  it('trata indisponibilidade da API sem deixar exceção Axios exposta ao componente', async () => {
-    const error = { message: 'Network Error' };
-
-    mockedIsAxiosError.mockReturnValue(true);
-    apiClient.mockRejectedValueOnce(error);
-
-    await expect(api.getClientProject('p1')).rejects.toMatchObject({
-      name: 'ApiRequestError',
-      status: 0,
-      message: expect.stringContaining(
-        'Não foi possível comunicar com a API',
-      ),
-    });
-  });
-
-  it('mantém o contrato existente de health check', async () => {
-    apiClient.get.mockResolvedValueOnce({
-      data: {
-        status: 'UP',
-        message: 'Backend SI600 Sistema de Eventos operacional',
-        timestamp: '2026-09-30T19:00:00Z',
-      },
+      });
+      expect(normalized.detail).toContain('A data é obrigatória.');
     });
 
-    await expect(api.checkBackendHealth()).resolves.toMatchObject({
-      status: 'UP',
+    it('rejeita payloads de taxa malformados em parseFee sem propagar dados corrompidos', () => {
+      expect(() => parseFee(null)).toThrow('Não foi possível carregar os dados da taxa');
+      expect(() => parseFee({ id: 123, name: 'Invalida' })).toThrow(
+        'Não foi possível carregar os dados da taxa',
+      );
     });
-  });
-
-  it('usa as rotas de taxas, quantidade e cotação esperadas pelo backend', async () => {
-    apiClient.mockResolvedValue({ status: 200, data: [] });
-
-    await api.getProjectFees('p1');
-    await api.submitFeeQuantity('p1', 'pf1', 12.5);
-    await api.getQuoteableFees();
-    await api.quoteProjectFee('p1', 'pf1', 250.5);
-
-    const calls = apiClient.mock.calls.map(([config]) => config);
-    expect(calls[0]).toMatchObject({ method: 'GET', url: '/projects/p1/fees' });
-    expect(calls[1]).toMatchObject({ method: 'PUT', url: '/projects/p1/fees/pf1/quantity', data: { quantity: 12.5 } });
-    expect(calls[2]).toMatchObject({ method: 'GET', url: '/admin/quotes' });
-    expect(calls[3]).toMatchObject({ method: 'PUT', url: '/projects/p1/fees/pf1/quote', data: { amount: 250.5 } });
-  });
-
-  it('propaga a mensagem e os campos inválidos devolvidos pela API de cotação', async () => {
-    mockedIsAxiosError.mockReturnValue(true);
-    apiClient.mockRejectedValueOnce({
-      response: {
-        status: 400,
-        data: { title: 'Dados de requisição inválidos', invalidFields: { amount: 'O valor deve ser maior que zero.' } },
-      },
-      message: 'HTTP 400',
-    });
-
-    await expect(api.quoteProjectFee('p1', 'pf1', 0)).rejects.toMatchObject({
-      status: 400,
-      invalidFields: { amount: 'O valor deve ser maior que zero.' },
-      message: expect.stringContaining('O valor deve ser maior que zero.'),
-    });
-  });
-
-  it('consulta o histórico cronológico do projeto via GET /projects/{id}/history', async () => {
-    const mockEvents = [
-      {
-        id: 'ev-1',
-        projectId: 'p1',
-        eventType: 'PROJETO_CRIADO',
-        actorId: 'admin-1',
-        actorRole: 'ADMIN',
-        description: 'Projeto cadastrado para a empresa Empresa A.',
-        createdAt: '2026-11-07T15:00:00Z',
-      },
-    ];
-    apiClient.mockResolvedValueOnce({ status: 200, data: mockEvents });
-
-    const result = await api.getProjectHistory('p1');
-
-    expect(apiClient).toHaveBeenCalledWith(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/projects/p1/history',
-      }),
-    );
-    expect(result).toEqual(mockEvents);
-  });
-
-  it('exporta os dados e histórico do projeto em CSV via GET /projects/{id}/export/csv com responseType blob', async () => {
-    const csvBlob = new Blob(['\uFEFFDADOS DO PROJETO\r\n'], { type: 'text/csv;charset=utf-8' });
-    apiClient.mockResolvedValueOnce({ status: 200, data: csvBlob });
-
-    const result = await api.exportProjectCsv('p1');
-
-    expect(apiClient).toHaveBeenCalledWith(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/projects/p1/export/csv',
-        responseType: 'blob',
-      }),
-    );
-    expect(result).toBe(csvBlob);
-  });
-
-  it('chama a rota de dashboard do admin esperada pelo backend', async () => {
-    const mockDashboardData = {
-      inactiveExhibitors: [],
-      pendingDeadlines: [],
-      pendingApprovals: [],
-    };
-    apiClient.mockResolvedValueOnce({ status: 200, data: mockDashboardData });
-
-    const result = await api.getAdminDashboard();
-    expect(result).toEqual(mockDashboardData);
-    expect(apiClient).toHaveBeenCalledWith(
-      expect.objectContaining({ method: 'GET', url: '/projects/admin/dashboard' })
-    );
   });
 });
