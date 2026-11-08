@@ -12,7 +12,7 @@
   justify-content: space-between;
   align-items: center;
   gap: $sp-4;
-  margin-bottom: $sp-6;
+  margin-bottom: $sp-5;
   flex-wrap: wrap;
 }
 
@@ -32,7 +32,27 @@
 .headerControls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.secondaryNavButton {
+  @include figma-pill-button;
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+    transform: translateY(-1px);
+  }
 }
 
 .pdfReviewButton {
@@ -114,13 +134,237 @@
 }
 
 /* ==========================================================================
-   Kanban Board Styles
+   KPI Strip Grid (6 Fixed-Size Cards Aligned with 3 Columns)
+   ========================================================================== */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.kpiCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  height: 112px;
+  min-height: 112px;
+  max-height: 112px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+    border-color: #cbd5e1;
+  }
+}
+
+.kpiCardSelected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.22);
+}
+
+.kpiAccentBlue {
+  border-left: 4px solid #3b82f6;
+}
+
+.kpiAccentRed {
+  border-left: 4px solid #ef4444;
+}
+
+.kpiAccentIndigo {
+  border-left: 4px solid #6366f1;
+}
+
+.kpiAccentAmber {
+  border-left: 4px solid #f59e0b;
+}
+
+.kpiAccentPurple {
+  border-left: 4px solid #a855f7;
+}
+
+.kpiAccentEmerald {
+  border-left: 4px solid #10b981;
+}
+
+.kpiTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.kpiLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpiTag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.kpiTagBlue {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.kpiTagRed {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.kpiTagIndigo {
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+.kpiTagAmber {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.kpiTagPurple {
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+.kpiTagEmerald {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.kpiValue {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpiSubtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   Filter & Search Bar
+   ========================================================================== */
+.filtersBar {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.filterControlsGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 14px;
+  align-items: end;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filterLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.filterInput,
+.filterSelect {
+  height: 36px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  }
+}
+
+.activeFilterFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  gap: 12px;
+}
+
+.activeFilterHint {
+  font-size: 12px;
+  color: #475569;
+}
+
+.clearFiltersBtn {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #fecaca;
+  }
+}
+
+/* ==========================================================================
+   Kanban Board & Fixed-Size Cards
    ========================================================================== */
 .kanbanBoard {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .kanbanColumn {
@@ -128,9 +372,10 @@
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 18px;
-  min-height: 480px;
+  min-height: 1085px;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
@@ -213,7 +458,8 @@
 }
 
 .columnDescription {
-  margin: 0 0 16px 0;
+  margin: 0 0 14px 0;
+  min-height: 34px;
   font-size: 12px;
   line-height: 1.4;
   color: #64748b;
@@ -226,27 +472,39 @@
   flex: 1;
 }
 
+.approvalsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .emptyCard {
   background: #ffffff;
   border: 1px dashed #cbd5e1;
   border-radius: 12px;
-  padding: 24px 16px;
+  padding: 32px 16px;
   text-align: center;
   color: #94a3b8;
   font-size: 13px;
   font-style: italic;
 }
 
+/* Todos os cards possuem tamanho estritamente fixo para alinhar as 3 colunas */
 .kanbanCard {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 13px 15px;
+  height: 214px;
+  min-height: 214px;
+  max-height: 214px;
+  box-sizing: border-box;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  justify-content: space-between;
+  overflow: hidden;
 
   &:hover {
     transform: translateY(-2px);
@@ -265,19 +523,62 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 8px;
+  min-height: 40px;
+}
+
+.cardTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
 }
 
 .cardCompanyName {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: #0f172a;
-  line-height: 1.3;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardSubtags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.categoryChip {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
+}
+
+.documentChip {
+  font-size: 10px;
+  color: #64748b;
+  font-family: $font-family-mono;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cardBody {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 5px;
+  flex: 1;
+  padding: 4px 0;
 }
 
 .metaRow {
@@ -285,38 +586,42 @@
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
+  line-height: 1.35;
   gap: 8px;
 }
 
 .metaLabel {
-  color: #94a3b8;
+  color: #64748b;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .metaValue {
-  color: #334155;
-  font-weight: 500;
+  color: #1e293b;
+  font-weight: 600;
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 170px;
+  max-width: 195px;
 }
 
 .cardFooter {
   padding-top: 8px;
   border-top: 1px solid #f1f5f9;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
 }
 
 /* ==========================================================================
-   Badges Styles
+   Badges & Card Buttons
    ========================================================================== */
 .badgeNeverAccessed {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   padding: 3px 8px;
   border-radius: 12px;
   background: #fee2e2;
@@ -326,6 +631,7 @@
   font-size: 11px;
   letter-spacing: 0.2px;
   white-space: nowrap;
+  flex-shrink: 0;
 
   &::before {
     content: '';
@@ -343,11 +649,12 @@
   padding: 3px 8px;
   border-radius: 12px;
   background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  font-weight: 500;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-weight: 600;
   font-size: 11px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .alertBadge {
@@ -358,6 +665,7 @@
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .alertAtrasado {
@@ -388,10 +696,11 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  width: 100%;
+  flex: 1;
   justify-content: center;
-  padding: 7px 12px;
-  border-radius: 8px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
   border: 1px solid #3b82f6;
   background: #eff6ff;
   color: #1d4ed8;
@@ -407,7 +716,49 @@
   }
 }
 
+.secondaryCardAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 
+  &:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #94a3b8;
+  }
+}
+
+.iconDetailsButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+}
 
 /* ==========================================================================
    Pagination Component
@@ -452,9 +803,131 @@
 }
 
 /* ==========================================================================
+   Project Details & History Modal
+   ========================================================================== */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.65);
+}
+
+.modalCardWide {
+  width: 100%;
+  max-width: 820px;
+  max-height: 88vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  padding: 24px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modalCompany {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.modalSubtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.closeModalBtn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modalDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.modalField {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.modalFieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.modalFieldValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.rejectionBox {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+.modalTimelineWrapper {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 12px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
    Responsive Breakpoints
    ========================================================================== */
 @media (max-width: 1024px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filterControlsGrid {
+    grid-template-columns: 1fr;
+  }
+
   .kanbanBoard {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -473,16 +946,14 @@
 
   .headerControls {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
-  .panel {
-    padding: 16px;
+  .kpiGrid {
+    grid-template-columns: 1fr;
   }
 
-  .table th,
-  .table td {
-    padding: 10px 8px;
-    font-size: 12px;
+  .modalDetailsGrid {
+    grid-template-columns: 1fr;
   }
 }

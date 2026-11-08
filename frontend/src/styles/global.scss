@@ -166,6 +166,11 @@ html[data-theme='dark'] {
   [class*='pageInfo'],
   [class*='modalCompany'],
   [class*='modalField'],
+  [class*='kpiLabel'],
+  [class*='kpiValue'],
+  [class*='kpiSubtitle'],
+  [class*='documentChip'],
+  [class*='activeFilterHint'],
   [class*='hint'] {
     color: #ffffff !important;
   }
@@ -176,12 +181,27 @@ html[data-theme='dark'] {
   [class*='loadingCard'],
   [class*='emptyCard'],
   [class*='filtersSection'],
+  [class*='filtersBar'],
+  [class*='kpiCard'],
   [class*='kanbanColumn'],
   [class*='container'],
   [class*='linkedSection'] {
     background: #1e293b !important;
     border-color: #334155 !important;
     color: #ffffff !important;
+  }
+
+  [class*='kpiCardSelected'] {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.45) !important;
+  }
+
+  [class*='cardFooter'],
+  [class*='activeFilterFooter'],
+  [class*='modalHeader'],
+  [class*='modalFooter'],
+  [class*='modalTimelineWrapper'] {
+    border-color: #334155 !important;
   }
 
   /* Inner Boxes & Cards */
@@ -320,6 +340,9 @@ html[data-theme='dark'] {
   /* Secondary / Neutral Buttons */
   [class*='pageButton'],
   [class*='refreshButton'],
+  [class*='secondaryNavButton'],
+  [class*='secondaryCardAction'],
+  [class*='iconDetailsButton'],
   [class*='backBtn'],
   [class*='downloadBtn'],
   [class*='secondaryButton'],

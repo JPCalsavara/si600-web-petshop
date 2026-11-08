@@ -64,10 +64,20 @@ export interface PendingApproval {
   status: ProjectStatus;
 }
 
+export interface DashboardFinancialSummary {
+  totalProjectFees: number;
+  pendingQuotesCount: number;
+  awaitingQuantityCount: number;
+  quotedFeesCount: number;
+  generatedPaymentsCount: number;
+  estimatedRevenue: number;
+}
+
 export interface AdminDashboardData {
   inactiveExhibitors: InactiveExhibitor[];
   pendingDeadlines: Project[];
   pendingApprovals: PendingApproval[];
+  financialSummary?: DashboardFinancialSummary;
 }
 
 // ---- US-03: criação de projeto do cliente ----

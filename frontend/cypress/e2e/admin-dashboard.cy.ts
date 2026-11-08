@@ -54,6 +54,14 @@ describe('US-18: Dashboard do Administrador', () => {
         status: 'PDF_EM_ANALISE',
       },
     ],
+    financialSummary: {
+      totalProjectFees: 8,
+      pendingQuotesCount: 2,
+      awaitingQuantityCount: 1,
+      quotedFeesCount: 3,
+      generatedPaymentsCount: 2,
+      estimatedRevenue: 14500.5,
+    },
   };
 
   beforeEach(() => {
@@ -77,6 +85,16 @@ describe('US-18: Dashboard do Administrador', () => {
 
   it('exibe o dashboard em formato Kanban com contadores por grupo ("Nunca acessou", "Pendentes", "Em dia")', () => {
     cy.wait('@getDashboard');
+
+    // Valida grade de 6 KPIs operacionais e financeiros no topo
+    cy.get('[data-testid="dashboard-kpi-grid"]').should('be.visible');
+    cy.get('[data-testid="kpi-total-projects"]').should('be.visible');
+    cy.get('[data-testid="kpi-never-accessed"]').should('be.visible');
+    cy.get('[data-testid="kpi-pending-approvals"]').should('be.visible');
+    cy.get('[data-testid="kpi-critical-deadlines"]').should('be.visible');
+    cy.get('[data-testid="kpi-pending-quotes"]').should('be.visible');
+    cy.get('[data-testid="kpi-value-pending-quotes"]').should('contain.text', '2');
+    cy.get('[data-testid="kpi-estimated-revenue"]').should('be.visible');
 
     // Valida visualização Kanban ativa por padrão
     cy.get('[data-testid="kanban-board"]').should('be.visible');

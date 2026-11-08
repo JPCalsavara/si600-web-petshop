@@ -52,6 +52,9 @@ export default function App() {
               setAdminSection('projetos');
               setProjectView({ name: 'lista' });
             }}
+            onNavigateToQuotes={() => {
+              setAdminSection('cotacoes');
+            }}
           />
         ) :
         adminSection === 'taxas' ? <FeeCatalogPage /> :
