@@ -18,7 +18,8 @@ public class ActorFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod()) || "/health".equals(request.getServletPath())) {
+        if (br.unicamp.ft.si600.eventos.payment.http.PaymentHttpPaths.protectedPath(request.getServletPath())
+                || "OPTIONS".equalsIgnoreCase(request.getMethod()) || "/health".equals(request.getServletPath())) {
             filterChain.doFilter(request, response);
             return;
         }

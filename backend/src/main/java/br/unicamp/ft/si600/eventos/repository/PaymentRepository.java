@@ -14,6 +14,8 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Optional<Payment> findByIntegrationIdAndRequestId(String integrationId, UUID requestId);
     Optional<Payment> findByIntegrationIdAndObligationReference(String integrationId, String obligationReference);
     Optional<Payment> findByIdAndIntegrationId(UUID id, String integrationId);
+    Optional<Payment> findByOrderId(String orderId);
+    org.springframework.data.domain.Page<Payment> findByIntegrationId(String integrationId, org.springframework.data.domain.Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Payment p where p.id = :id and p.integrationId = :integration")

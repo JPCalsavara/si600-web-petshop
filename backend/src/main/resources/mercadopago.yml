@@ -1,12 +1,3 @@
-# Imports relativos ao diretório de execução: raiz do projeto ou backend/.
-# .env do backend prevalece sobre .env da raiz; ambiente do processo prevalece sobre arquivos.
-spring:
-  config:
-    import:
-      - optional:file:../.env[.properties]
-      - optional:file:.env[.properties]
-      - optional:file:backend/.env[.properties]
-
 mercadopago:
   enabled: ${MP_ENABLED:false}
   base-url: ${MP_BASE_URL:https://api.mercadopago.com}
@@ -16,3 +7,16 @@ mercadopago:
 
 payment:
   fingerprint-secret: ${PAYMENT_FINGERPRINT_SECRET:}
+  internal:
+    enabled: ${PAYMENT_INTERNAL_ENABLED:false}
+    token: ${PAYMENT_INTERNAL_TOKEN:}
+    integration-id: ${PAYMENT_INTERNAL_INTEGRATION_ID:}
+    allowed-obligations: ${PAYMENT_INTERNAL_ALLOWED_OBLIGATIONS:}
+  development:
+    enabled: ${PAYMENT_DEV_ENABLED:false}
+    username: ${PAYMENT_DEV_USERNAME:}
+    password: ${PAYMENT_DEV_PASSWORD:}
+    origin: ${PAYMENT_DEV_ORIGIN:http://localhost:5173}
+  webhook:
+    enabled: ${PAYMENT_WEBHOOK_ENABLED:false}
+    secret: ${PAYMENT_WEBHOOK_SECRET:}

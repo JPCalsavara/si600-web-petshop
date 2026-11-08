@@ -14,12 +14,12 @@ import br.unicamp.ft.si600.eventos.repository.PaymentRepository;
 import jakarta.validation.Validator;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -41,31 +41,31 @@ import static br.unicamp.ft.si600.eventos.exception.PaymentException.Kind;
 /** Interface Java backend. O chamador autentica a integração e autoriza os dados da obrigação. */
 @Service
 public class PaymentService {
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PaymentService.class);
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
     private final PaymentRepository repository;
     private final ObjectProvider<MercadoPagoGateway> gateways;
     private final Validator validator;
     private final Clock clock;
-    private final ApplicationEventPublisher events;
     private final String fingerprintSecret;
     private final TransactionTemplate write;
     private final TransactionTemplate read;
 
     public PaymentService(PaymentRepository repository, ObjectProvider<MercadoPagoGateway> gateways,
-                          Validator validator, Clock clock, ApplicationEventPublisher events,
+                          Validator validator, Clock clock,
                           PlatformTransactionManager transactions,
                           @Value("${payment.fingerprint-secret:}") String fingerprintSecret) {
         this.repository = repository;
         this.gateways = gateways;
         this.validator = validator;
         this.clock = clock;
-        this.events = events;
         this.fingerprintSecret = fingerprintSecret;
         this.write = new TransactionTemplate(transactions);
         this.write.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.write.setTimeout(5);
         this.read = new TransactionTemplate(transactions);
         this.read.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.read.setReadOnly(true);
+        this.read.setTimeout(5);
     }
 
     public PaymentResponse generateBoleto(GenerateBoletoCommand command) {
@@ -90,7 +90,7 @@ public class PaymentService {
             return failCreation(payment, true, "UNEXPECTED_GATEWAY_FAILURE", 0);
         }
         try {
-            return apply(payment.integrationId(), payment.id(), result, false);
+            return apply(payment.integrationId(), payment.id(), result, false, null);
         } catch (PaymentException ex) {
             if (ex.kind() != Kind.VERIFICATION_FAILED) throw ex;
             return failCreation(payment, true, "VERIFICATION_FAILED", result == null ? 0 : result.providerHttpStatus());
@@ -103,20 +103,52 @@ public class PaymentService {
         return read.execute(tx -> PaymentResponse.from(load(integrationId, paymentId, false)));
     }
 
+    /** Histórico local paginado; o controller autoriza o acesso ao ambiente de desenvolvimento. */
+    public org.springframework.data.domain.Page<PaymentResponse> getPaymentHistory(String integrationId, int page) {
+        var sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt", "id");
+        return read.execute(tx -> repository.findByIntegrationId(integrationId,
+                org.springframework.data.domain.PageRequest.of(page, 20, sort)).map(PaymentResponse::from));
+    }
+
     public BoletoDetailsResponse getBoleto(String integrationId, UUID paymentId) {
         requireNoAmbientTransaction();
         PaymentResponse payment = getPayment(integrationId, paymentId);
         if (payment.orderId() == null) throw new PaymentException(Kind.RECOVERY_REQUIRED, paymentId);
-        OrderResult result = gateway().getOrder(payment.orderId());
-        PaymentResponse updated = apply(integrationId, paymentId, result, true);
-        return new BoletoDetailsResponse(updated, result.ticketUrl(), result.digitableLine(), result.barcodeContent());
+        return fetchAndApply(integrationId, paymentId, payment.orderId());
     }
 
     public PaymentResponse synchronizeOrder(String integrationId, UUID paymentId) {
         requireNoAmbientTransaction();
         PaymentResponse payment = getPayment(integrationId, paymentId);
         if (payment.orderId() == null) return payment;
-        return apply(integrationId, paymentId, gateway().getOrder(payment.orderId()), true);
+        return fetchAndApply(integrationId, paymentId, payment.orderId()).payment();
+    }
+
+    /** Resolve a cobrança pela external_reference verificada do provedor; o corpo não escolhe o pagamento. */
+    public PaymentResponse synchronizeNotifiedOrder(String orderId) {
+        requireNoAmbientTransaction();
+        if (orderId == null || !orderId.matches("ORD[A-Z0-9]{1,100}")) throw new PaymentException(Kind.INVALID_INPUT, null);
+        // A resposta autenticada do provedor é a fonte de associação. Isso também recupera
+        // reservas incertas em que o POST criou a ordem, mas a resposta não foi persistida.
+        OrderResult snapshot = gateway().getOrder(orderId);
+        UUID paymentId;
+        try {
+            paymentId = UUID.fromString(snapshot.externalReference());
+            if (!paymentId.toString().equals(snapshot.externalReference())) throw new IllegalArgumentException();
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            log.warn("MP_WEBHOOK order={} resolution=payment_not_found_local", orderId);
+            throw new PaymentException(Kind.NOT_FOUND, null);
+        }
+        PaymentResponse local = read.execute(tx -> repository.findById(paymentId).map(PaymentResponse::from).orElse(null));
+        if (local == null) {
+            log.warn("MP_WEBHOOK order={} resolution=payment_not_found_local", orderId);
+            throw new PaymentException(Kind.NOT_FOUND, paymentId);
+        }
+        UUID alreadyAssociated = read.execute(tx -> repository.findByOrderId(orderId).map(Payment::getId).orElse(null));
+        if (alreadyAssociated != null && !alreadyAssociated.equals(paymentId)) {
+            throw new PaymentException(Kind.CONFLICT, paymentId);
+        }
+        return apply(local.integrationId(), local.id(), snapshot, true, null);
     }
 
     /** Recuperação assistida: o ID candidato só é vinculado depois de GET e conferência de referência/valor. */
@@ -129,7 +161,22 @@ public class PaymentService {
         if (payment.orderId() != null && !payment.orderId().equals(candidateOrderId)) {
             throw new PaymentException(Kind.CONFLICT, paymentId);
         }
-        return apply(integrationId, paymentId, gateway().getOrder(candidateOrderId), true);
+        return fetchAndApply(integrationId, paymentId, candidateOrderId).payment();
+    }
+
+    private BoletoDetailsResponse fetchAndApply(String integrationId, UUID paymentId, String orderId) {
+        // A concurrent commit invalidates the snapshot; only GET may be retried, never creation.
+        for (int attempt = 0; attempt < 2; attempt++) {
+            Long version = read.execute(tx -> load(integrationId, paymentId, false).getVersion());
+            OrderResult snapshot = gateway().getOrder(orderId);
+            try {
+                var updated = apply(integrationId, paymentId, snapshot, true, version);
+                return new BoletoDetailsResponse(updated, snapshot.ticketUrl(), snapshot.digitableLine(), snapshot.barcodeContent());
+            } catch (PaymentException ex) {
+                if (ex.kind() != Kind.STALE_SNAPSHOT || attempt == 1) throw ex;
+            }
+        }
+        throw new PaymentException(Kind.STALE_SNAPSHOT, paymentId);
     }
 
     private Reservation reserve(GenerateBoletoCommand command, String fingerprint) {
@@ -164,17 +211,18 @@ public class PaymentService {
         }).orElse(null);
     }
 
-    private PaymentResponse apply(String integrationId, UUID paymentId, OrderResult result, boolean verifiedGet) {
+    private PaymentResponse apply(String integrationId, UUID paymentId, OrderResult result, boolean verifiedGet, Long expectedVersion) {
         try {
             return write.execute(tx -> {
                 Payment payment = load(integrationId, paymentId, true);
                 verify(payment, result);
-                PaymentStatus before = payment.getStatus();
+                if (expectedVersion != null && !expectedVersion.equals(payment.getVersion())) {
+                    throw new PaymentException(Kind.STALE_SNAPSHOT, paymentId);
+                }
                 payment.applyProviderSnapshot(result.orderId(), result.paymentId(), result.status(), result.statusDetail(),
                         result.paymentStatus(), result.paymentStatusDetail(), result.paymentExpiresAt(),
                         result.providerHttpStatus(), mapStatus(result, verifiedGet), now());
                 repository.flush();
-                publishAfterCommit(payment, before);
                 return PaymentResponse.from(payment);
             });
         } catch (PaymentException ex) {
@@ -197,6 +245,11 @@ public class PaymentService {
     }
 
     private static PaymentStatus mapStatus(OrderResult result, boolean verifiedGet) {
+        if (verifiedGet) {
+            if ("refunded".equals(result.status()) && "refunded".equals(result.statusDetail())) return PaymentStatus.REEMBOLSADO;
+            if ("processed".equals(result.status()) && "partially_refunded".equals(result.statusDetail())) return PaymentStatus.REEMBOLSADO_PARCIAL;
+            if ("charged_back".equals(result.status())) return PaymentStatus.CONTESTADO;
+        }
         if (verifiedGet && "processed".equals(result.status()) && "accredited".equals(result.statusDetail())
                 && "processed".equals(result.paymentStatus()) && "accredited".equals(result.paymentStatusDetail())) {
             return PaymentStatus.PAGO;
@@ -205,7 +258,7 @@ public class PaymentService {
             case "created", "processing", "processed" -> PaymentStatus.CRIANDO;
             case "action_required" -> PaymentStatus.GERADO;
             case "canceled" -> "expired".equals(result.statusDetail()) ? PaymentStatus.EXPIRADO : PaymentStatus.CANCELADO;
-            case "failed" -> PaymentStatus.FALHOU;
+            case "failed" -> "expired".equals(result.statusDetail()) ? PaymentStatus.EXPIRADO : PaymentStatus.FALHOU;
             default -> PaymentStatus.INCERTO;
         };
     }
@@ -214,10 +267,8 @@ public class PaymentService {
         try {
             return write.execute(tx -> {
                 Payment payment = load(original.integrationId(), original.id(), true);
-                PaymentStatus before = payment.getStatus();
                 payment.recordCreationFailure(uncertain, code, httpStatus, now());
                 repository.flush();
-                publishAfterCommit(payment, before);
                 return PaymentResponse.from(payment);
             });
         } catch (RuntimeException ex) {
@@ -229,21 +280,6 @@ public class PaymentService {
         return (locked ? repository.findForUpdate(paymentId, integrationId)
                 : repository.findByIdAndIntegrationId(paymentId, integrationId))
                 .orElseThrow(() -> new PaymentException(Kind.NOT_FOUND, paymentId));
-    }
-
-    private void publishAfterCommit(Payment payment, PaymentStatus before) {
-        if (before == payment.getStatus()) return;
-        PaymentStatusChanged event = new PaymentStatusChanged(payment.getId(), payment.getIntegrationId(),
-                before, payment.getStatus(), payment.getUpdatedAt());
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override public void afterCommit() {
-                try {
-                    events.publishEvent(event);
-                } catch (RuntimeException ex) {
-                    log.warn("Falha na notificação local do pagamento {} após commit.", event.paymentId());
-                }
-            }
-        });
     }
 
     private void validate(GenerateBoletoCommand command) {

@@ -6,6 +6,7 @@ import org.hibernate.annotations.Check;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.Objects;
 
 @Entity
 @Table(name = "payments", uniqueConstraints = {
@@ -60,7 +61,14 @@ public class Payment {
                                      String providerDetail, String paymentStatus, String paymentDetail,
                                      OffsetDateTime expiresAt, int httpStatus, PaymentStatus next,
                                      OffsetDateTime now) {
-        if (status == PaymentStatus.PAGO && next != PaymentStatus.PAGO) return;
+        if (!status.accepts(next)) return;
+        // Repeated identical GETs are reads: do not advance version/timestamp or contend on a phantom update.
+        if (status == next && Objects.equals(this.orderId, orderId)
+                && (paymentId == null || Objects.equals(this.paymentId, paymentId))
+                && Objects.equals(this.providerStatus, providerStatus) && Objects.equals(this.providerStatusDetail, providerDetail)
+                && Objects.equals(this.providerPaymentStatus, paymentStatus) && Objects.equals(this.providerPaymentStatusDetail, paymentDetail)
+                && (expiresAt == null || Objects.equals(this.expiresAt, expiresAt))
+                && this.lastHttpStatus == httpStatus && this.lastErrorCode == null) return;
         this.orderId = orderId;
         if (paymentId != null) this.paymentId = paymentId;
         this.providerStatus = providerStatus;
@@ -83,6 +91,7 @@ public class Payment {
     }
 
     public UUID getId() { return id; }
+    public Long getVersion() { return version; }
     public String getIntegrationId() { return integrationId; }
     public String getObligationReference() { return obligationReference; }
     public UUID getRequestId() { return requestId; }

@@ -28,5 +28,5 @@ CREATE TABLE IF NOT EXISTS payments (
     CONSTRAINT uq_payment_order UNIQUE (mp_order_id),
     CONSTRAINT uq_payment_external UNIQUE (mp_payment_id),
     CONSTRAINT ck_payment_amount_currency CHECK (amount > 0 AND currency = 'BRL'),
-    CONSTRAINT ck_payment_state CHECK (status IN ('CRIANDO','GERADO','INCERTO','FALHOU','PAGO','CANCELADO','EXPIRADO'))
+    CONSTRAINT ck_payment_state CHECK (status IN ('CRIANDO','GERADO','INCERTO','FALHOU','PAGO','CANCELADO','EXPIRADO','REEMBOLSADO_PARCIAL','REEMBOLSADO','CONTESTADO'))
 );

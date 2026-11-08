@@ -3,7 +3,6 @@ package br.unicamp.ft.si600.eventos.payment;
 import br.unicamp.ft.si600.eventos.gateway.MercadoPagoGateway;
 import br.unicamp.ft.si600.eventos.gateway.MercadoPagoGateway.*;
 import br.unicamp.ft.si600.eventos.gateway.MercadoPagoProperties;
-import br.unicamp.ft.si600.eventos.gateway.RestMercadoPagoGateway;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
@@ -88,7 +87,7 @@ class MercadoPagoGatewayIntegrationTest {
     }
 
     private MercadoPagoGateway gateway(Duration timeout) {
-        return new RestMercadoPagoGateway(new MercadoPagoProperties(true,
+        return new MercadoPagoGateway(new MercadoPagoProperties(true,
                 "http://127.0.0.1:" + server.getAddress().getPort(), "stub-token",
                 Duration.ofSeconds(1), timeout), mapper, validators.getValidator());
     }
@@ -323,7 +322,7 @@ class MercadoPagoGatewayIntegrationTest {
     @ValueSource(strings = {"http://example.com", "https://user:password@example.com", "https://example.com?token=x",
             "https://example.com/path", "invalid"})
     void deveRejeitarConfiguracaoInseguraAntesDeEnviarToken(String baseUrl) {
-        assertThatThrownBy(() -> new RestMercadoPagoGateway(new MercadoPagoProperties(true, baseUrl, "stub-token",
+        assertThatThrownBy(() -> new MercadoPagoGateway(new MercadoPagoProperties(true, baseUrl, "stub-token",
                 Duration.ofSeconds(1), Duration.ofSeconds(1)), mapper, validators.getValidator()))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageNotContaining("password");
         assertThat(paths).isEmpty();
@@ -374,5 +373,17 @@ class MercadoPagoGatewayIntegrationTest {
                   "ticket_url":"https://www.mercadopago.com.br/ticket/example",
                   "digitable_line":"1234567890","barcode_content":"0987654321"}}]}}
                 """.formatted(ORDER_ID, status, detail, status, detail);
+    }
+    @Test
+    void deveAceitarBoletoBradescoRetornadoPeloMercadoPago() {
+        responseBody = responseBody.replace(
+                "\"id\":\"boleto\",\"type\":\"ticket\"",
+                "\"id\":\"bolbradesco\",\"type\":\"ticket\""
+        );
+
+        OrderResult result = gateway.createBoleto(request());
+
+        assertThat(result.orderId()).isEqualTo(ORDER_ID);
+        assertThat(result.paymentId()).isNotNull();
     }
 }

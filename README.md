@@ -192,3 +192,7 @@ Consulte os detalhes em [docs/ci-cd-gitlab-github-bridge.md](docs/ci-cd-gitlab-g
 * Lorenzo De Oliveira Pugina
 * Samuel Calegnan dos Santos Souza
 * Samuel Lima Martins
+
+## Pagamentos em desenvolvimento
+
+Consulte [a configuração e o fluxo manual](docs/pagamentos.md). Após preencher `.envpagamentos`, inicie com `bash scripts/pagamentos-dev.sh` e acesse `http://localhost:5173/dev/pagamentos`.

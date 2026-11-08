@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public class PaymentException extends RuntimeException {
     public enum Kind { INVALID_INPUT, CONFLICT, NOT_FOUND, CONFIGURATION, RECOVERY_REQUIRED,
-        VERIFICATION_FAILED, STORAGE_FAILURE, AMBIENT_TRANSACTION }
+        VERIFICATION_FAILED, STORAGE_FAILURE, AMBIENT_TRANSACTION, STALE_SNAPSHOT }
     private final Kind kind;
     private final UUID paymentId;
 

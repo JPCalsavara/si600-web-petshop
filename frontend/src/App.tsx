@@ -1,3 +1,5 @@
+import { lazy, Suspense } from 'react';
+const PaymentTestPage = import.meta.env.DEV ? lazy(() => import('./pages/PaymentTestPage/PaymentTestPage')) : null;
 import { FeeCatalogPage } from './pages/FeeCatalogPage/FeeCatalogPage';
 import { useState } from 'react';
 import './styles/global.scss';
@@ -39,6 +41,9 @@ export default function App() {
   const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios'>('resumo');
   const [projectView, setProjectView] = useState<AdminView>({ name: 'lista' });
 
+  if (PaymentTestPage && window.location.pathname === '/dev/pagamentos') {
+    return <Suspense fallback={<p>Carregando...</p>}><PaymentTestPage /></Suspense>;
+  }
   return (
     <AppShell active={role === 'ADMIN' ? adminSection : 'projetos'} onNavigate={setAdminSection}>
       {role === 'ADMIN' ? (
@@ -57,6 +62,7 @@ export default function App() {
             }}
           />
         ) :
+        adminSection === 'pagamentos' && PaymentTestPage ? <Suspense fallback={<p>Carregando...</p>}><PaymentTestPage /></Suspense> :
         adminSection === 'taxas' ? <FeeCatalogPage /> :
         adminSection === 'cotacoes' ? <QuoteFeesPage /> :
         adminSection === 'projetos' ? <AdminProjects view={projectView} setView={setProjectView} /> :
