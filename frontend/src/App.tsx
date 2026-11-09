@@ -38,15 +38,15 @@ function AdminProjects({ view, setView }: { view: AdminView; setView: (v: AdminV
 export default function App() {
   const role = getCurrentActorRole();
   const projectId = getCurrentClientProjectId();
-  const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios'>('resumo');
+  const isDirectDevPayments = typeof window !== 'undefined' && window.location.pathname === '/dev/pagamentos';
+  const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios'>(
+    () => isDirectDevPayments ? 'pagamentos' : 'resumo'
+  );
   const [projectView, setProjectView] = useState<AdminView>({ name: 'lista' });
 
-  if (PaymentTestPage && window.location.pathname === '/dev/pagamentos') {
-    return <Suspense fallback={<p>Carregando...</p>}><PaymentTestPage /></Suspense>;
-  }
   return (
-    <AppShell active={role === 'ADMIN' ? adminSection : 'projetos'} onNavigate={setAdminSection}>
-      {role === 'ADMIN' ? (
+    <AppShell active={role === 'ADMIN' || isDirectDevPayments ? adminSection : 'projetos'} onNavigate={setAdminSection}>
+      {role === 'ADMIN' || isDirectDevPayments ? (
         adminSection === 'resumo' ? (
           <AdminDashboardPage
             onOpenPdfReview={() => {
@@ -62,7 +62,11 @@ export default function App() {
             }}
           />
         ) :
-        adminSection === 'pagamentos' && PaymentTestPage ? <Suspense fallback={<p>Carregando...</p>}><PaymentTestPage /></Suspense> :
+        adminSection === 'pagamentos' && PaymentTestPage ? (
+          <Suspense fallback={<p>Carregando módulo de pagamentos...</p>}>
+            <PaymentTestPage />
+          </Suspense>
+        ) :
         adminSection === 'taxas' ? <FeeCatalogPage /> :
         adminSection === 'cotacoes' ? <QuoteFeesPage /> :
         adminSection === 'projetos' ? <AdminProjects view={projectView} setView={setProjectView} /> :

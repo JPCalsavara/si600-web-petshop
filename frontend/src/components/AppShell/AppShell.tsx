@@ -98,7 +98,7 @@ export function AppShell({ active, children, onNavigate }: Props) {
               )}
               {admin && (
                 <NavItem
-                  label="Pagamentos"
+                  label={import.meta.env.DEV ? 'Pagamentos (Dev)' : 'Pagamentos'}
                   active={active === 'pagamentos'}
                   onClick={() => handleNavigate('pagamentos')}
                 />
