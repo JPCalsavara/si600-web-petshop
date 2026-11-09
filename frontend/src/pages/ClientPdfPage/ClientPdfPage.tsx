@@ -8,17 +8,15 @@ import { ALERT_TAG_LABELS } from '../../constants/alertTag';
 import type { Project } from '../../types';
 import styles from './ClientPdfPage.module.scss';
 import { ProjectFees } from './ProjectFees';
+import { ProjectTimeline } from '../../components/ProjectTimeline/ProjectTimeline';
 import { STATUS_LABELS, feesVisible } from '../../constants/projectStatus';
+import { formatDate } from '../../utils/date';
 
 interface Props {
   projectId: string;
 }
 
 const MAX_SIZE = 10 * 1024 * 1024;
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString('pt-BR');
-}
 
 function formatBytes(value: number | null) {
   if (!value) return '-';
@@ -34,6 +32,7 @@ export function ClientPdfPage({ projectId }: Props) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [activeTab, setActiveTab] = useState<'geral' | 'historico'>('geral');
 
   async function load() {
     try {
@@ -131,75 +130,98 @@ export function ClientPdfPage({ projectId }: Props) {
       {error && <div className={styles.alertDanger}>{error}</div>}
       {success && <div className={styles.alertSuccess}>{success}</div>}
 
-      {project.status === 'REPROVADO' && project.rejectionJustification && (
-        <div className={styles.rejection}>
-          <strong>Ajustes necessários</strong>
-          <p>{project.rejectionJustification}</p>
-        </div>
-      )}
+      <nav className={styles.tabs} aria-label="Seções do projeto">
+        <button
+          type="button"
+          className={`${styles.tabButton} ${activeTab === 'geral' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('geral')}
+        >
+          Visão Geral
+        </button>
+        <button
+          type="button"
+          className={`${styles.tabButton} ${activeTab === 'historico' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('historico')}
+        >
+          Histórico
+        </button>
+      </nav>
 
-      <section className={styles.card}>
-        <div className={styles.summaryGrid}>
-          <div><span>Prazo limite do PDF</span><strong>{formatDate(project.pdfDeadline)}</strong></div>
-          <div><span>Prazo limite de pagamento</span><strong>{project.paymentDeadline ? formatDate(project.paymentDeadline) : '-'}</strong></div>
-          <div><span>Metragem informada</span><strong>{project.boothAreaM2 ? `${project.boothAreaM2} m²` : 'Não informada'}</strong></div>
-          <div><span>Arquivo atual</span><strong>{project.pdfOriginalFilename || 'Nenhum arquivo'}</strong></div>
-          <div><span>Tamanho</span><strong>{formatBytes(project.pdfSizeBytes)}</strong></div>
-        </div>
-
-        {project.pdfOriginalFilename && (
-          <button className={styles.secondaryButton} onClick={handleDownload}>
-            Baixar PDF enviado
-          </button>
-        )}
-      </section>
-
-      {canSubmit && (
-        <form className={styles.card} onSubmit={handleSubmit} noValidate>
-          <h2>{project.status === 'REPROVADO' ? 'Reenviar planta do estande' : 'Enviar planta do estande'}</h2>
-          <div className={styles.formGrid}>
-            <label>
-              Metragem oficial do estande (m²) *
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={area}
-                onChange={(event) => setArea(event.target.value)}
-                placeholder="Ex.: 42,50"
-              />
-            </label>
-
-            <label>
-              Planta do estande (PDF, máximo 10 MB) *
-              <input
-                key={fileInputKey}
-                type="file"
-                accept="application/pdf,.pdf"
-                onChange={(event) => {
-                  const selected = event.target.files?.[0] || null;
-                  setFile(selected);
-                  setError(validateFile(selected));
-                }}
-              />
-            </label>
-          </div>
-
-          <button className={styles.primaryButton} disabled={sending}>
-            {sending ? 'Enviando...' : 'Enviar PDF para análise'}
-          </button>
-        </form>
-      )}
-
-      {!canSubmit && project.status === 'PDF_EM_ANALISE' && (
-        <div className={styles.info}>Seu PDF está em análise. Aguarde a decisão do administrador.</div>
-      )}
-      {feesVisible(project.status) ? (
-        <ProjectFees projectId={projectId} />
+      {activeTab === 'historico' ? (
+        <ProjectTimeline projectId={projectId} projectName={project.companyName} />
       ) : (
-        <div className={styles.info}>
-          As taxas do projeto ficam disponíveis após a aprovação do PDF. Situação atual: {STATUS_LABELS[project.status]}.
-        </div>
+        <>
+          {project.status === 'REPROVADO' && project.rejectionJustification && (
+            <div className={styles.rejection}>
+              <strong>Ajustes necessários</strong>
+              <p>{project.rejectionJustification}</p>
+            </div>
+          )}
+
+          <section className={styles.card}>
+            <div className={styles.summaryGrid}>
+              <div><span>Prazo limite do PDF</span><strong>{formatDate(project.pdfDeadline)}</strong></div>
+              <div><span>Prazo limite de pagamento</span><strong>{project.paymentDeadline ? formatDate(project.paymentDeadline) : '-'}</strong></div>
+              <div><span>Metragem informada</span><strong>{project.boothAreaM2 ? `${project.boothAreaM2} m²` : 'Não informada'}</strong></div>
+              <div><span>Arquivo atual</span><strong>{project.pdfOriginalFilename || 'Nenhum arquivo'}</strong></div>
+              <div><span>Tamanho</span><strong>{formatBytes(project.pdfSizeBytes)}</strong></div>
+            </div>
+
+            {project.pdfOriginalFilename && (
+              <button className={styles.secondaryButton} onClick={handleDownload}>
+                Baixar PDF enviado
+              </button>
+            )}
+          </section>
+
+          {canSubmit && (
+            <form className={styles.card} onSubmit={handleSubmit} noValidate>
+              <h2>{project.status === 'REPROVADO' ? 'Reenviar planta do estande' : 'Enviar planta do estande'}</h2>
+              <div className={styles.formGrid}>
+                <label>
+                  Metragem oficial do estande (m²) *
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={area}
+                    onChange={(event) => setArea(event.target.value)}
+                    placeholder="Ex.: 42,50"
+                  />
+                </label>
+
+                <label>
+                  Planta do estande (PDF, máximo 10 MB) *
+                  <input
+                    key={fileInputKey}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={(event) => {
+                      const selected = event.target.files?.[0] || null;
+                      setFile(selected);
+                      setError(validateFile(selected));
+                    }}
+                  />
+                </label>
+              </div>
+
+              <button className={styles.primaryButton} disabled={sending}>
+                {sending ? 'Enviando...' : 'Enviar PDF para análise'}
+              </button>
+            </form>
+          )}
+
+          {!canSubmit && project.status === 'PDF_EM_ANALISE' && (
+            <div className={styles.info}>Seu PDF está em análise. Aguarde a decisão do administrador.</div>
+          )}
+          {feesVisible(project.status) ? (
+            <ProjectFees projectId={projectId} />
+          ) : (
+            <div className={styles.info}>
+              As taxas do projeto ficam disponíveis após a aprovação do PDF. Situação atual: {STATUS_LABELS[project.status]}.
+            </div>
+          )}
+        </>
       )}
     </main>
   );

@@ -1,26 +1,63 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import type { HealthStatus, Project, ProjectStatus, Fee, FeeRequest, ProjectFee, CalculatedFee, AdminDashboardData } from '../types';
+import type {
+  HealthStatus,
+  Project,
+  ProjectStatus,
+  Fee,
+  FeeRequest,
+  ProjectFee,
+  CalculatedFee,
+  AdminDashboardData,
+  ProjectHistoryEvent,
+  QuoteableProjectFee,
+  ProjectFeeConfiguration,
+} from '../types';
+
+export type { QuoteableProjectFee, ProjectFeeConfiguration };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-const localRole = typeof window !== 'undefined' ? localStorage.getItem('MOCK_ROLE') : null;
-const localActorId = typeof window !== 'undefined' ? localStorage.getItem('MOCK_ACTOR_ID') : null;
+function getStorageItem(key: string): string | null {
+  try {
+    const storage = (globalThis as { localStorage?: Storage }).localStorage;
+    return storage ? storage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
 
-const actorId = localActorId || import.meta.env.VITE_USER_ID || 'client-1';
-const actorRole = (localRole || import.meta.env.VITE_USER_ROLE || 'CLIENT').toUpperCase();
+export function getCurrentActorId(): string {
+  const localActorId = getStorageItem('MOCK_ACTOR_ID');
+  return localActorId || import.meta.env.VITE_USER_ID || 'client-1';
+}
+
+export function getCurrentActorRole(): 'CLIENT' | 'ADMIN' {
+  const localRole = getStorageItem('MOCK_ROLE');
+  const resolved = (localRole || import.meta.env.VITE_USER_ROLE || 'CLIENT').toUpperCase();
+  return resolved === 'ADMIN' ? 'ADMIN' : 'CLIENT';
+}
+
+export function getCurrentClientProjectId(): string | undefined {
+  const localProjectId = getStorageItem('MOCK_PROJECT_ID');
+  return localProjectId || import.meta.env.VITE_PROJECT_ID || undefined;
+}
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
 });
 
 apiClient.interceptors.request.use((config) => {
-  config.headers.set('X-Authenticated-User-Id', actorId);
-  config.headers.set('X-Authenticated-User-Role', actorRole);
+  config.headers.set('X-Authenticated-User-Id', getCurrentActorId());
+  config.headers.set('X-Authenticated-User-Role', getCurrentActorRole());
   return config;
 });
 
 export class ApiRequestError extends Error {
-  constructor(message: string, public readonly status: number, public readonly invalidFields: Record<string, string> = {}) {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly invalidFields: Record<string, string> = {},
+  ) {
     super(message);
     this.name = 'ApiRequestError';
   }
@@ -30,6 +67,32 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+export function normalizeProblemDetail(
+  status: number,
+  problem: unknown,
+): { detail: string; invalidFields: Record<string, string> } {
+  let detail = `Falha na API: HTTP ${status}`;
+  const invalidFields: Record<string, string> = {};
+  if (isRecord(problem)) {
+    if (typeof problem.detail === 'string') detail = problem.detail;
+    else if (typeof problem.title === 'string') detail = problem.title;
+    const rawErrors = isRecord(problem.invalidFields)
+      ? problem.invalidFields
+      : isRecord(problem.errors)
+        ? problem.errors
+        : null;
+    if (rawErrors) {
+      for (const [field, message] of Object.entries(rawErrors)) {
+        if (typeof message === 'string') invalidFields[field] = message;
+      }
+      if (Object.keys(invalidFields).length > 0) {
+        detail += ` ${Object.values(invalidFields).join(' ')}`;
+      }
+    }
+  }
+  return { detail, invalidFields };
+}
+
 async function request<T>(config: AxiosRequestConfig): Promise<T> {
   try {
     const response = await apiClient(config);
@@ -37,19 +100,7 @@ async function request<T>(config: AxiosRequestConfig): Promise<T> {
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      let detail = `Falha na API: HTTP ${error.response.status}`;
-      const invalidFields: Record<string, string> = {};
-      const problem = error.response.data;
-      if (isRecord(problem)) {
-        if (typeof problem.detail === 'string') detail = problem.detail;
-        else if (typeof problem.title === 'string') detail = problem.title;
-        if (isRecord(problem.invalidFields)) {
-          for (const [field, message] of Object.entries(problem.invalidFields)) {
-            if (typeof message === 'string') invalidFields[field] = message;
-          }
-          detail += ` ${Object.values(invalidFields).join(' ')}`;
-        }
-      }
+      const { detail, invalidFields } = normalizeProblemDetail(error.response.status, error.response.data);
       throw new ApiRequestError(detail, error.response.status, invalidFields);
     }
     if (axios.isAxiosError(error)) {
@@ -63,21 +114,12 @@ async function request<T>(config: AxiosRequestConfig): Promise<T> {
 }
 
 export async function checkBackendHealth(): Promise<HealthStatus> {
-  try {
-    const response = await apiClient.get('/health', { headers: { Accept: 'application/json' } });
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(`Falha ao conectar ao backend: HTTP ${error.response?.status || 'Desconhecido'} ${error.message}`);
-    }
-    throw error;
-  }
+  return request<HealthStatus>({
+    method: 'GET',
+    url: '/health',
+    headers: { Accept: 'application/json' },
+  });
 }
-
-export function getCurrentActorRole(): 'CLIENT' | 'ADMIN' {
-  return actorRole === 'ADMIN' ? 'ADMIN' : 'CLIENT';
-}
-
 
 export async function createProject(body: {
   name: string;
@@ -160,7 +202,7 @@ function isFee(value: unknown): value is Fee {
     && (value.measurementUnit === null || typeof value.measurementUnit === 'string');
 }
 
-function parseFee(value: unknown): Fee {
+export function parseFee(value: unknown): Fee {
   if (!isFee(value)) throw new Error('Não foi possível carregar os dados da taxa. Tente novamente.');
   return value;
 }
@@ -191,29 +233,13 @@ export async function deactivateFee(id: string): Promise<Fee> {
   return parseFee(await request<unknown>({ method: 'POST', url: `/fees/${encodeURIComponent(id)}/deactivate` }));
 }
 
-/** US-06: grava a quantidade e leva a taxa para "Aguardando cotação". */
 export async function submitFeeQuantity(projectId: string, projectFeeId: string, quantity: number): Promise<ProjectFee> {
   return request<ProjectFee>({
     method: 'PUT',
     url: `/projects/${encodeURIComponent(projectId)}/fees/${encodeURIComponent(projectFeeId)}/quantity`,
     headers: { 'Content-Type': 'application/json' },
-    data: { quantity }
+    data: { quantity },
   });
-}
-
-export interface QuoteableProjectFee {
-  projectId: string;
-  projectName: string;
-  clientEmail: string | null;
-  projectFeeId: string;
-  feeName: string;
-  feeType: string;
-  quantity: number | null;
-  measurementUnit: string | null;
-  status: string;
-  quotedAmount: number | null;
-  quotedBy: string | null;
-  quotedAt: string | null;
 }
 
 export async function getQuoteableFees(): Promise<QuoteableProjectFee[]> {
@@ -229,34 +255,47 @@ export async function quoteProjectFee(projectId: string, projectFeeId: string, a
   });
 }
 
-export interface ProjectFeeConfiguration {
-  projectFeeId: string;
-  feeId: string;
-  name: string;
-  description: string | null;
-  type: string;
-  measurementUnit: string | null;
-  amount: number | null;
-  amountPerM2: number | null;
-  areaPerUnitM2: number | null;
-  unitAmount: number | null;
-  areaPricingMode: string | null;
-  status: string;
-  quantity: number | null;
-  quotedAmount: number | null;
-  quotedBy: string | null;
-  quotedAt: string | null;
-}
-
 export async function getProjectFeeConfiguration(projectId: string): Promise<ProjectFeeConfiguration[]> {
   return request<ProjectFeeConfiguration[]>({ method: 'GET', url: `/projects/${encodeURIComponent(projectId)}/fees/configuration` });
 }
 
 export async function configureProjectFees(projectId: string, feeIds: string[]): Promise<ProjectFeeConfiguration[]> {
   return request<ProjectFeeConfiguration[]>({
-    method: 'PUT', url: `/projects/${encodeURIComponent(projectId)}/fees/configuration`,
-    headers: { 'Content-Type': 'application/json' }, data: { feeIds },
+    method: 'PUT',
+    url: `/projects/${encodeURIComponent(projectId)}/fees/configuration`,
+    headers: { 'Content-Type': 'application/json' },
+    data: { feeIds },
   });
+}
+
+export async function getProjectHistory(projectId: string): Promise<ProjectHistoryEvent[]> {
+  return request<ProjectHistoryEvent[]>({
+    method: 'GET',
+    url: `/projects/${encodeURIComponent(projectId)}/history`,
+  });
+}
+
+export async function exportProjectCsv(projectId: string): Promise<Blob> {
+  return request<Blob>({
+    method: 'GET',
+    url: `/projects/${encodeURIComponent(projectId)}/export/csv`,
+    responseType: 'blob',
+  });
+}
+
+export async function downloadProjectCsv(projectId: string): Promise<void> {
+  const blobData = await exportProjectCsv(projectId);
+  const blob = blobData instanceof Blob
+    ? blobData
+    : new Blob([blobData], { type: 'text/csv;charset=utf-8;' });
+  const objectUrl = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = `projeto-${projectId}.csv`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.URL.revokeObjectURL(objectUrl);
 }
 
 export async function getAdminDashboard(): Promise<AdminDashboardData> {

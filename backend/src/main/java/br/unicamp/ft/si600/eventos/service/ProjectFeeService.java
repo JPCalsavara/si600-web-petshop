@@ -12,6 +12,7 @@ import br.unicamp.ft.si600.eventos.entity.Fee;
 import br.unicamp.ft.si600.eventos.entity.FeeType;
 import br.unicamp.ft.si600.eventos.entity.Project;
 import br.unicamp.ft.si600.eventos.entity.ProjectFee;
+import br.unicamp.ft.si600.eventos.entity.ProjectHistoryEventType;
 import br.unicamp.ft.si600.eventos.entity.ProjectStatus;
 import br.unicamp.ft.si600.eventos.entity.ProjectFeeStatus;
 import br.unicamp.ft.si600.eventos.exception.ApiException;
@@ -35,11 +36,14 @@ public class ProjectFeeService {
     private final ProjectRepository projects;
     private final FeeRepository feeRepository;
     private final ProjectFeeRepository projectFees;
+    private final ProjectHistoryService historyService;
 
-    public ProjectFeeService(ProjectRepository projects, FeeRepository feeRepository, ProjectFeeRepository projectFees) {
+    public ProjectFeeService(ProjectRepository projects, FeeRepository feeRepository,
+                             ProjectFeeRepository projectFees, ProjectHistoryService historyService) {
         this.projects = projects;
         this.feeRepository = feeRepository;
         this.projectFees = projectFees;
+        this.historyService = historyService;
     }
 
     @Transactional(readOnly = true)
@@ -112,7 +116,14 @@ public class ProjectFeeService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "A quantidade deve ser maior que zero.");
         }
         projectFee.submitQuantity(quantity, OffsetDateTime.now());
-        return ProjectFeeResponse.from(projectFees.saveAndFlush(projectFee));
+        ProjectFee savedFee = projectFees.saveAndFlush(projectFee);
+        historyService.recordEvent(
+                projectId,
+                ProjectHistoryEventType.QUANTIDADE_INFORMADA,
+                actor,
+                "Quantidade informada para a taxa '" + savedFee.getFee().getName() + "': " + quantity + " " + savedFee.getFee().getMeasurementUnit() + "."
+        );
+        return ProjectFeeResponse.from(savedFee);
     }
 
 
@@ -163,7 +174,14 @@ public class ProjectFeeService {
             }
         }
         projectFees.flush();
-        return projectFees.findAllByProjectIdOrderByFeeNameAsc(projectId).stream()
+        var updatedList = projectFees.findAllByProjectIdOrderByFeeNameAsc(projectId);
+        historyService.recordEvent(
+                projectId,
+                ProjectHistoryEventType.TAXAS_CONFIGURADAS,
+                actor,
+                "Configuração de taxas do projeto atualizada (" + updatedList.size() + " taxa(s) ativa(s))."
+        );
+        return updatedList.stream()
                 .map(ProjectFeeConfigurationResponse::from).toList();
     }
 
@@ -210,8 +228,16 @@ public class ProjectFeeService {
                 && projectFee.getStatus() != ProjectFeeStatus.COTADA) {
             throw new ApiException(HttpStatus.CONFLICT, "A taxa não está disponível para cotação neste estado.");
         }
-        projectFee.quote(request.amount().setScale(2, RoundingMode.HALF_UP), actor.id(), OffsetDateTime.now());
-        return PendingQuoteResponse.from(projectFees.saveAndFlush(projectFee));
+        BigDecimal scaledAmount = request.amount().setScale(2, RoundingMode.HALF_UP);
+        projectFee.quote(scaledAmount, actor.id(), OffsetDateTime.now());
+        ProjectFee savedFee = projectFees.saveAndFlush(projectFee);
+        historyService.recordEvent(
+                projectId,
+                ProjectHistoryEventType.TAXA_COTADA,
+                actor,
+                "Taxa '" + savedFee.getFee().getName() + "' cotada no valor de R$ " + scaledAmount + "."
+        );
+        return PendingQuoteResponse.from(savedFee);
     }
 
     private void requireAdmin(Actor actor) {

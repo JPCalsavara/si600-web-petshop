@@ -96,7 +96,7 @@ viewports.forEach((viewport) => {
       cy.contains('button', 'Enviar PDF para análise').should('be.visible').click();
       
       // Deve transitar para o estado de "Em análise"
-      cy.contains(/PDF EM ANALISE/i, { timeout: 10000 }).should('be.visible');
+      cy.contains(/PDF EM AN[AÁ]LISE/i, { timeout: 10000 }).should('be.visible');
     });
 
     it('Admin Sad Path: Tentar rejeitar sem justificativa', () => {

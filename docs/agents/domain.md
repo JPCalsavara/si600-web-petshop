@@ -30,7 +30,7 @@ Single-context repository layout:
 
 ## Use the glossary's vocabulary
 
-When output names a domain concept (in an issue title, an API contract, a test name, or a gatekeeper review finding), use the term as defined in `CONTEXT.md` (e.g., `Cliente`, `Pet`, `Servico`, `Agendamento`, `Atendimento`). Do not drift to synonyms the glossary explicitly avoids.
+When output names a domain concept (in an issue title, an API contract, a test name, or a gatekeeper review finding), use the term as defined in `CONTEXT.md` (e.g., `Cliente`, `Administrador`, `Projeto`, `Planta`, `StatusProjeto`, `Taxa`, `StatusTaxaProjeto`, `TagAlerta`, `EventoHistorico`, `NotificacaoPrazo`). Do not drift to synonyms the glossary explicitly avoids.
 
 ## Flag ADR conflicts
 

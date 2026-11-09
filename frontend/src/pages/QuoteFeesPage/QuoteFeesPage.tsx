@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { getQuoteableFees, quoteProjectFee } from '../../services/api';
-import { parseQuoteAmount } from '../../services/feeQuote';
-import { feeStatusLabel } from '../../constants/feeStatus';
-import type { QuoteableProjectFee } from '../../services/api';
+import { feeStatusLabel, parseQuoteAmount } from '../../constants/feeStatus';
+import { formatDateTime } from '../../utils/date';
+import type { QuoteableProjectFee } from '../../types';
+import styles from './QuoteFeesPage.module.scss';
 
 function money(value: number | null) {
-  return value == null ? '—' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  return value == null
+    ? '—'
+    : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
 export function QuoteFeesPage() {
@@ -23,10 +26,14 @@ export function QuoteFeesPage() {
       setFees(await getQuoteableFees());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível carregar as cotações.');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   async function save(fee: QuoteableProjectFee) {
     const parsed = parseQuoteAmount(values[fee.projectFeeId] ?? fee.quotedAmount?.toString() ?? '');
@@ -36,45 +43,136 @@ export function QuoteFeesPage() {
     }
     const amount = parsed.value;
     try {
-      setBusy(old => ({ ...old, [fee.projectFeeId]: true }));
+      setBusy((old) => ({ ...old, [fee.projectFeeId]: true }));
       setError(null);
       setMessage(null);
       await quoteProjectFee(fee.projectId, fee.projectFeeId, amount);
       setMessage(`Cotação de "${fee.feeName}" (${fee.projectName}) salva com sucesso.`);
-      setValues(old => { const next = { ...old }; delete next[fee.projectFeeId]; return next; });
+      setValues((old) => {
+        const next = { ...old };
+        delete next[fee.projectFeeId];
+        return next;
+      });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível salvar a cotação.');
     } finally {
-      setBusy(old => ({ ...old, [fee.projectFeeId]: false }));
+      setBusy((old) => ({ ...old, [fee.projectFeeId]: false }));
     }
   }
 
-  if (loading) return <section><h1>Cotação de taxas</h1><p>Carregando cotações...</p></section>;
-  return <section>
-    <h1>Cotação de taxas</h1>
-    <p>Informe o valor das taxas variáveis cuja quantidade o cliente já enviou. Enquanto o pagamento não for gerado, você pode recotar; se o cliente alterar a quantidade, a taxa volta para esta lista sem valor.</p>
-    {error && <div role="alert" style={{ padding: 12, margin: '12px 0', background: '#fee2e2' }}>{error}</div>}
-    {message && <div role="status" style={{ padding: 12, margin: '12px 0', background: '#dcfce7' }}>{message}</div>}
-    {fees.length === 0 ? <p>Não há taxas aguardando cotação ou disponíveis para recotação.</p> :
-      <div style={{ display: 'grid', gap: 16 }}>
-        {fees.map(fee => <article key={fee.projectFeeId} style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
-          <h2>{fee.feeName}</h2>
-          <p><strong>Projeto:</strong> {fee.projectName} · <strong>Cliente:</strong> {fee.clientEmail ?? '—'}</p>
-          <p><strong>Quantidade:</strong> {fee.quantity ?? '—'} {fee.measurementUnit ?? ''}</p>
-          <p><strong>Status:</strong> {fee.status === 'COTADA' ? 'Cotada (pode recotar)' : feeStatusLabel(fee.status)}</p>
-          <p><strong>Valor atual:</strong> {money(fee.quotedAmount)}</p>
-          {fee.quotedBy && <p><strong>Última cotação:</strong> {fee.quotedBy} · {fee.quotedAt ? new Date(fee.quotedAt).toLocaleString('pt-BR') : ''}</p>}
-          <label style={{ display: 'block', marginTop: 12 }}>
-            Novo valor (R$)
-            <input type="number" inputMode="decimal" min="0.01" step="0.01" value={values[fee.projectFeeId] ?? (fee.quotedAmount?.toString() ?? '')}
-              onChange={e => setValues(old => ({ ...old, [fee.projectFeeId]: e.target.value }))}
-              style={{ display: 'block', marginTop: 4, padding: 8, maxWidth: 260, width: '100%' }} />
-          </label>
-          <button type="button" disabled={busy[fee.projectFeeId]} onClick={() => void save(fee)} style={{ marginTop: 12 }}>
-            {busy[fee.projectFeeId] ? 'Salvando...' : fee.status === 'COTADA' ? 'Salvar recotação' : 'Salvar cotação'}
-          </button>
-        </article>)}
-      </div>}
-  </section>;
+  return (
+    <section className={styles.page}>
+      <header className={styles.header}>
+        <div>
+          <h1 className={styles.title}>Cotação de taxas</h1>
+          <p className={styles.subtitle}>
+            Informe o valor das taxas variáveis cuja quantidade o cliente já enviou. Enquanto o pagamento não for gerado, você pode recotar; se o cliente alterar a quantidade, a taxa volta para esta lista sem valor.
+          </p>
+        </div>
+        {!loading && (
+          <span className={styles.countBadge}>
+            {fees.length} {fees.length === 1 ? 'taxa para cotação' : 'taxas para cotação'}
+          </span>
+        )}
+      </header>
+
+      {error && (
+        <div role="alert" className={styles.alertError}>
+          {error}
+        </div>
+      )}
+      {message && (
+        <div role="status" className={styles.alertSuccess}>
+          {message}
+        </div>
+      )}
+
+      {loading ? (
+        <div className={styles.loadingCard}>
+          <p>Carregando cotações...</p>
+        </div>
+      ) : fees.length === 0 ? (
+        <div className={styles.emptyCard}>
+          <p>Não há taxas aguardando cotação ou disponíveis para recotação.</p>
+        </div>
+      ) : (
+        <div className={styles.grid}>
+          {fees.map((fee) => (
+            <article key={fee.projectFeeId} className={styles.quoteCard}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.feeHeading}>{fee.feeName}</h2>
+                <span
+                  className={`${styles.statusBadge} ${
+                    fee.status === 'COTADA' ? styles.statusQuoted : styles.statusPending
+                  }`}
+                >
+                  {fee.status === 'COTADA' ? 'Cotada (pode recotar)' : feeStatusLabel(fee.status)}
+                </span>
+              </div>
+
+              <div className={styles.metaList}>
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Projeto:</span>
+                  <span className={styles.metaValue}>{fee.projectName}</span>
+                </div>
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Cliente:</span>
+                  <span className={styles.metaValue}>{fee.clientEmail ?? '—'}</span>
+                </div>
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Quantidade:</span>
+                  <span className={styles.metaValue}>
+                    {fee.quantity ?? '—'} {fee.measurementUnit ?? ''}
+                  </span>
+                </div>
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Valor atual:</span>
+                  <span className={styles.currentAmount}>{money(fee.quotedAmount)}</span>
+                </div>
+                {fee.quotedBy && (
+                  <div className={styles.metaRow}>
+                    <span className={styles.metaLabel}>Última cotação ({fee.quotedBy}):</span>
+                    <span className={styles.metaValue}>
+                      {fee.quotedAt ? formatDateTime(fee.quotedAt) : '—'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.formFooter}>
+                <label className={styles.inputLabel}>
+                  <span>Novo valor (R$)</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0.01"
+                    step="0.01"
+                    className={styles.input}
+                    placeholder="0,00"
+                    value={values[fee.projectFeeId] ?? (fee.quotedAmount?.toString() ?? '')}
+                    onChange={(e) =>
+                      setValues((old) => ({ ...old, [fee.projectFeeId]: e.target.value }))
+                    }
+                  />
+                </label>
+                <button
+                  type="button"
+                  className={styles.saveButton}
+                  disabled={busy[fee.projectFeeId]}
+                  onClick={() => void save(fee)}
+                >
+                  {busy[fee.projectFeeId]
+                    ? 'Salvando...'
+                    : fee.status === 'COTADA'
+                      ? 'Salvar recotação'
+                      : 'Salvar cotação'}
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }

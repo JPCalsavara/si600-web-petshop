@@ -1,14 +1,21 @@
 package br.unicamp.ft.si600.eventos.service;
 
 import br.unicamp.ft.si600.eventos.dto.AdminDashboardResponse;
+import br.unicamp.ft.si600.eventos.dto.DashboardFinancialSummaryResponse;
 import br.unicamp.ft.si600.eventos.dto.DecisionRequest;
 import br.unicamp.ft.si600.eventos.dto.DownloadUrlResponse;
 import br.unicamp.ft.si600.eventos.dto.InactiveExhibitorResponse;
 import br.unicamp.ft.si600.eventos.dto.PendingApprovalResponse;
 import br.unicamp.ft.si600.eventos.dto.ProjectResponse;
+import br.unicamp.ft.si600.eventos.entity.Fee;
+import br.unicamp.ft.si600.eventos.entity.FeeType;
 import br.unicamp.ft.si600.eventos.entity.Project;
+import br.unicamp.ft.si600.eventos.entity.ProjectFee;
+import br.unicamp.ft.si600.eventos.entity.ProjectFeeStatus;
+import br.unicamp.ft.si600.eventos.entity.ProjectHistoryEventType;
 import br.unicamp.ft.si600.eventos.entity.ProjectStatus;
 import br.unicamp.ft.si600.eventos.exception.ApiException;
+import br.unicamp.ft.si600.eventos.repository.ProjectFeeRepository;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
 import br.unicamp.ft.si600.eventos.security.Actor;
 import br.unicamp.ft.si600.eventos.security.ActorRole;
@@ -42,19 +49,24 @@ public class ProjectPdfService {
     private static final BigDecimal MAX_AREA_M2 = new BigDecimal("9999999999.99");
 
     private final ProjectRepository repository;
+    private final ProjectFeeRepository projectFeeRepository;
     private final ObjectStorage storage;
     private final PdfDecisionNotifier notifier;
     private final AlertTagCalculator alertTagCalculator;
     private final TimeHelper timeHelper;
+    private final ProjectHistoryService historyService;
 
-    public ProjectPdfService(ProjectRepository repository, ObjectStorage storage,
-                             PdfDecisionNotifier notifier, AlertTagCalculator alertTagCalculator,
-                             TimeHelper timeHelper) {
+    public ProjectPdfService(ProjectRepository repository, ProjectFeeRepository projectFeeRepository,
+                             ObjectStorage storage, PdfDecisionNotifier notifier,
+                             AlertTagCalculator alertTagCalculator, TimeHelper timeHelper,
+                             ProjectHistoryService historyService) {
         this.repository = repository;
+        this.projectFeeRepository = projectFeeRepository;
         this.storage = storage;
         this.notifier = notifier;
         this.alertTagCalculator = alertTagCalculator;
         this.timeHelper = timeHelper;
+        this.historyService = historyService;
     }
 
     private ProjectResponse toResponse(Project project) {
@@ -87,9 +99,17 @@ public class ProjectPdfService {
         }
 
         try {
-            project.submitPdf(key, sanitizeFilename(file.getOriginalFilename()),
-                    PDF_CONTENT_TYPE, file.getSize(), areaM2.setScale(2, RoundingMode.HALF_UP), OffsetDateTime.now());
+            String safeFilename = sanitizeFilename(file.getOriginalFilename());
+            BigDecimal scaledArea = areaM2.setScale(2, RoundingMode.HALF_UP);
+            project.submitPdf(key, safeFilename,
+                    PDF_CONTENT_TYPE, file.getSize(), scaledArea, OffsetDateTime.now());
             repository.saveAndFlush(project);
+            historyService.recordEvent(
+                    project.getId(),
+                    ProjectHistoryEventType.PDF_ENVIADO,
+                    actor,
+                    "Planta do estande enviada (" + safeFilename + ", área informada: " + scaledArea + " m²)."
+            );
         } catch (RuntimeException ex) {
             deleteQuietly(key); // o registro não aponta para o novo objeto: evita órfão
             throw ex;
@@ -157,7 +177,58 @@ public class ProjectPdfService {
                 ))
                 .toList();
 
-        return new AdminDashboardResponse(inactiveExhibitors, pendingDeadlines, pendingApprovals);
+        DashboardFinancialSummaryResponse financialSummary = buildFinancialSummary();
+
+        return new AdminDashboardResponse(inactiveExhibitors, pendingDeadlines, pendingApprovals, financialSummary);
+    }
+
+    private DashboardFinancialSummaryResponse buildFinancialSummary() {
+        List<ProjectFee> allProjectFees = projectFeeRepository.findAllWithProjectAndFee();
+        long totalProjectFees = allProjectFees.size();
+        long pendingQuotesCount = 0L;
+        long awaitingQuantityCount = 0L;
+        long quotedFeesCount = 0L;
+        long generatedPaymentsCount = 0L;
+        BigDecimal estimatedRevenue = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+
+        for (ProjectFee pf : allProjectFees) {
+            Fee fee = pf.getFee();
+            Project project = pf.getProject();
+            ProjectFeeStatus status = pf.effectiveStatus();
+
+            if (pf.isPaymentGenerated()) {
+                generatedPaymentsCount++;
+            }
+
+            if (fee.getType() == FeeType.VARIAVEL) {
+                if (status == ProjectFeeStatus.AGUARDANDO_COTACAO && pf.getQuantity() != null) {
+                    pendingQuotesCount++;
+                } else if (status == ProjectFeeStatus.AGUARDANDO_QUANTIDADE || pf.getQuantity() == null) {
+                    awaitingQuantityCount++;
+                } else if (status == ProjectFeeStatus.COTADA) {
+                    quotedFeesCount++;
+                }
+
+                if ((status == ProjectFeeStatus.COTADA || status == ProjectFeeStatus.PAGAMENTO_GERADO)
+                        && pf.getQuotedAmount() != null) {
+                    estimatedRevenue = estimatedRevenue.add(pf.getQuotedAmount());
+                }
+            } else {
+                FeeCalculator.Result result = FeeCalculator.calculate(fee, project.getBoothAreaM2());
+                if (result.value() != null) {
+                    estimatedRevenue = estimatedRevenue.add(result.value());
+                }
+            }
+        }
+
+        return new DashboardFinancialSummaryResponse(
+                totalProjectFees,
+                pendingQuotesCount,
+                awaitingQuantityCount,
+                quotedFeesCount,
+                generatedPaymentsCount,
+                estimatedRevenue.setScale(2, RoundingMode.HALF_UP)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -178,8 +249,15 @@ public class ProjectPdfService {
         Project project = repository.findById(projectId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
         requireStatusForDecision(project);
-        project.approve(actor.id(), OffsetDateTime.now(), request.approvedAreaM2());
+        BigDecimal scaledArea = request.approvedAreaM2().setScale(2, RoundingMode.HALF_UP);
+        project.approve(actor.id(), OffsetDateTime.now(), scaledArea);
         Project saved = repository.save(project);
+        historyService.recordEvent(
+                saved.getId(),
+                ProjectHistoryEventType.PDF_APROVADO,
+                actor,
+                "Planta do estande aprovada com metragem homologada de " + scaledArea + " m²."
+        );
         notifier.notifyApproved(saved);
         return toResponse(saved);
     }
@@ -196,6 +274,12 @@ public class ProjectPdfService {
         }
         project.reject(actor.id(), OffsetDateTime.now(), justification);
         Project saved = repository.save(project);
+        historyService.recordEvent(
+                saved.getId(),
+                ProjectHistoryEventType.PDF_REPROVADO,
+                actor,
+                "Planta do estande reprovada. Justificativa: " + justification
+        );
         notifier.notifyRejected(saved);
         return toResponse(saved);
     }

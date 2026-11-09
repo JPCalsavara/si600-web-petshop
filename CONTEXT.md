@@ -2,9 +2,9 @@
 
 ## 1. Visão Geral do Sistema
 
-O **SI600 Sistema de Eventos** é um sistema web integrado para gerenciamento operacional e comercial focado no aluguel de estandes em eventos. A plataforma atende dois públicos principais:
-1. **Clientes (Expositores)**: Submetem projetos arquitetônicos de seus estandes, gerenciam configurações do projeto e realizam pagamentos de taxas e aluguéis referentes aos estandes aprovados.
-2. **Administradores**: Gerenciam a aprovação e análise das plantas (inserindo também as metragens oficiais), controlam o catálogo de taxas do evento e supervisionam os status de faturamento de cada projeto.
+O **SI600 Sistema de Eventos** é um sistema web integrado para gerenciamento operacional e comercial focado no aluguel e montagem de estandes em eventos. A plataforma atende dois públicos principais:
+1. **Clientes (`CLIENT` / Expositores)**: Submetem projetos arquitetônicos de seus estandes em PDF (`Planta`), informam quantidades para taxas variáveis, acompanham o histórico de auditoria e consultam as taxas calculadas referentes aos estandes aprovados.
+2. **Administradores (`ADMIN`)**: Gerenciam o catálogo global de taxas do evento, cadastram projetos de expositores, configuram as taxas de cada projeto, analisam e aprovam/reprovam as plantas em PDF (confirmando a metragem oficial `boothAreaM2`), realizam a cotação financeira de taxas variáveis, monitoram gargalos no Dashboard Kanban e exportam relatórios consolidados em CSV.
 
 ---
 
@@ -12,65 +12,32 @@ O **SI600 Sistema de Eventos** é um sistema web integrado para gerenciamento op
 
 Termo | Definição | Sinônimos Evitados
 :--- | :--- | :---
-**`Cliente`** | Pessoa física ou jurídica (expositor) que contrata o aluguel de um estande no evento. | *Usuário comum*, *Consumidor*
-**`Projeto`** | Agrupamento lógico das informações do cliente para a montagem de seu estande, incluindo a planta e as taxas associadas. | *Reserva*, *Inscrição*
-**`Planta`** | O projeto arquitetônico do estande enviado pelo Cliente (comumente em formato PDF). Contém atributos como a **área em m²** (obrigatoriamente preenchida pelo Administrador após conferência) e o status atual. | *PDF do estande*, *Documento*
-**`StatusPlanta`** | Enumeração que dita o ciclo de vida da Planta e, consequentemente, a exibição das taxas: `AGUARDANDO`, `EM_ANALISE`, `APROVADA`, `REPROVADA`. | *Status do Projeto*, *Estado do PDF*
-**`Taxa`** | Valores cobrados do cliente relacionados ao projeto. Podem ser Fixas, Por Metragem (baseado na área m² preenchida pelo Admin) ou Variáveis (com entrada de quantidade salva pelo próprio Cliente via botão). | *Cobrança*, *Custo*
-**`Pagamento`** | Geração da guia financeira (Boleto/PIX) a partir das taxas calculadas de uma Planta Aprovada. Se pagamentos já foram gerados, a Planta não pode voltar para status Reprovada. | *Fatura*, *Transação*
+**`Cliente`** | Pessoa física ou jurídica (expositor) proprietária de um `Projeto` (`ownerId`) que contrata o aluguel de um estande no evento. | *Usuário comum*, *Consumidor*, *Tutor*
+**`Administrador`** | Integrante da organização do evento com permissão para gerir catálogo de taxas, aprovar/reprovar plantas, cotar taxas variáveis e auditar projetos. | *Operador*, *Atendente*
+**`Projeto` (`Project`)** | Agregado central das informações do estande do expositor, incluindo dados cadastrais, prazos (`pdfDeadline`, `paymentDeadline`), metadados da planta PDF, metragem (`boothAreaM2`), `ProjectStatus` e taxas vinculadas. | *Reserva*, *Inscrição*, *Agendamento*
+**`Planta`** | O projeto arquitetônico do estande enviado pelo Cliente em formato PDF (armazenado no Backblaze B2 sob `pdfObjectKey`), acompanhado da área em $\text{m}^2$ (`boothAreaM2`). | *Documento genérico*, *Anexo*
+**`StatusProjeto` (`ProjectStatus`)** | Enumeração que governa o ciclo de vida do Projeto e da Planta: `AGUARDANDO_PDF`, `PDF_EM_ANALISE`, `REPROVADO`, `APROVADO`, `AGUARDANDO_PAGAMENTO`, `CONCLUIDO`. | *Estado do PDF*
+**`Taxa` (`Fee` / `ProjectFee`)** | Cobrança do catálogo (`Fee`) ou vinculada a um projeto (`ProjectFee`). Pode ser `FIXA`, `POR_METRAGEM` (`VALOR_POR_M2` ou `UNIDADES_POR_INTERVALO`) ou `VARIAVEL` (com entrada de quantidade pelo Cliente e cotação pelo Administrador). | *Custo*, *Serviço avulso*
+**`StatusTaxaProjeto` (`ProjectFeeStatus`)** | Ciclo de vida de uma taxa vinculada ao projeto: `DISPONIVEL`, `AGUARDANDO_QUANTIDADE`, `AGUARDANDO_COTACAO`, `COTADA`, `PAGAMENTO_GERADO`. | *Status da fatura*
+**`TagAlerta` (`AlertTag`)** | Etiqueta operacional calculada dinamicamente a partir dos prazos e status do projeto: `ATRASADO`, `PRAZO_PROXIMO`, `PENDENTE`, `EM_DIA`, `CONCLUIDO`. | *Badge estático*
+**`EventoHistorico` (`ProjectHistoryEvent`)** | Registro imutável na trilha de auditoria do projeto (`PROJETO_CRIADO`, `PDF_ENVIADO`, `PDF_APROVADO`, `PDF_REPROVADO`, `TAXAS_CONFIGURADAS`, `QUANTIDADE_INFORMADA`, `TAXA_COTADA`). | *Log de sistema*
+**`NotificacaoPrazo` (`DeadlineNotification`)** | Registro idempotente de envio de alerta de vencimento por e-mail nos marcos `T-7`, `T-3`, `T-1`, `T0` e `T+1` para `PDF_SUBMISSION` ou `PAYMENT`. | *Disparo avulso*
 
 ---
 
 ## 3. Invariantes e Regras de Negócio Fundamentais
 
-1. **Visualização de Taxas**: Um cliente só pode visualizar e pagar as taxas referentes a um projeto se o status da `Planta` for igual a `APROVADA`.
-2. **Imutabilidade Condicional da Planta**: Uma `Planta` não pode ser marcada como `REPROVADA` se o projeto já tiver qualquer registro de `Pagamento` gerado e atrelado a ele. O administrador ficará bloqueado de fazer essa transição (HTTP 409 Conflict).
-3. **Pertença do Projeto**: Um cliente autenticado só tem acesso aos seus próprios `Projeto`s e respectivas plantas e taxas, garantindo o isolamento.
-4. **Dependência de Metragem**: As taxas do tipo "Por Metragem" só podem ser calculadas se o atributo de área da Planta (m²) estiver preenchido de forma estrita (> 0) pelo Administrador no ato da aprovação.
-5. **Ação Explícita de Taxas Variáveis**: As taxas do tipo "Variável" dependem do preenchimento da "quantidade" por parte do Cliente. Esse valor deve ser persistido via acionamento explícito de um botão "Salvar", desencadeando uma única transação no backend antes de se permitir a emissão da cobrança.
+1. **Visualização de Taxas Condicionada à Aprovação**: Um `Cliente` só pode visualizar os valores calculados das taxas referentes a um `Projeto` quando o status do projeto estiver em `APROVADO`, `AGUARDANDO_PAGAMENTO` ou `CONCLUIDO`. Antes disso, a API retorna `HTTP 409 Conflict`.
+2. **Imutabilidade Condicional Após Geração de Pagamento**: Um `Projeto` não pode ser marcado como `REPROVADO` e uma `ProjectFee` não pode ser removida ou recotada se já houver registro com status `PAGAMENTO_GERADO` (`HTTP 409 Conflict`).
+3. **Isolamento de Propriedade (`ownerId`)**: Um `Cliente` autenticado tem acesso exclusivo aos seus próprios `Projeto`s (`project.ownerId == actor.id`). Na linha do tempo (`ProjectHistoryEvent`), o `actorId` é mascarado para o `Cliente`, exibindo apenas o papel (`ADMIN` ou `CLIENT`).
+4. **Conferência de Metragem ($\text{m}^2$)**: O `Cliente` informa a área pretendida (`areaM2 > 0`) no envio do PDF e o `Administrador` confirma a metragem oficial (`approvedAreaM2 > 0`) no ato da aprovação, base sobre a qual as taxas `POR_METRAGEM` são calculadas.
+5. **Fluxo de Taxas Variáveis e Invalidamento de Cotação**: Nas taxas do tipo `VARIAVEL`, o `Cliente` informa e salva explicitamente a `quantity > 0`. Qualquer alteração de quantidade descarta eventual cotação anterior (`quotedAmount = null`) e retorna a taxa para `AGUARDANDO_COTACAO` até que o `Administrador` registre um novo valor (`COTADA`).
 
 ---
 
-## 4. Stack Tecnológica Oficial & Padrões de Desenvolvimento
+## 4. Documentação Arquitetural e RFCs Gerais
 
-Camada | Tecnologia | Detalhes & Padrões
-:--- | :--- | :---
-**Backend** | **Java 21 / Spring Boot** | REST API sob `/api/...`, Spring Data JPA, Hibernate, Bean Validation (`@Valid`), Problem Details (RFC 7807 via `@RestControllerAdvice`). Arquitetura em camadas desacopladas (`controller`, `service`, `repository`, `entity`, `dto`, `exception`).
-**Frontend** | **React 18+ (Vite) + TS** | SPA moderna construída com Vite, componentes funcionais modulares, tipagem TypeScript estrita e cliente HTTP centralizado consumindo o backend.
-**Banco de Dados** | **PostgreSQL 16** | Gerenciado via `docker-compose.yml` (`localhost:5432`, base `eventos_db`, usuário `eventos_user`, senha `eventos_pass`).
-**Testes E2E & Componente** | **Cypress** | Suíte de testes ponta a ponta simulando jornadas completas no navegador e validando a comunicação real com a API.
-**Qualidade Estática** | **SonarCloud** | Análise estática contínua de código, cobertura, duplicações, bugs e vulnerabilidades.
-**AI Gatekeeper Reviewer** | **LangGraph + Google Gemini** | Avaliador inteligente executado no CI/CD e localmente, validando diffs, conformidade com ADRs e aderência aos padrões de projeto.
-
----
-
-## 5. Diretrizes Mandatórias de Teste
-
-Conforme estabelecido nas Decisões Arquiteturais:
-* **[ADR 0001](docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md)**: Adotamos **exclusivamente Testes de Integração e Testes End-to-End (E2E)**. Não implementamos testes unitários isolados com mocks artificiais de banco de dados ou serviços internos.
-* **[ADR 0002](docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md)**: Toda funcionalidade possui cobertura mandatória de:
-  1. **Casos Bons (Happy Path)**: Valida fluxos corretos, HTTP 200/201, persistência de dados e respostas íntegras.
-  2. **Casos Ruins (Sad Path / Regras de Negócio)**: Violações de regras, HTTP 401/403/404/409/422, garantindo rollback de transação e zero escritas espúrias no banco.
-  3. **Casos Incompletos (Payloads Parciais / Limites de Borda)**: Campos ausentes, strings vazias, valores nulos, payloads malformados, garantindo HTTP 400 Bad Request com matriz de erros estruturada (RFC 7807) e zero erros 500.
-
----
-
-## 6. Política Oficial de Branches e Merge Requests
-
-* **Hierarquia de Branches**:
-  * `main`: Produção estável. Protegida contra push direto.
-  * `dev`: Integração contínua da equipe. Protegida contra push direto.
-  * `member/<slug>`: Branch pessoal de cada integrante (`member/joao-calsavara`, `member/felipe-moreira`, `member/gabriela-januario`, `member/gabriel-santos`, `member/julio-hidalgo`, `member/lorenzo-pugina`, `member/samuel-calegnan`, `member/samuel-lima`).
-* **Fluxo Obrigatório**:
-  * Desenvolvimento individual sempre em `member/<slug>`.
-  * Integração para `dev` realizada **exclusivamente via Merge Request**.
-  * **Regra de 2 Aprovações**: Nenhum MR em `dev` ou `main` pode ser mesclado sem no mínimo **2 aprovações humanas** de outros integrantes do time.
-  * Promoção de release: MR de `dev` para `main` com 2 aprovações requeridas.
-
----
-
-## 7. Pipeline Padrão de CI/CD (GitHub Actions + GitLab Bridge)
-
-* Disparado a cada `push` nas branches `main`, `dev` e `member/*` via dual push no remote `origin`.
-* Executa build do Spring Boot e React, testes de integração, verificação de qualidade com SonarCloud e revisão semântica com o AI Gatekeeper Reviewer.
-* O script `gitlab_reporter.py` publica o veredito técnico diretamente na timeline do Merge Request e atualiza o commit status no GitLab Unicamp.
+* **[RFC Geral do Backend e MER](docs/rfc/rfc-backend.md)**: Arquitetura do backend, seams, catálogo de rotas REST e diagrama MER final em Mermaid.
+* **[RFC Geral do Frontend](docs/rfc/rfc-frontend.md)**: Arquitetura de módulos profundos de domínio (rejeição de Atomic Design), seam de sessão/HTTP e suíte E2E.
+* **[RFC Executiva (PO & Cliente)](docs/rfc/rfc-po-visao-cliente.md)**: Resumo acessível de produto (Backend + Frontend + MER) voltado ao PO e ao cliente.
+* **[Catálogo de ADRs](docs/adr/README.md)**: Decisões arquiteturais vigentes ([ADR 0001](docs/adr/0001-estrategia-de-testes-integracao-e-e2e.md), [ADR 0002](docs/adr/0002-padroes-de-cenarios-de-teste-bons-ruins-incompletos.md), [ADR 0004](docs/adr/0004_armazenamento_b2_para_pdfs_de_estande.md), [ADR 0005](docs/adr/0005-padronizacao-de-codigo-com-eslint-e-prettier.md), [ADR 0006](docs/adr/0006-obrigatoriedade-rfc-antes-do-codigo.md)).

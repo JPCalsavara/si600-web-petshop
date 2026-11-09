@@ -1,13 +1,19 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
 import { ALERT_TAG_LABELS } from '../../constants/alertTag';
-import { listAdminProjects } from '../../services/api';
+import { downloadProjectCsv, listAdminProjects } from '../../services/api';
 import type { Project, ProjectStatus } from '../../types';
 import styles from './ProjectListPage.module.scss';
 import { ProjectFeesConfigPage } from '../ProjectFeesConfigPage/ProjectFeesConfigPage';
+import { ProjectFormPage } from '../ProjectFormPage/ProjectFormPage';
+import { ProjectTimeline } from '../../components/ProjectTimeline/ProjectTimeline';
+import { usePaginatedList } from '../../components/Pagination/Pagination';
+import { formatDate } from '../../utils/date';
+
+export { formatDate };
 
 interface Props {
-  onAdd: () => void;
+  onAdd?: () => void;
   onOpenPdfReview: () => void;
 }
 
@@ -16,19 +22,30 @@ const PAGE_SIZE = 15;
 type SortField = 'companyName' | 'pdfDeadline' | 'paymentDeadline' | 'status';
 type SortDirection = 'asc' | 'desc';
 
-/** yyyy-mm-dd -> dd/mm/aaaa sem passar por Date (evita deslocar um dia por fuso). */
-export function formatDate(value: string | null) {
-  if (!value) return '-';
-  const datePart = value.slice(0, 10);
-  const [y, m, d] = datePart.split('-');
-  return y && m && d ? `${d}/${m}/${y}` : '-';
-}
-
-export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
+export function ProjectListPage({ onOpenPdfReview }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [creatingProject, setCreatingProject] = useState(false);
   const [configProject, setConfigProject] = useState<Project | null>(null);
+  const [historyProject, setHistoryProject] = useState<Project | null>(null);
+  const [exportingProjectId, setExportingProjectId] = useState<string | null>(null);
+
+  async function handleExportCsv(projectId: string) {
+    try {
+      setExportingProjectId(projectId);
+      setError(null);
+      await downloadProjectCsv(projectId);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível exportar o CSV do projeto.'
+      );
+    } finally {
+      setExportingProjectId(null);
+    }
+  }
 
   // Filtros em texto
   const [projectSearch, setProjectSearch] = useState('');
@@ -39,29 +56,26 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
   const [sortField, setSortField] = useState<SortField>('companyName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  // Paginação (15 projetos por página)
-  const [currentPage, setCurrentPage] = useState(1);
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await listAdminProjects();
+      setProjects(data);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível carregar os projetos.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await listAdminProjects();
-        setProjects(data);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Não foi possível carregar os projetos.'
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-
     void load();
-  }, []);
+  }, [load]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -146,12 +160,15 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
     });
   }, [filteredProjects, sortField, sortDirection]);
 
-  // Paginação de 15 por página
-  const totalPages = Math.max(1, Math.ceil(sortedProjects.length / PAGE_SIZE));
-  const pagedProjects = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return sortedProjects.slice(start, start + PAGE_SIZE);
-  }, [sortedProjects, currentPage]);
+  // Paginação de 15 por página com clamp automático
+  const {
+    currentPage,
+    totalPages,
+    pagedItems: pagedProjects,
+    setCurrentPage,
+    prevPage,
+    nextPage,
+  } = usePaginatedList(sortedProjects, PAGE_SIZE);
 
   const renderSortIndicator = (field: SortField) => {
     if (sortField !== field) {
@@ -177,16 +194,6 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
     }
   };
 
-  if (configProject) {
-    return (
-      <ProjectFeesConfigPage
-        projectId={configProject.id}
-        projectName={configProject.companyName || 'Projeto'}
-        onBack={() => setConfigProject(null)}
-      />
-    );
-  }
-
   return (
     <div className={styles.page} data-testid="project-list-page">
       <header className={styles.header}>
@@ -208,7 +215,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
           <button
             type="button"
             className={styles.addButton}
-            onClick={onAdd}
+            onClick={() => setCreatingProject(true)}
             data-testid="btn-add-project"
           >
             + Novo Projeto
@@ -401,8 +408,23 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                           className={styles.configFeeBtn}
                           onClick={() => setConfigProject(p)}
                           data-testid={`btn-config-fee-${p.id}`}
+                          title="Configurar taxas do projeto"
                         >
-                          Configurar taxas
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="13"
+                            height="13"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
+                          <span>Configurar taxas</span>
                         </button>
                       ) : (
                         <span className={styles.feeNotice}>Após aprovação do PDF</span>
@@ -419,17 +441,33 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                       </span>
                     </td>
                     <td data-label="Ações" className={styles.actionsCell}>
-                      {p.status === 'APROVADO' || p.status === 'AGUARDANDO_PAGAMENTO' ? (
+                      <div className={styles.actionButtons}>
+                        {(p.status === 'APROVADO' || p.status === 'AGUARDANDO_PAGAMENTO') && (
+                          <button
+                            type="button"
+                            className={styles.actionLinkBtn}
+                            onClick={() => setConfigProject(p)}
+                          >
+                            Ver taxas →
+                          </button>
+                        )}
                         <button
                           type="button"
                           className={styles.actionLinkBtn}
-                          onClick={() => setConfigProject(p)}
+                          onClick={() => setHistoryProject(p)}
                         >
-                          Ver taxas →
+                          Histórico
                         </button>
-                      ) : (
-                        <span className={styles.noAction}>—</span>
-                      )}
+                        <button
+                          type="button"
+                          className={styles.actionLinkBtn}
+                          disabled={exportingProjectId === p.id}
+                          onClick={() => void handleExportCsv(p.id)}
+                          data-testid={`btn-export-csv-${p.id}`}
+                        >
+                          {exportingProjectId === p.id ? 'Exportando...' : 'Exportar em CSV'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -446,7 +484,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                   <button
                     type="button"
                     className={styles.pageButton}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={prevPage}
                     disabled={currentPage <= 1}
                     data-testid="btn-prev-projects"
                   >
@@ -458,7 +496,7 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
                   <button
                     type="button"
                     className={styles.pageButton}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={nextPage}
                     disabled={currentPage >= totalPages}
                     data-testid="btn-next-projects"
                   >
@@ -470,6 +508,58 @@ export function ProjectListPage({ onAdd, onOpenPdfReview }: Props) {
           </div>
         )}
       </section>
+
+      {creatingProject && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" data-testid="project-form-modal">
+          <div className={styles.modalCard}>
+            <ProjectFormPage
+              onCreated={() => void load()}
+              onDone={() => {
+                setCreatingProject(false);
+                void load();
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {configProject && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" data-testid="project-fees-modal">
+          <div className={styles.modalCardWide}>
+            <ProjectFeesConfigPage
+              projectId={configProject.id}
+              projectName={configProject.companyName || 'Projeto'}
+              onBack={() => {
+                setConfigProject(null);
+                void load();
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {historyProject && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" data-testid="project-history-modal">
+          <div className={styles.modalCardWide}>
+            <div className={styles.historyModalHeader}>
+              <button
+                type="button"
+                className={styles.closeModalBtn}
+                onClick={() => setHistoryProject(null)}
+                aria-label="Fechar histórico"
+                title="Fechar"
+              >
+                <span aria-hidden="true">✕</span>
+                <span className={styles.srOnly}>← Voltar aos projetos</span>
+              </button>
+            </div>
+            <ProjectTimeline
+              projectId={historyProject.id}
+              projectName={historyProject.companyName}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

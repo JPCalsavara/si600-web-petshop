@@ -1,30 +1,23 @@
 /**
- * Converte data ISO/OffsetDateTime para dd/mm/aaaa sem passar por Date (evita deslocar dia por fuso).
+ * Converte data ISO/OffsetDateTime para dd/mm/aaaa sem passar por Date (evita deslocar dia por fuso UTC-3).
  */
 export function formatDate(value: string | null | undefined): string {
   if (!value) return '-';
   const datePart = value.slice(0, 10);
   const [y, m, d] = datePart.split('-');
-  return y && m && d ? `${d}/${m}/${y}` : '-';
+  return y && m && d && y.length === 4 && m.length === 2 && d.length === 2
+    ? `${d}/${m}/${y}`
+    : '-';
 }
 
 /**
- * Retorna true se a data limite informada (string ISO) já expirou em relação ao instante atual.
+ * Converte timestamp ISO/OffsetDateTime para data e hora pt-BR.
  */
-export function isOverdue(deadlineStr: string | null | undefined): boolean {
-  if (!deadlineStr) return false;
-  const deadline = new Date(deadlineStr);
-  return new Date().getTime() > deadline.getTime();
-}
-
-/**
- * Retorna true se a data limite vence em até thresholdDays (padrão: 3 dias corridos).
- */
-export function isDueSoon(deadlineStr: string | null | undefined, thresholdDays = 3): boolean {
-  if (!deadlineStr) return false;
-  const now = new Date();
-  const deadline = new Date(deadlineStr);
-  const diffTime = deadline.getTime() - now.getTime();
-  const diffDays = diffTime / (1000 * 60 * 60 * 24);
-  return diffDays >= 0 && diffDays <= thresholdDays;
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '-';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleString('pt-BR');
 }

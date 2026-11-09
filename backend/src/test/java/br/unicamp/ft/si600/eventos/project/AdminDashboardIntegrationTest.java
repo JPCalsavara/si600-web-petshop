@@ -148,6 +148,12 @@ class AdminDashboardIntegrationTest {
             assertThat(pendingApprovals.get(0).get("companyName").asText()).isEqualTo("Empresa Beta");
             assertThat(pendingApprovals.get(0).get("pdfOriginalFilename").asText()).isEqualTo("planta_estande.pdf");
             assertThat(pendingApprovals.get(0).get("status").asText()).isEqualTo(ProjectStatus.PDF_EM_ANALISE.name());
+
+            // 4. Resumo Financeiro / KPIs de Taxas
+            JsonNode financialSummary = body.get("financialSummary");
+            assertThat(financialSummary).isNotNull();
+            assertThat(financialSummary.get("totalProjectFees").asLong()).isGreaterThanOrEqualTo(0L);
+            assertThat(financialSummary.get("estimatedRevenue").decimalValue()).isGreaterThanOrEqualTo(BigDecimal.ZERO);
         }
 
         @Test
@@ -224,6 +230,9 @@ class AdminDashboardIntegrationTest {
             assertThat(body.get("inactiveExhibitors").size()).isZero();
             assertThat(body.get("pendingDeadlines").size()).isZero();
             assertThat(body.get("pendingApprovals").size()).isZero();
+            assertThat(body.get("financialSummary").get("totalProjectFees").asLong()).isZero();
+            assertThat(body.get("financialSummary").get("pendingQuotesCount").asLong()).isZero();
+            assertThat(body.get("financialSummary").get("estimatedRevenue").decimalValue()).isEqualByComparingTo(BigDecimal.ZERO);
         }
 
         @Test

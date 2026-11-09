@@ -18,6 +18,9 @@ public interface ProjectFeeRepository extends JpaRepository<ProjectFee, UUID> {
 
     List<ProjectFee> findAllByProjectIdOrderByFeeNameAsc(UUID projectId);
 
+    @Query("select pf from ProjectFee pf join fetch pf.project p join fetch pf.fee f")
+    List<ProjectFee> findAllWithProjectAndFee();
+
     /** US-07: taxas de projetos liberados, com projeto e taxa já carregados, aguardando cotação primeiro. */
     @Query("select pf from ProjectFee pf join fetch pf.project p join fetch pf.fee f "
             + "where p.status in :projectStatuses and f.type = :type and pf.status in :statuses "

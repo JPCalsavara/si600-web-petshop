@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { configureProjectFees, getProjectFeeConfiguration, listFees } from '../../services/api';
-import { FEE_TYPE_LABELS, feeStatusLabel } from '../../constants/feeStatus';
-import type { Fee } from '../../types';
-import type { ProjectFeeConfiguration } from '../../services/api';
+import { usePaginatedList } from '../../components/Pagination/Pagination';
+import { FEE_TYPE_LABELS, feeStatusLabel, formatFeePricing } from '../../constants/feeStatus';
+import type { Fee, ProjectFeeConfiguration } from '../../types';
 import styles from './ProjectFeesConfigPage.module.scss';
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -12,16 +12,6 @@ const PAGE_SIZE = 10;
 export function isLocked(link: ProjectFeeConfiguration): boolean {
   return link.quantity !== null || link.quotedAmount !== null
     || link.status === 'COTADA' || link.status === 'PAGAMENTO_GERADO';
-}
-
-function formatFeePrice(fee: Fee): string {
-  if (fee.type === 'FIXA') {
-    return currency.format(fee.amount ?? 0);
-  }
-  if (fee.type === 'POR_METRAGEM') {
-    return `${currency.format(fee.amountPerM2 ?? 0)} / m²`;
-  }
-  return `Cotada por ${fee.measurementUnit ?? 'unidade'}`;
 }
 
 function formatTypeLabel(type: string): string {
@@ -55,7 +45,14 @@ export function ProjectFeesConfigPage({ projectId, projectName, onBack }: Projec
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  const {
+    currentPage: safeCurrentPage,
+    totalPages,
+    pagedItems: pagedCatalog,
+    prevPage,
+    nextPage,
+  } = usePaginatedList(catalog, PAGE_SIZE);
 
   function apply(fees: Fee[], links: ProjectFeeConfiguration[]) {
     const linked = new Set(links.map(link => link.feeId));
@@ -102,15 +99,6 @@ export function ProjectFeesConfigPage({ projectId, projectName, onBack }: Projec
     return new Set(current.filter(isLocked).map(link => link.feeId));
   }, [current]);
 
-  // Paginação de 10 taxas por página
-  const totalPages = Math.max(1, Math.ceil(catalog.length / PAGE_SIZE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-
-  const pagedCatalog = useMemo(() => {
-    const start = (safeCurrentPage - 1) * PAGE_SIZE;
-    return catalog.slice(start, start + PAGE_SIZE);
-  }, [catalog, safeCurrentPage]);
-
   function toggleFee(feeId: string) {
     if (lockedFeeIds.has(feeId)) return;
     setSelected(prev =>
@@ -120,27 +108,37 @@ export function ProjectFeesConfigPage({ projectId, projectName, onBack }: Projec
 
   return (
     <section className={styles.page} data-testid="project-fees-config-page">
-      <button type="button" className={styles.backButton} onClick={onBack}>
-        ← Voltar aos projetos
-      </button>
-
       <header className={styles.header}>
         <div className={styles.titleArea}>
-          <h1 className={styles.title}>Configurar Taxas do Projeto</h1>
-          <span className={styles.projectBadge}>Projeto: {projectName}</span>
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>Configurar Taxas do Projeto</h1>
+            <span className={styles.projectBadge}>Projeto: {projectName}</span>
+          </div>
           <p className={styles.subtitle}>
             Selecione as taxas do catálogo que se aplicam a este projeto. Taxas fixas e por metragem têm o valor calculado automaticamente; as variáveis são cotadas na tela de cotação após o cliente informar a quantidade.
           </p>
         </div>
 
-        <button
-          type="button"
-          className={styles.saveButtonHeader}
-          disabled={saving || loading}
-          onClick={() => void save()}
-        >
-          {saving ? 'Salvando...' : 'Salvar configuração'}
-        </button>
+        <div className={styles.headerRight}>
+          <button
+            type="button"
+            className={styles.saveButtonHeader}
+            disabled={saving || loading}
+            onClick={() => void save()}
+          >
+            {saving ? 'Salvando...' : 'Salvar configuração'}
+          </button>
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={onBack}
+            aria-label="Cancelar"
+            title="Fechar"
+          >
+            <span aria-hidden="true">✕</span>
+            <span className={styles.srOnly}> ← Voltar aos projetos</span>
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -206,7 +204,7 @@ export function ProjectFeesConfigPage({ projectId, projectName, onBack }: Projec
                             {FEE_TYPE_LABELS[fee.type]}
                           </span>
                         </div>
-                        <div className={styles.feePricing}>{formatFeePrice(fee)}</div>
+                        <div className={styles.feePricing}>{formatFeePricing(fee)}</div>
                         <p className={styles.feeDescription}>{fee.description || 'Sem descrição cadastrada'}</p>
                         {!fee.active && (
                           <span className={styles.inactiveNotice}>Taxa desativada no catálogo geral</span>
@@ -235,7 +233,7 @@ export function ProjectFeesConfigPage({ projectId, projectName, onBack }: Projec
                       type="button"
                       className={styles.pageButton}
                       disabled={safeCurrentPage === 1}
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      onClick={prevPage}
                     >
                       Anterior
                     </button>
@@ -246,7 +244,7 @@ export function ProjectFeesConfigPage({ projectId, projectName, onBack }: Projec
                       type="button"
                       className={styles.pageButton}
                       disabled={safeCurrentPage === totalPages}
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      onClick={nextPage}
                     >
                       Próxima
                     </button>

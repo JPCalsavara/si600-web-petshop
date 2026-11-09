@@ -53,6 +53,7 @@ jobs:
 
       - name: Linter & Tests (Backend/Frontend/E2E)
         run: |
+          set +e
           touch tests.log
           
           echo "=== Running Backend Tests ==="

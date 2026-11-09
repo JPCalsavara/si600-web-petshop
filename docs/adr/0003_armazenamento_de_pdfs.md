@@ -1,7 +1,7 @@
 # ADR 0003: Estratégia de Armazenamento de PDFs (Boletos e Comprovantes)
 
 ## Status
-Proposto (Proposed)
+Substituído por [ADR 0004](0004_armazenamento_b2_para_pdfs_de_estande.md) (Superseded by ADR 0004)
 
 ## Data
 2026-09-28

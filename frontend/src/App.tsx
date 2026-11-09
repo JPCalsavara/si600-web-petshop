@@ -2,7 +2,7 @@ import { FeeCatalogPage } from './pages/FeeCatalogPage/FeeCatalogPage';
 import { useState } from 'react';
 import './styles/global.scss';
 import { AppShell } from './components/AppShell/AppShell';
-import { getCurrentActorRole } from './services/api';
+import { getCurrentActorRole, getCurrentClientProjectId } from './services/api';
 import { ClientPdfPage } from './pages/ClientPdfPage/ClientPdfPage';
 import { AdminPdfPage } from './pages/AdminPdfPage/AdminPdfPage';
 import { ProjectListPage } from './pages/ProjectListPage/ProjectListPage';
@@ -22,12 +22,7 @@ function AdminProjects({ view, setView }: { view: AdminView; setView: (v: AdminV
     case 'novo':
       return <ProjectFormPage onDone={toList} />;
     case 'analise-pdf':
-      return (
-        <>
-          <button type="button" onClick={toList}>← Voltar aos projetos</button>
-          <AdminPdfPage />
-        </>
-      );
+      return <AdminPdfPage onBack={toList} />;
     default:
       return (
         <ProjectListPage
@@ -40,7 +35,7 @@ function AdminProjects({ view, setView }: { view: AdminView; setView: (v: AdminV
 
 export default function App() {
   const role = getCurrentActorRole();
-  const projectId = (typeof window !== 'undefined' ? localStorage.getItem('MOCK_PROJECT_ID') : null) || import.meta.env.VITE_PROJECT_ID;
+  const projectId = getCurrentClientProjectId();
   const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios'>('resumo');
   const [projectView, setProjectView] = useState<AdminView>({ name: 'lista' });
 
@@ -56,6 +51,9 @@ export default function App() {
             onNavigateToProjects={() => {
               setAdminSection('projetos');
               setProjectView({ name: 'lista' });
+            }}
+            onNavigateToQuotes={() => {
+              setAdminSection('cotacoes');
             }}
           />
         ) :
