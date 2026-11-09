@@ -61,6 +61,7 @@ Cada seam externo possui ao menos dois adaptadores reais (produção e substitut
 | :--- | :--- | :--- | :--- |
 | **`ObjectStorage`** | `S3ObjectStorage` (Backblaze B2 via protocolo S3 compatível, [ADR 0004](../adr/0004_armazenamento_b2_para_pdfs_de_estande.md)) | `InMemoryObjectStorage` | Armazenamento privado de arquivos PDF (limite de 10 MB, validação de magic bytes `%PDF-`), remoção de chaves substituídas e geração de URLs assinadas temporárias (15 min). |
 | **`EmailSender`** | `AsyncEmailSender` + `GmailEmailSender` (API REST Gmail OAuth2 via JDK `HttpClient`) | `LoggingEmailSender` / `RecordingEmailSender` | Disparo assíncrono de notificações de decisão de planta (aprovação/reprovação) e alertas automáticos de vencimento de prazos (`T-7`, `T-3`, `T-1`, `T0`, `T+1`). |
+| **`PaymentGateway`** | `MercadoPagoGateway` (Orders API do Mercado Pago via JDK `HttpClient` / `RestClient`) | Simulações controladas em `PaymentHttpIntegrationSupport` | Integração com Orders API do Mercado Pago para geração de boletos, consulta de status e verificação de assinatura HMAC SHA-256 em webhooks. |
 | **`Clock`** | `Clock.systemUTC()` (`TimeConfiguration`) | `MutableClock` / `Clock.fixed(...)` | Determinismo temporal para cálculo dinâmico de `AlertTag` e disparo do agendador diário de notificações de prazo. |
 | **`ActorResolver`** | `ActorFilter` (extração dos cabeçalhos `X-Authenticated-User-Id` e `X-Authenticated-User-Role`) | Cabeçalhos injetados por `MockMvc` / Cypress | Isolamento da identidade autenticada (`ADMIN` vs `CLIENT`) e verificação estrita de propriedade (`project.ownerId == actor.id`). |
 
@@ -76,6 +77,7 @@ erDiagram
     FEES ||--o{ PROJECT_FEES : "define modelo de taxa (1:N)"
     PROJECTS ||--o{ PROJECT_HISTORY_EVENTS : "registra trilha de auditoria (1:N)"
     PROJECTS ||--o{ DEADLINE_NOTIFICATIONS : "controla idempotencia de alertas (1:N)"
+    PROJECTS ||--o{ PAYMENTS : "registra transacoes financeiras (1:N)"
 
     PROJECTS {
         uuid id PK "Identificador único do projeto"
@@ -149,6 +151,28 @@ erDiagram
         date deadline_date "Data do prazo vigente no momento do disparo"
         varchar(254) recipient "E-mail destinatário (Cliente ou Admin)"
         timestamptz sent_at "Data/hora de confirmação do envio (uk_deadline_notifications_milestone)"
+    }
+
+    PAYMENTS {
+        uuid id PK "Identificador único do pagamento"
+        bigint version "Controle de concorrência otimista (@Version)"
+        varchar(100) integration_id "Identificador da integração interna"
+        varchar(160) obligation_reference "Referência da obrigação financeira"
+        uuid request_id "Identificador da requisição cliente para idempotência"
+        uuid idempotency_key "Chave de idempotência enviada ao Mercado Pago"
+        varchar(64) request_fingerprint "Hash SHA-256 dos parâmetros para proteção contra repetição"
+        numeric(16_2) amount "Valor monetário da cobrança (amount > 0)"
+        varchar(3) currency "Moeda corrente (BRL)"
+        varchar(30) status "CRIANDO | GERADO | INCERTO | FALHOU | PAGO | CANCELADO | EXPIRADO | REEMBOLSADO | CONTESTADO"
+        varchar(128) mp_order_id UK "Identificador da ordem no Mercado Pago"
+        varchar(128) mp_payment_id UK "Identificador do pagamento no Mercado Pago"
+        varchar(128) mp_status "Status retornado pelo Mercado Pago"
+        varchar(128) mp_status_detail "Detalhe do status do Mercado Pago"
+        varchar(64) last_error_code "Último código de erro retornado"
+        integer last_http_status "Último HTTP status do provedor"
+        timestamptz created_at "Data/hora de criação do registro"
+        timestamptz updated_at "Data/hora da última alteração"
+        timestamptz expires_at "Data/hora de expiração do boleto"
     }
 ```
 
@@ -239,6 +263,15 @@ Todos os controllers respondem sob o context-path `/api` (`server.servlet.contex
 | `PUT` | `/api/projects/{projectId}/fees/{projectFeeId}/quote` | `ADMIN` | Registra cotação financeira (`quotedAmount > 0`), muda status para `COTADA` e registra `TAXA_COTADA`. |
 | `GET` | `/api/projects/{projectId}/history` | `CLIENT` (dono) / `ADMIN` | Retorna linha do tempo (`ProjectHistoryEventResponse`) ordenada cronologicamente. Para `CLIENT`, `actorId` é mascarado (`null`), expondo apenas `actorRole`. |
 | `GET` | `/api/projects/{projectId}/export/csv` | `ADMIN` | Gera arquivo `text/csv; charset=UTF-8` com BOM UTF-8, metadados do projeto, detalhamento das taxas, total calculado e proteção contra CSV Formula Injection. |
+
+### 5.4 Módulo de Pagamentos e Webhooks (`PaymentInternalController`, `MercadoPagoWebhookController`)
+
+| Método | Rota | Papel | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/internal/payments/boleto` | Técnico / Dev | Geração de ordem e boleto via Orders API do Mercado Pago com idempotência e verificação de `requestFingerprint`. Autenticado via Bearer Token técnico ou Basic Auth em ambiente `dev`. |
+| `GET` | `/api/internal/payments/sync/{orderId}` | Técnico / Dev | Sincronização manual com o provedor de pagamentos para reconciliação de estado. |
+| `GET` | `/api/internal/payments/history/{integrationId}` | Técnico / Dev | Consulta o histórico de transações registradas para uma integração. |
+| `POST` | `/api/webhooks/mercadopago` | Provedor (MP) | Endpoint de notificações webhook do Mercado Pago. Valida assinatura HMAC SHA-256 (`x-signature`) e sincroniza o estado oficial da transação no banco. |
 
 ---
 
