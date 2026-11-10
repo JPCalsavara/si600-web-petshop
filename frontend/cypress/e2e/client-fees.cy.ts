@@ -6,125 +6,62 @@ viewports.forEach((viewport) => {
     let feeId = '';
     let projectFeeId = ''; // Será obtido no frontend via DOM ou intercept
     let projectEmail = '';
+    let clientSession: Cypress.E2ESession;
 
-	before(() => {
-	  projectEmail = `taxas-${Date.now()}@teste.com`;
+    before(() => {
+      projectEmail = `taxas-${Date.now()}@teste.com`;
 
-	  // 1. Cria uma taxa variável e aguarda o ID antes de criar o projeto
-	  cy.request({
-	    method: 'POST',
-	    url: `${Cypress.expose('API_BASE_URL')}/fees`,
-	    headers: {
-	      'X-Authenticated-User-Role': 'ADMIN',
-	      'X-Authenticated-User-Id': 'admin-1'
-	    },
-	    body: {
-	      name: `Taxa Extra E2E ${Date.now()}`,
-	      type: 'VARIAVEL',
-	      measurementUnit: 'Unidades'
-	    }
-	  }).then((res) => {
-	    feeId = res.body.id;
+      // 1. Cria uma taxa variável e aguarda o ID antes de criar o projeto
+      cy.adminRequest({
+        method: 'POST',
+        url: `${Cypress.expose('API_BASE_URL')}/fees`,
+        body: {
+          name: `Taxa Extra E2E ${Date.now()}`,
+          type: 'VARIAVEL',
+          measurementUnit: 'Unidades',
+        },
+      })
+        .then((res) => {
+          feeId = res.body.id;
 
-	    // 2. Cria o projeto usando a taxa realmente criada
-	    return cy.request({
-	      method: 'POST',
-	      url: `${Cypress.expose('API_BASE_URL')}/projects`,
-	      headers: {
-		'X-Authenticated-User-Role': 'ADMIN',
-		'X-Authenticated-User-Id': 'admin-1'
-	      },
-	      body: {
-		name: `Empresa E2E Taxas ${Date.now()}`,
-		document: `${Date.now()}0`,
-		address: 'Rua de Teste, 123',
-		area: 'B2C',
-		email: projectEmail,
-		feeIds: [feeId],
-		pdfDeadline: '2050-12-31',
-		paymentDeadline: '2050-12-31'
-	      }
-	    });
-	  }).then((res) => {
-	    // 3. Guarda o projeto criado
-	    projectId = res.body.id;
-
-	    // 4. Envia o PDF via MultipartFormData
-	    const formData = new FormData();
-	    formData.append('areaM2', '50.0');
-
-	    const blob = new Blob(['%PDF-1.7 E2E'], {
-	      type: 'application/pdf'
-	    });
-	    formData.append('file', blob, 'planta.pdf');
-
-	    cy.visit('/');
-
-	    return cy.window().then((win) => {
-	      return new Cypress.Promise((resolve, reject) => {
-		const xhr = new XMLHttpRequest();
-
-		xhr.open(
-		  'POST',
-		  `${Cypress.expose('API_BASE_URL')}/projects/${projectId}/pdf`
-		);
-
-		xhr.setRequestHeader(
-		  'X-Authenticated-User-Role',
-		  'CLIENT'
-		);
-		xhr.setRequestHeader(
-		  'X-Authenticated-User-Id',
-		  projectEmail
-		);
-
-		xhr.onload = () => {
-		  if (xhr.status >= 200 && xhr.status < 300) {
-		    resolve(xhr);
-		  } else {
-		    reject(
-		      new Error(
-			`Upload do PDF falhou: HTTP ${xhr.status} - ${xhr.responseText}`
-		      )
-		    );
-		  }
-		};
-
-		xhr.onerror = () => reject(
-		  new Error('Erro de rede ao enviar o PDF')
-		);
-
-		xhr.send(formData);
-	      });
-	    });
-	  }).then(() => {
-	    // 5. Aprova o PDF como admin
-	    return cy.request({
-	      method: 'POST',
-	      url: `${Cypress.expose('API_BASE_URL')}/projects/admin/${projectId}/approve`,
-	      headers: {
-		'X-Authenticated-User-Role': 'ADMIN',
-		'X-Authenticated-User-Id': 'admin-1'
-	      },
-	      body: {
-		approvedAreaM2: 50.0
-	      }
-	    });
-	  });
-	});
+          // 2. Cria o projeto usando a taxa realmente criada
+          return cy.createProjectAsAdmin({
+            name: `Empresa E2E Taxas ${Date.now()}`,
+            document: `${Date.now()}0`,
+            address: 'Rua de Teste, 123',
+            area: 'B2C',
+            email: projectEmail,
+            feeIds: [feeId],
+            pdfDeadline: '2050-12-31',
+            paymentDeadline: '2050-12-31',
+          });
+        })
+        .then((project) => {
+          // 3. Guarda o projeto criado e entra como o Cliente com a senha provisória
+          projectId = project.id;
+          return cy.apiLogin(project.email, project.provisionalPassword);
+        })
+        .then((client) => {
+          clientSession = client;
+          // 4. Envia o PDF como o Cliente
+          return cy.uploadPdfAs(client, projectId, '50.0', 'planta.pdf', '%PDF-1.7 E2E');
+        })
+        .then(() => {
+          // 5. Aprova o PDF como admin
+          return cy.adminRequest({
+            method: 'POST',
+            url: `${Cypress.expose('API_BASE_URL')}/projects/admin/${projectId}/approve`,
+            body: { approvedAreaM2: 50.0 },
+          });
+        });
+    });
 
     beforeEach(() => {
       cy.viewport(viewport);
     });
 
     const loginAsClient = () => {
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'CLIENT');
-          win.localStorage.setItem('MOCK_ACTOR_ID', projectEmail);
-          win.localStorage.setItem('MOCK_PROJECT_ID', projectId);
-        }
-      });
+      cy.visitAs(clientSession);
     };
 
     it('US-05: Cliente visualiza as taxas disponíveis após aprovação', () => {

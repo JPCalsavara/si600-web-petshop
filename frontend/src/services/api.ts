@@ -17,29 +17,40 @@ export type { QuoteableProjectFee, ProjectFeeConfiguration };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-function getStorageItem(key: string): string | null {
+const SESSION_KEY = 'AUTH_SESSION';
+export const SESSION_EXPIRED_EVENT = 'auth:expired';
+
+export interface AuthSession {
+  token: string;
+  email: string;
+  role: 'CLIENT' | 'ADMIN';
+  projectId: string | null;
+}
+
+// Acesso defensivo ao localStorage (SSR, modo privado ou testes em Node podem não ter/permitir).
+function getStorage(): Storage | null {
   try {
-    const storage = (globalThis as { localStorage?: Storage }).localStorage;
-    return storage ? storage.getItem(key) : null;
+    return (globalThis as { localStorage?: Storage }).localStorage ?? null;
   } catch {
     return null;
   }
 }
 
-export function getCurrentActorId(): string {
-  const localActorId = getStorageItem('MOCK_ACTOR_ID');
-  return localActorId || import.meta.env.VITE_USER_ID || 'client-1';
+export function getSession(): AuthSession | null {
+  try {
+    const raw = getStorage()?.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as AuthSession) : null;
+  } catch {
+    return null;
+  }
 }
 
-export function getCurrentActorRole(): 'CLIENT' | 'ADMIN' {
-  const localRole = getStorageItem('MOCK_ROLE');
-  const resolved = (localRole || import.meta.env.VITE_USER_ROLE || 'CLIENT').toUpperCase();
-  return resolved === 'ADMIN' ? 'ADMIN' : 'CLIENT';
+function saveSession(session: AuthSession): void {
+  getStorage()?.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
-export function getCurrentClientProjectId(): string | undefined {
-  const localProjectId = getStorageItem('MOCK_PROJECT_ID');
-  return localProjectId || import.meta.env.VITE_PROJECT_ID || undefined;
+export function clearSession(): void {
+  getStorage()?.removeItem(SESSION_KEY);
 }
 
 const apiClient = axios.create({
@@ -47,8 +58,8 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  config.headers.set('X-Authenticated-User-Id', getCurrentActorId());
-  config.headers.set('X-Authenticated-User-Role', getCurrentActorRole());
+  const session = getSession();
+  if (session) config.headers.set('Authorization', `Bearer ${session.token}`);
   return config;
 });
 
@@ -100,6 +111,11 @@ async function request<T>(config: AxiosRequestConfig): Promise<T> {
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
+      if (error.response.status === 401 && config.url !== '/auth/login') {
+        // Sessão expirada ou inválida: limpa o login local e avisa o App para voltar à tela de login.
+        clearSession();
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+      }
       const { detail, invalidFields } = normalizeProblemDetail(error.response.status, error.response.data);
       throw new ApiRequestError(detail, error.response.status, invalidFields);
     }
@@ -119,6 +135,39 @@ export async function checkBackendHealth(): Promise<HealthStatus> {
     url: '/health',
     headers: { Accept: 'application/json' },
   });
+}
+
+export function getCurrentActorRole(): 'CLIENT' | 'ADMIN' {
+  return getSession()?.role === 'ADMIN' ? 'ADMIN' : 'CLIENT';
+}
+
+/** US-01: entra com e-mail e senha e guarda a sessão devolvida pelo backend. */
+export async function login(email: string, password: string): Promise<AuthSession> {
+  const result = await request<{ token: string; email: string; role: string; projectId: string | null }>({
+    method: 'POST',
+    url: '/auth/login',
+    headers: { 'Content-Type': 'application/json' },
+    data: { email, password },
+  });
+  const session: AuthSession = {
+    token: result.token,
+    email: result.email,
+    role: result.role === 'ADMIN' ? 'ADMIN' : 'CLIENT',
+    projectId: result.projectId,
+  };
+  saveSession(session);
+  return session;
+}
+
+/** US-01: encerra a sessão no backend e apaga o login local (apaga mesmo se o backend estiver fora). */
+export async function logout(): Promise<void> {
+  try {
+    await request<void>({ method: 'POST', url: '/auth/logout' });
+  } catch {
+    // Sem rede ou sessão já expirada: o importante é limpar o estado local.
+  } finally {
+    clearSession();
+  }
 }
 
 export async function createProject(body: {

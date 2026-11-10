@@ -9,13 +9,7 @@ viewports.forEach((viewport) => {
 
     beforeEach(() => {
       cy.viewport(viewport);
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
-          win.localStorage.setItem('MOCK_ACTOR_ID', 'admin-1');
-          win.localStorage.removeItem('MOCK_PROJECT_ID');
-        },
-      });
+      cy.adminLogin().then((admin) => cy.visitAs(admin));
       cy.contains('button', 'Projetos').click({ force: true });
     });
 
@@ -33,6 +27,8 @@ viewports.forEach((viewport) => {
       cy.contains('button', 'Salvar').click();
       cy.contains('p', 'Projeto criado com sucesso.').should('be.visible');
       cy.contains('strong', email).should('be.visible');
+      // US-01: o Admin vê a senha provisória uma única vez para repassá-la ao Cliente.
+      cy.get('[data-testid="provisional-password"]').should('be.visible').invoke('text').should('have.length.at.least', 8);
 
       cy.contains('button', 'Voltar à lista').click();
       cy.get('[data-testid="input-filter-project"]', { timeout: 10000 })

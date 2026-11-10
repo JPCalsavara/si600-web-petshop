@@ -23,7 +23,8 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
   const [feeIds, setFeeIds] = useState<string[]>([]);
   const [fees, setFees] = useState<Array<{ id: string; name: string; type: string }>>([]);
   const [error, setError] = useState<string | null>(null);
-  const [credentials, setCredentials] = useState<{ login: string } | null>(null);
+  const [credentials, setCredentials] = useState<{ login: string; password?: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     listFees()
@@ -65,7 +66,7 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
         paymentDeadline,
         feeIds,
       });
-      setCredentials({ login: created.contactEmail });
+      setCredentials({ login: created.contactEmail, password: created.provisionalPassword });
       onCreated?.();
     } catch (err) {
       setError(
@@ -76,6 +77,16 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
     }
   }
 
+  async function copyCredentials(c: { login: string; password?: string }) {
+    try {
+      await navigator.clipboard.writeText(`Usuário: ${c.login}\nSenha: ${c.password ?? ''}`);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  // Tela "Novo Usuário" do Figma: mostra usuário e senha para o Admin repassar.
   if (credentials) {
     return (
       <div className={styles.page}>
@@ -99,9 +110,24 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
             <span>Usuário</span>
             <strong>{credentials.login}</strong>
           </div>
-          <p className={styles.hint}>
-            A criação de senha/autenticação não faz parte do contrato atual do backend.
-          </p>
+          {credentials.password ? (
+            <>
+              <div className={styles.row}>
+                <span>Senha provisória</span>
+                <strong data-testid="provisional-password">{credentials.password}</strong>
+              </div>
+              <div>
+                <button type="button" className={styles.copyButton} onClick={() => copyCredentials(credentials)}>
+                  {copied ? 'Copiado!' : 'Copiar usuário e senha'}
+                </button>
+              </div>
+              <p className={styles.hint}>
+                Esta senha só aparece agora. Se o envio de e-mail estiver ativo, o cliente também a recebe por e-mail.
+              </p>
+            </>
+          ) : (
+            <p className={styles.hint}>Este e-mail já possuía acesso; a senha existente foi mantida.</p>
+          )}
         </section>
         <div className={styles.actions}>
           <button type="button" className={styles.save} onClick={onDone}>

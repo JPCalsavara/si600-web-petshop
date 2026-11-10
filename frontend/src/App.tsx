@@ -1,8 +1,9 @@
 import { FeeCatalogPage } from './pages/FeeCatalogPage/FeeCatalogPage';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './styles/global.scss';
 import { AppShell } from './components/AppShell/AppShell';
-import { getCurrentActorRole, getCurrentClientProjectId } from './services/api';
+import { SESSION_EXPIRED_EVENT, getSession, logout } from './services/api';
+import { LoginPage } from './pages/LoginPage/LoginPage';
 import { ClientPdfPage } from './pages/ClientPdfPage/ClientPdfPage';
 import { AdminPdfPage } from './pages/AdminPdfPage/AdminPdfPage';
 import { ProjectListPage } from './pages/ProjectListPage/ProjectListPage';
@@ -34,13 +35,33 @@ function AdminProjects({ view, setView }: { view: AdminView; setView: (v: AdminV
 }
 
 export default function App() {
-  const role = getCurrentActorRole();
-  const projectId = getCurrentClientProjectId();
+  const [session, setSession] = useState(getSession());
   const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios'>('resumo');
   const [projectView, setProjectView] = useState<AdminView>({ name: 'lista' });
 
+  // Sessão expirada em qualquer chamada da API: volta para a tela de login.
+  useEffect(() => {
+    const onExpired = () => setSession(null);
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
+
+  if (!session) {
+    return <LoginPage onLoggedIn={() => setSession(getSession())} />;
+  }
+
+  const role = session.role;
+  const projectId = session.projectId;
+
+  async function handleLogout() {
+    await logout();
+    setSession(null);
+    setAdminSection('resumo');
+    setProjectView({ name: 'lista' });
+  }
+
   return (
-    <AppShell active={role === 'ADMIN' ? adminSection : 'projetos'} onNavigate={setAdminSection}>
+    <AppShell active={role === 'ADMIN' ? adminSection : 'projetos'} onNavigate={setAdminSection} onLogout={handleLogout}>
       {role === 'ADMIN' ? (
         adminSection === 'resumo' ? (
           <AdminDashboardPage
@@ -65,7 +86,7 @@ export default function App() {
           <p>A seção de {adminSection} ainda não foi implementada.</p>
         </div>
       ) : projectId ? <ClientPdfPage projectId={projectId} /> : (
-        <div>Configure <code>VITE_PROJECT_ID</code> para visualizar o projeto.</div>
+        <div>Nenhum projeto está vinculado ao seu acesso. Fale com o administrador.</div>
       )}
     </AppShell>
   );

@@ -183,6 +183,21 @@
   }
 }
 
+.copyButton {
+  @include figma-pill-button;
+  background: #ffffff;
+  color: #2563eb;
+  border: 1px solid #2563eb;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: #eff6ff;
+  }
+}
+
 .alert {
   padding: 12px 16px;
   border-radius: 12px;
