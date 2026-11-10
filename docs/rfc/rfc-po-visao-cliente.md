@@ -51,6 +51,7 @@ flowchart LR
   - **Taxa Fixa:** Valor único para qualquer estande (ex: Taxa de Inscrição ou Limpeza Básica).
   - **Taxa por Metragem ($\text{m}^2$):** Calculada automaticamente pelo tamanho do estande, podendo ser um valor direto por $\text{m}^2$ (ex: $\text{R\$ } 50,00/\text{m}^2$) ou por blocos de área (ex: 1 extintor a cada $15\text{ m}^2$).
   - **Taxa Variável (Sob Demanda):** Serviços em que o expositor informa quanto precisa (ex: kVA de energia extra, pontos de água) e o Administrador informa o orçamento (cotação) correspondente.
+- **Acesso ao Sistema:** Entra com e-mail e senha e sai pelo botão **Sair**. Ao cadastrar um projeto, o sistema cria automaticamente o acesso do expositor e mostra ao Administrador, uma única vez, o usuário e a **senha provisória** (com botão para copiar); a mesma senha é enviada ao expositor por e-mail.
 - **Gestão de Projetos e Configuração de Taxas:** Cadastra cada empresa expositora (CNPJ/CPF, responsável, categoria, e-mail e prazos de entrega do PDF e de pagamento) e escolhe quais taxas do catálogo se aplicam àquele estande.
 - **Análise de Plantas (Aprovação ou Reprovação):** Analisa o PDF enviado pelo expositor. Se estiver correto, aprova confirmando a metragem oficial do estande. Se houver pendências técnicas, reprova informando o motivo obrigatório — e o expositor recebe imediatamente um e-mail explicativo para enviar uma nova versão.
 - **Fila de Cotações:** Visualiza em uma única tela todos os pedidos de itens variáveis enviados pelos expositores e preenche o valor final cotado.
@@ -59,6 +60,7 @@ flowchart LR
   - Em qualquer projeto, pode baixar com um clique a **Planilha CSV** contendo todos os dados cadastrais, status e o detalhamento financeiro completo das taxas do expositor.
 
 ### 2.2 O que o Expositor (Cliente) faz no sistema?
+- **Acesso ao Sistema:** Entra com o e-mail do projeto e a senha provisória recebida por e-mail ou repassada pelo Administrador.
 - **Envio da Planta do Estande:** Faz o upload do projeto arquitetônico em PDF (até 10 MB) e informa a metragem do estande. Caso a planta seja reprovada, lê a justificativa diretamente na tela (e no seu e-mail) e pode reenviar o PDF corrigido quantas vezes forem necessárias.
 - **Consulta de Taxas e Solicitação de Itens Variáveis:** Assim que a planta é aprovada, a tabela financeira do estande é liberada. O expositor vê o valor já calculado das taxas fixas e por metragem, e preenche a quantidade desejada nas taxas variáveis clicando em **Salvar**.
 - **Linha do Tempo Transparente:** Acompanha o histórico completo de tudo o que aconteceu no seu projeto (datas de criação, envios de planta, decisões da administração e atualizações de taxas).
@@ -134,6 +136,7 @@ erDiagram
 ## 5. Segurança, Confiabilidade e Qualidade
 
 - **Armazenamento Seguro das Plantas PDF:** Os arquivos PDF das plantas não ficam expostos publicamente; são guardados em nuvem criptografada (Backblaze B2) e acessados apenas por links temporários que expiram em 15 minutos.
+- **Login e Perfis de Acesso:** Todas as telas e dados exigem login. As senhas são guardadas de forma irreversível, as sessões expiram em 8 horas e o expositor nunca acessa telas ou dados do Administrador.
 - **Proteção contra Alterações Indevidas:**
   - O expositor só visualiza valores de cobrança depois que sua planta foi tecnicamente aprovada.
   - Uma planta que já possua pagamentos gerados não pode ser revertida para reprovada, protegendo a consistência financeira do evento.

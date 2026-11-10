@@ -22,7 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
         properties = {
                 "storage.b2.enabled=false",
                 "spring.jpa.hibernate.ddl-auto=create-drop",
-                "app.cors.allowed-origins=http://localhost:4173"
+                "app.cors.allowed-origins=http://localhost:4173",
+                // O application.yml de teste liga os cabeçalhos legados; em prod eles têm de ficar desligados.
+                "app.security.legacy-headers=false"
         })
 class ProductionProfileIntegrationTest {
 

@@ -44,7 +44,7 @@ flowchart TB
     end
 
     subgraph Gateway ["Seam HTTP & Sessão do Ator"]
-        API["services/api.ts + types/index.ts\n(ActorSession dinâmica + Cliente REST + Parser RFC 7807)"]
+        API["services/api.ts + types/index.ts\n(Sessão de login Bearer + Cliente REST + Parser RFC 7807)"]
     end
 
     APP --> Pages
@@ -59,7 +59,7 @@ flowchart TB
 
 ### 2.1 Seam de Sessão e Comunicação HTTP (`src/services/api.ts` e `src/types/index.ts`)
 
-- **Resolução Dinâmica de Sessão (`ActorSession`):** As funções `getCurrentActorRole()`, `getCurrentActorId()` e `getCurrentClientProjectId()` consultam `window.localStorage` (`MOCK_ROLE`, `MOCK_ACTOR_ID`, `MOCK_PROJECT_ID`) com fallback para variáveis de ambiente (`VITE_USER_ROLE`, `VITE_USER_ID`, `VITE_PROJECT_ID`) **dinamicamente a cada chamada e em cada requisição Axios**. Isso permite alternar entre os papéis `ADMIN` e `CLIENT` em tempo de execução e durante os testes E2E sem recarregamento forçado de módulo.
+- **Sessão de Login (`AUTH_SESSION`, US-01):** `login(email, senha)` chama `POST /api/auth/login` e guarda `{ token, email, role, projectId }` em `localStorage` (`AUTH_SESSION`). `getSession()`, `getCurrentActorRole()` e `clearSession()` leem/limpam essa sessão **a cada chamada**, e o interceptor do Axios envia `Authorization: Bearer <token>` em cada requisição. Um `401` fora de `/auth/login` limpa a sessão e dispara o evento `auth:expired`, que faz o `App` voltar à tela de login; `logout()` encerra a sessão no backend e apaga a local mesmo se o backend estiver fora. Os antigos `MOCK_ROLE`/`MOCK_ACTOR_ID`/`MOCK_PROJECT_ID` e os cabeçalhos `X-Authenticated-User-*` não existem mais no frontend. A tela `LoginPage` mostra os erros do backend e barra e-mail/senha em branco antes de chamar a API; `AppShell` oferece o botão **Sair**.
 - **Normalização de Erros RFC 7807 (`ApiRequestError`):** O interceptor de erro traduz respostas `ProblemDetail` (`title`, `detail`, `status`, `errors`) em instâncias tipadas de `ApiRequestError`, permitindo que páginas e formulários exibam tanto mensagens gerais de conflito (`409`/`422`) quanto erros específicos por campo (`fieldErrors`).
 - **Contratos Unificados (`src/types/index.ts`):** Concentra todas as interfaces de domínio (`Fee`, `Project`, `ProjectFee`, `CalculatedFee`, `QuoteableProjectFee`, `ProjectFeeConfiguration`, `ProjectHistoryEvent`, `AdminDashboardData`, `AlertTag`), eliminando tipos duplicados ou espalhados.
 
@@ -105,6 +105,8 @@ O hook `usePaginatedList(items, pageSize)` e o componente `<PaginationControls /
 2. **Testes nos Seams Públicos ([ADR 0001](../adr/0001-estrategia-de-testes-integracao-e-e2e.md)):**
    - **Proibição de Mocks Artificiais:** Nenhum teste utiliza `vi.mock('axios')` ou `cy.intercept` estático para simular o backend.
    - **Suíte E2E Cypress (`frontend/cypress/e2e/*.cy.ts`):** Exercita a aplicação real no navegador conectada ao backend Spring Boot e PostgreSQL real:
+     - `login.cy.ts` (US-01): login do Admin e do Cliente, botão Sair, isolamento de perfil (`403` do Cliente em rotas de Admin), credenciais inválidas, formulário em branco, `401` sem token e sessão inválida voltando ao login.
+     - **Autenticação nos E2E:** `cypress/support/e2e.ts` define `cy.apiLogin`, `cy.adminLogin`, `cy.adminRequest`, `cy.createProjectAsAdmin`, `cy.visitAs` e `cy.uploadPdfAs`. O Admin vem do seed (`ADMIN_EMAIL`/`ADMIN_PASSWORD`, padrão do `docker-compose.yml`) e o Cliente entra com a senha provisória devolvida na criação do projeto.
      - `fee-catalog.cy.ts`: Catálogo de taxas (criação, edição, desativação, conflito de nome e validações).
      - `project-flow.cy.ts`: Criação e listagem de projetos, conflito de CPF/CNPJ/e-mail, validação de prazos e exportação CSV em viewports desktop e mobile (`macbook-15` e `iphone-x`).
      - `pdf-flow.cy.ts`: Upload de PDF pelo Cliente, bloqueio de arquivo inválido, aprovação e reprovação pelo Administrador.

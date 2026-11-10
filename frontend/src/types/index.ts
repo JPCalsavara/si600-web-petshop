@@ -42,6 +42,8 @@ export interface Project {
   contactEmail: string;
   paymentDeadline: string | null;
   alertTag?: AlertTag;
+  /** Só vem na resposta da criação do projeto (POST /projects). */
+  provisionalPassword?: string;
 }
 
 export interface InactiveExhibitor {

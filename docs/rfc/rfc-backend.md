@@ -24,7 +24,7 @@ Seguindo os princípios de **Deep Modules** (`/codebase-design`), o backend exp�
 ```mermaid
 flowchart LR
     subgraph Inbound ["Seam HTTP Público (/api/*)"]
-        AF["ActorFilter & ActorResolver\n(X-Authenticated-User-Id / Role)"]
+        AF["ActorFilter & ActorResolver\n(Authorization: Bearer token de sessão)"]
         CTRL["Controllers REST\n(@Valid + DTOs)"]
         ERR["ApiExceptionHandler\n(RFC 7807 ProblemDetail)"]
     end
@@ -35,6 +35,7 @@ flowchart LR
         HS["ProjectHistoryService"]
         CS["ProjectCsvExportService"]
         DS["DeadlineNotificationScheduler\n& AlertTagService"]
+        AS["AuthService (login, sessões, conta do Cliente)\n& SessionCleanupScheduler"]
     end
 
     subgraph Outbound ["Seams de Infraestrutura (Ports & Adapters)"]
@@ -50,6 +51,7 @@ flowchart LR
     PS --> OBJ
     PS --> MAIL
     DS --> MAIL
+    AS --> MAIL
     Core --> CLK
 ```
 
@@ -62,13 +64,13 @@ Cada seam externo possui ao menos dois adaptadores reais (produção e substitut
 | **`ObjectStorage`** | `S3ObjectStorage` (Backblaze B2 via protocolo S3 compatível, [ADR 0004](../adr/0004_armazenamento_b2_para_pdfs_de_estande.md)) | `InMemoryObjectStorage` | Armazenamento privado de arquivos PDF (limite de 10 MB, validação de magic bytes `%PDF-`), remoção de chaves substituídas e geração de URLs assinadas temporárias (15 min). |
 | **`EmailSender`** | `AsyncEmailSender` + `GmailEmailSender` (API REST Gmail OAuth2 via JDK `HttpClient`) | `LoggingEmailSender` / `RecordingEmailSender` | Disparo assíncrono de notificações de decisão de planta (aprovação/reprovação) e alertas automáticos de vencimento de prazos (`T-7`, `T-3`, `T-1`, `T0`, `T+1`). |
 | **`Clock`** | `Clock.systemUTC()` (`TimeConfiguration`) | `MutableClock` / `Clock.fixed(...)` | Determinismo temporal para cálculo dinâmico de `AlertTag` e disparo do agendador diário de notificações de prazo. |
-| **`ActorResolver`** | `ActorFilter` (extração dos cabeçalhos `X-Authenticated-User-Id` e `X-Authenticated-User-Role`) | Cabeçalhos injetados por `MockMvc` / Cypress | Isolamento da identidade autenticada (`ADMIN` vs `CLIENT`) e verificação estrita de propriedade (`project.ownerId == actor.id`). |
+| **`ActorResolver`** | `ActorFilter` (lê `Authorization: Bearer <token>` e resolve o ator via `AuthService.authenticate`, comparando o SHA-256 do token com `auth_sessions`) | Cabeçalhos legados `X-Authenticated-User-Id` / `X-Authenticated-User-Role`, aceitos **somente** com `app.security.legacy-headers=true` (ligado só no `application.yml` de testes; desligado por padrão). A aplicação **não sobe** com o profile `prod` e essa flag ligada. Os testes E2E (Cypress) fazem login real. | Isolamento da identidade autenticada (`ADMIN` vs `CLIENT`) e verificação estrita de propriedade (`project.ownerId == actor.id`). Token ausente, inválido ou expirado resulta em `401`. |
 
 ---
 
 ## 3. Modelo Entidade-Relacionamento (MER) Final
 
-O esquema relacional consolidado no PostgreSQL 16 (`eventos_db`) é composto por **5 tabelas principais** mapeadas pelas entidades JPA em `br.unicamp.ft.si600.eventos.entity`:
+O esquema relacional consolidado no PostgreSQL 16 (`eventos_db`) é composto por **7 tabelas principais** mapeadas pelas entidades JPA em `br.unicamp.ft.si600.eventos.entity`:
 
 ```mermaid
 erDiagram
@@ -76,6 +78,7 @@ erDiagram
     FEES ||--o{ PROJECT_FEES : "define modelo de taxa (1:N)"
     PROJECTS ||--o{ PROJECT_HISTORY_EVENTS : "registra trilha de auditoria (1:N)"
     PROJECTS ||--o{ DEADLINE_NOTIFICATIONS : "controla idempotencia de alertas (1:N)"
+    USER_ACCOUNTS ||--o{ AUTH_SESSIONS : "abre sessões de login (1:N)"
 
     PROJECTS {
         uuid id PK "Identificador único do projeto"
@@ -150,11 +153,36 @@ erDiagram
         varchar(254) recipient "E-mail destinatário (Cliente ou Admin)"
         timestamptz sent_at "Data/hora de confirmação do envio (uk_deadline_notifications_milestone)"
     }
+
+    USER_ACCOUNTS {
+        uuid id PK "Identificador da conta"
+        varchar(254) email UK "Login do usuário (e-mail em minúsculas)"
+        varchar(200) password_hash "PBKDF2WithHmacSHA256 (120.000 iterações, sal aleatório)"
+        varchar(20) role "ADMIN | CLIENT"
+        timestamptz created_at "Data de criação da conta"
+    }
+
+    AUTH_SESSIONS {
+        varchar(64) token_hash PK "SHA-256 do token de sessão (o token em si nunca é gravado)"
+        uuid user_id "Conta dona da sessão (idx_auth_sessions_user_id)"
+        timestamptz expires_at "Expiração da sessão (8 horas após o login)"
+    }
 ```
 
 ---
 
 ## 4. Regras de Negócio e Máquinas de Estado
+
+### 4.0 Autenticação, Contas e Sessões (US-01)
+
+Detalhes e fluxos completos em [US-01 - Login e Perfis de Acesso](US-01-login-e-perfis-de-acesso.md).
+
+- **Contas (`user_accounts`):** o `ADMIN` inicial é criado na subida da aplicação por `AdminSeed`, a partir de `ADMIN_EMAIL` e `ADMIN_PASSWORD`. O `CLIENT` ganha conta automaticamente quando o Administrador cria o projeto: o login é o `contactEmail` do projeto e a senha é uma **senha provisória aleatória** gerada por `AuthService.provisionClientAccount`. Se o e-mail já tiver conta, nada é criado nem enviado e a senha existente é mantida.
+- **Entrega da senha provisória:** (1) enviada por e-mail ao Cliente **após o commit** da transação (se o projeto der rollback, nenhum e-mail sai) e (2) devolvida **uma única vez** no campo `provisionalPassword` da resposta de `POST /api/projects`, para o Admin repassá-la pela tela. O campo é omitido (`@JsonInclude(NON_NULL)`) em qualquer outra resposta. Com `LOG_PROVISIONAL_PASSWORD=true` (apenas dev) a senha também é registrada no log.
+- **Senhas e tokens:** senha com PBKDF2WithHmacSHA256 (120.000 iterações, sal aleatório, sem dependência externa). O token de sessão é aleatório; só o seu SHA-256 é gravado em `auth_sessions`. A sessão dura 8 horas.
+- **Limpeza de sessões expiradas:** feita por `SessionCleanupScheduler` (`@Scheduled`, `fixedDelay` de 1 hora, desligável por `app.auth.session-cleanup.enabled=false`) com uma única exclusão em massa. O `login` **não** limpa sessões, para que logins simultâneos não disputem lock na tabela `auth_sessions`.
+- **Cabeçalhos legados:** `X-Authenticated-User-*` só funcionam com `app.security.legacy-headers=true`, usado nos testes antigos. `ActorFilter` lança erro na subida se a flag estiver ligada com o profile `prod`, porque esses cabeçalhos podem ser forjados por qualquer cliente.
+- **Mensagens:** credenciais erradas e e-mail inexistente recebem a mesma resposta `401` ("E-mail ou senha inválidos."), sem revelar se a conta existe.
 
 ### 4.1 Ciclo de Vida do Projeto (`ProjectStatus`)
 
@@ -203,6 +231,16 @@ Calculadas em tempo de leitura por `AlertTagService` usando o `Clock` injetado (
 
 Todos os controllers respondem sob o context-path `/api` (`server.servlet.context-path=/api`). Erros de validação (`400`), autenticação/autorização (`401`/`403`), recurso inexistente (`404`), conflito de estado (`409`) e regra semântica (`422`) seguem estritamente o formato **RFC 7807 (`application/problem+json`)** produzido por `ApiExceptionHandler`.
 
+### 5.0 Autenticação (`AuthController`)
+
+| Método | Rota | Papel | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/login` | Público | Recebe `{ email, password }` e devolve `{ token, email, role, projectId }` (`projectId` só para `CLIENT`). `400` (ProblemDetail com `invalidFields`) para corpo vazio, campos nulos/em branco ou acima do limite (e-mail 254, senha 200); `401` para credenciais inválidas. |
+| `POST` | `/api/auth/logout` | Autenticado | Revoga a sessão do token informado (`204`). |
+| `GET` | `/api/auth/me` | Autenticado | Devolve o ator da sessão atual; `401` se o token for inválido ou estiver expirado. |
+
+Todas as demais rotas, exceto `GET /api/health`, exigem `Authorization: Bearer <token>`.
+
 ### 5.1 Saúde e Catálogo de Taxas (`HealthController`, `FeeController`)
 
 | Método | Rota | Papel | Descrição |
@@ -218,7 +256,7 @@ Todos os controllers respondem sob o context-path `/api` (`server.servlet.contex
 
 | Método | Rota | Papel | Descrição |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/projects` | `ADMIN` | Cria projeto expositor, vincula `feeIds` iniciais (`ProjectFee`) e grava `PROJETO_CRIADO`. Valida unicidade de CPF/CNPJ e e-mail (`409`) e `paymentDeadline >= pdfDeadline` (`422`). |
+| `POST` | `/api/projects` | `ADMIN` | Cria projeto expositor, vincula `feeIds` iniciais (`ProjectFee`) e grava `PROJETO_CRIADO`. Valida unicidade de CPF/CNPJ e e-mail (`409`) e `paymentDeadline >= pdfDeadline` (`422`). Cria também a conta do Cliente (US-01) e devolve `provisionalPassword` na resposta quando a conta é nova. |
 | `GET` | `/api/projects/{projectId}` | `CLIENT` (dono) / `ADMIN` | Retorna dados do projeto e `alertTags`; atualiza `lastAccessAt` quando acessado pelo Cliente dono. |
 | `POST` | `/api/projects/{projectId}/pdf` | `CLIENT` (dono) | Multipart (`file` PDF até 10 MB + `areaM2 > 0`). Grava objeto no B2, atualiza `status = PDF_EM_ANALISE` e registra `PDF_ENVIADO`. |
 | `GET` | `/api/projects/{projectId}/pdf/download` | `CLIENT` (dono) / `ADMIN` | Retorna URL assinada temporária (`DownloadUrlResponse`) com validade de 15 minutos. |
@@ -247,4 +285,5 @@ Todos os controllers respondem sob o context-path `/api` (`server.servlet.contex
 Todas as suítes em `backend/src/test/java/br/unicamp/ft/si600/eventos/` executam com `@SpringBootTest` + `@AutoConfigureMockMvc` contra banco relacional real e os adaptadores determinísticos de teste (`InMemoryObjectStorage`, `RecordingEmailSender`, `MutableClock`), cobrindo obrigatoriamente a matriz tripartite:
 - **Casos Bons (Happy Path):** Criação, listagem, cálculo aritmético exato, persistência no banco, eventos de histórico e envio de e-mails/objetos S3.
 - **Casos Ruins (Sad Path):** Violação de propriedade (`403`), projeto/taxa inexistente (`404`), conflito de estado ou unicidade (`409`), prazos invertidos (`422`) com garantia de rollback transacional.
+- **Autenticação (US-01):** `AuthIntegrationTest` (em `src/test/java/.../auth/`, para ser executado pelo Surefire) cobre login/logout, isolamento `ADMIN` x `CLIENT`, `401` sem token, senha provisória (e-mail e resposta), limpeza de sessões e `400` padronizado em `/auth/login`. Os demais testes rodam com `app.security.legacy-headers=true` no `application.yml` de teste; o `AuthIntegrationTest` o desliga para exercitar o fluxo real.
 - **Casos Incompletos (Malformed / Boundary):** Payloads nulos, listas vazias, números negativos/zero, arquivos falsos sem assinatura `%PDF-` ou acima de 10 MB (`400`/`413`) retornando matriz `errors` na estrutura RFC 7807 sem jamais produzir `500 Internal Server Error`.

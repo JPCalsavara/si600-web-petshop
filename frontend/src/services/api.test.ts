@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   ApiRequestError,
-  getCurrentActorId,
+  clearSession,
   getCurrentActorRole,
-  getCurrentClientProjectId,
+  getSession,
   normalizeProblemDetail,
   parseFee,
 } from './api';
@@ -34,17 +34,32 @@ describe('Seam HTTP e Sessão do Ator — Contratos de Borda (ADR 0001 / ADR 000
   });
 
   describe('1. Casos Bons (Happy Path)', () => {
-    it('resolve dinamicamente o papel, o identificador do ator e o projeto a partir do localStorage', () => {
-      localStorageAdapter.setItem('MOCK_ROLE', 'admin');
-      localStorageAdapter.setItem('MOCK_ACTOR_ID', 'admin-42');
-      localStorageAdapter.setItem('MOCK_PROJECT_ID', 'proj-99');
+    it('resolve o papel, o e-mail e o projeto a partir da sessão salva no localStorage (US-01)', () => {
+      localStorageAdapter.setItem(
+        'AUTH_SESSION',
+        JSON.stringify({ token: 't-1', email: 'admin@exemplo.com', role: 'ADMIN', projectId: null }),
+      );
 
       expect(getCurrentActorRole()).toBe('ADMIN');
-      expect(getCurrentActorId()).toBe('admin-42');
-      expect(getCurrentClientProjectId()).toBe('proj-99');
+      expect(getSession()).toEqual({ token: 't-1', email: 'admin@exemplo.com', role: 'ADMIN', projectId: null });
 
-      localStorageAdapter.setItem('MOCK_ROLE', 'client');
+      localStorageAdapter.setItem(
+        'AUTH_SESSION',
+        JSON.stringify({ token: 't-2', email: 'cliente@exemplo.com', role: 'CLIENT', projectId: 'proj-99' }),
+      );
       expect(getCurrentActorRole()).toBe('CLIENT');
+      expect(getSession()?.projectId).toBe('proj-99');
+    });
+
+    it('clearSession apaga o login local', () => {
+      localStorageAdapter.setItem(
+        'AUTH_SESSION',
+        JSON.stringify({ token: 't-1', email: 'a@b.com', role: 'ADMIN', projectId: null }),
+      );
+
+      clearSession();
+
+      expect(getSession()).toBeNull();
     });
 
     it('valida uma taxa íntegra retornada pela API via parseFee', () => {
@@ -80,6 +95,15 @@ describe('Seam HTTP e Sessão do Ator — Contratos de Borda (ADR 0001 / ADR 000
   });
 
   describe('3. Casos Incompletos (Boundary & Malformed Payloads)', () => {
+    it('trata ausência de sessão e sessão corrompida como não autenticado (papel CLIENT, sem sessão)', () => {
+      expect(getSession()).toBeNull();
+      expect(getCurrentActorRole()).toBe('CLIENT');
+
+      localStorageAdapter.setItem('AUTH_SESSION', '{json quebrado');
+      expect(getSession()).toBeNull();
+      expect(getCurrentActorRole()).toBe('CLIENT');
+    });
+
     it('extrai matriz de erros por campo (invalidFields e errors) de respostas HTTP 400', () => {
       const normalized = normalizeProblemDetail(400, {
         title: 'Dados inválidos',

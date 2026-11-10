@@ -12,77 +12,40 @@ viewports.forEach((viewport) => {
       pendingApprovalCompany = `Stande Em Analise ${suffix}`;
       const pendingEmail = `analise-${suffix}@teste.com`;
 
-      cy.request({
-        method: 'POST',
-        url: `${Cypress.expose('API_BASE_URL')}/projects`,
-        headers: {
-          'X-Authenticated-User-Role': 'ADMIN',
-          'X-Authenticated-User-Id': 'admin-1',
-        },
-        body: {
-          name: inactiveCompany,
-          document: `${Date.now()}1`.slice(0, 14),
-          address: 'Av. Dashboard, 100',
-          area: 'B2C',
-          email: `inativo-${suffix}@teste.com`,
-          feeIds: [],
-          pdfDeadline: '2050-12-31',
-          paymentDeadline: '2050-12-31',
-        },
+      cy.createProjectAsAdmin({
+        name: inactiveCompany,
+        document: `${Date.now()}1`.slice(0, 14),
+        address: 'Av. Dashboard, 100',
+        area: 'B2C',
+        email: `inativo-${suffix}@teste.com`,
+        feeIds: [],
+        pdfDeadline: '2050-12-31',
+        paymentDeadline: '2050-12-31',
       });
 
-      cy.request({
-        method: 'POST',
-        url: `${Cypress.expose('API_BASE_URL')}/projects`,
-        headers: {
-          'X-Authenticated-User-Role': 'ADMIN',
-          'X-Authenticated-User-Id': 'admin-1',
-        },
-        body: {
-          name: pendingApprovalCompany,
-          document: `${Date.now()}2`.slice(0, 14),
-          address: 'Av. Dashboard, 200',
-          area: 'Music Hub',
-          email: pendingEmail,
-          feeIds: [],
-          pdfDeadline: '2050-12-31',
-          paymentDeadline: '2050-12-31',
-        },
-      }).then((res) => {
-        approvalProjectId = res.body.id;
-
-        const formData = new FormData();
-        formData.append('areaM2', '75.5');
-        const blob = new Blob(['%PDF-1.7 E2E Dashboard'], { type: 'application/pdf' });
-        formData.append('file', blob, 'planta_dashboard.pdf');
-
-        cy.visit('/');
-        return cy.window().then((win) => {
-          return new Cypress.Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `${Cypress.expose('API_BASE_URL')}/projects/${approvalProjectId}/pdf`);
-            xhr.setRequestHeader('X-Authenticated-User-Role', 'CLIENT');
-            xhr.setRequestHeader('X-Authenticated-User-Id', pendingEmail);
-            xhr.onload = () => {
-              if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
-              else reject(new Error(`Upload falhou: HTTP ${xhr.status}`));
-            };
-            xhr.onerror = () => reject(new Error('Erro de rede no upload do PDF'));
-            xhr.send(formData);
-          });
+      cy.createProjectAsAdmin({
+        name: pendingApprovalCompany,
+        document: `${Date.now()}2`.slice(0, 14),
+        address: 'Av. Dashboard, 200',
+        area: 'Music Hub',
+        email: pendingEmail,
+        feeIds: [],
+        pdfDeadline: '2050-12-31',
+        paymentDeadline: '2050-12-31',
+      })
+        .then((project) => {
+          approvalProjectId = project.id;
+          // O envio do PDF é do Cliente: entra com a senha provisória devolvida na criação.
+          return cy.apiLogin(project.email, project.provisionalPassword);
+        })
+        .then((client) => {
+          return cy.uploadPdfAs(client, approvalProjectId, '75.5', 'planta_dashboard.pdf', '%PDF-1.7 E2E Dashboard');
         });
-      });
     });
 
     beforeEach(() => {
       cy.viewport(viewport);
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
-          win.localStorage.setItem('MOCK_ACTOR_ID', 'admin-1');
-          win.localStorage.removeItem('MOCK_PROJECT_ID');
-        },
-      });
+      cy.adminLogin().then((admin) => cy.visitAs(admin));
     });
 
     it('1. Caso Bom: exibe o dashboard real em formato Kanban com KPIs, filtros e atalho de análise de planta', () => {

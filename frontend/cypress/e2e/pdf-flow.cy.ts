@@ -5,31 +5,30 @@ viewports.forEach((viewport) => {
     let projectId = '';
     let projectEmail = '';
     let projectName = '';
+    let clientSession: Cypress.E2ESession;
 
     before(() => {
       projectEmail = `e2e-${Date.now()}@teste.com`;
       projectName = `Empresa E2E ${Date.now()}`;
       // 1. Acessa como Admin e cria o projeto via API para isolar o teste do UI de criação
-      cy.request({
-        method: 'POST',
-        url: `${Cypress.expose('API_BASE_URL')}/projects`,
-        headers: {
-          'X-Authenticated-User-Role': 'ADMIN',
-          'X-Authenticated-User-Id': 'admin-1',
-        },
-        body: {
-          name: projectName,
-          document: `${Date.now()}0`, // 14 dígitos
-          address: 'Rua de Teste, 123',
-          area: 'B2C',
-          email: projectEmail,
-          pdfDeadline: '2050-12-31',
-          paymentDeadline: '2050-12-31',
-          feeIds: [],
-        }
-      }).then((resp) => {
-        projectId = resp.body.id;
-      });
+      cy.createProjectAsAdmin({
+        name: projectName,
+        document: `${Date.now()}0`, // 14 dígitos
+        address: 'Rua de Teste, 123',
+        area: 'B2C',
+        email: projectEmail,
+        pdfDeadline: '2050-12-31',
+        paymentDeadline: '2050-12-31',
+        feeIds: [],
+      })
+        .then((project) => {
+          projectId = project.id;
+          // 2. O Cliente entra com a senha provisória devolvida na criação
+          return cy.apiLogin(project.email, project.provisionalPassword);
+        })
+        .then((client) => {
+          clientSession = client;
+        });
     });
 
     beforeEach(() => {
@@ -37,22 +36,11 @@ viewports.forEach((viewport) => {
     });
 
     const loginAsClient = () => {
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'CLIENT');
-          win.localStorage.setItem('MOCK_ACTOR_ID', projectEmail);
-          win.localStorage.setItem('MOCK_PROJECT_ID', projectId);
-        }
-      });
+      cy.visitAs(clientSession);
     };
 
     const loginAsAdmin = () => {
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
-          win.localStorage.setItem('MOCK_PROJECT_ID', '');
-        }
-      });
+      cy.adminLogin().then((admin) => cy.visitAs(admin));
     };
 
     it('Sad Path 1: Envio sem arquivo', () => {

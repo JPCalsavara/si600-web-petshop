@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { getCurrentActorRole } from '../../services/api';
+import { getSession } from '../../services/api';
 import styles from './AppShell.module.scss';
 
 type SectionName = 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas' | 'cotacoes';
@@ -7,10 +7,11 @@ type SectionName = 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas' |
 interface Props {
   active: SectionName;
   children: ReactNode;
+  onLogout?: () => void;
   onNavigate?: (section: SectionName) => void;
 }
 
-export function AppShell({ active, children, onNavigate }: Props) {
+export function AppShell({ active, children, onNavigate, onLogout }: Props) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -26,10 +27,10 @@ export function AppShell({ active, children, onNavigate }: Props) {
     }
   }, [darkMode]);
 
-  const role = getCurrentActorRole();
-  const admin = role === 'ADMIN';
-  const name = admin ? 'Rosângela' : 'Fabiana S. T.';
-  const handle = admin ? '@adminRosângela' : '@User94';
+  const session = getSession();
+  const admin = session?.role === 'ADMIN';
+  const name = admin ? 'Administrador' : 'Cliente';
+  const handle = session?.email ?? '';
 
   const handleNavigate = (section: SectionName) => {
     if (onNavigate) onNavigate(section);
@@ -130,7 +131,7 @@ export function AppShell({ active, children, onNavigate }: Props) {
               </span>
             </button>
 
-            <button className={styles.logout} type="button">
+            <button className={styles.logout} type="button" onClick={onLogout}>
               ↪ <span>Sair</span>
             </button>
           </div>

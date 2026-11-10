@@ -30,6 +30,16 @@ services:
       - SPRING_DATASOURCE_USERNAME=eventos_user
       - SPRING_DATASOURCE_PASSWORD=eventos_pass
       - SPRING_PROFILES_ACTIVE=dev
+      - ADMIN_EMAIL=admin@exemplo.com
+      - ADMIN_PASSWORD=Admin@12345
+      - LOG_PROVISIONAL_PASSWORD=true
+      # E-mail (senha provisória do cliente e decisão do PDF). Defina no arquivo .env na raiz ou no shell;
+      # sem GMAIL_ENABLED=true nenhum e-mail é enviado. Ver docs/us-08-notificacao-email-gmail.md.
+      - GMAIL_ENABLED=${GMAIL_ENABLED:-false}
+      - GMAIL_SENDER=${GMAIL_SENDER:-}
+      - GMAIL_CLIENT_ID=${GMAIL_CLIENT_ID:-}
+      - GMAIL_CLIENT_SECRET=${GMAIL_CLIENT_SECRET:-}
+      - GMAIL_REFRESH_TOKEN=${GMAIL_REFRESH_TOKEN:-}
     ports:
       - "8080:8080"
     depends_on:
@@ -44,7 +54,6 @@ services:
     restart: unless-stopped
     environment:
       - VITE_PROXY_TARGET=http://backend:8080
-      - VITE_USER_ROLE=ADMIN
     ports:
       - "5173:5173"
     volumes:
