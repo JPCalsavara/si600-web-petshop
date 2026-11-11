@@ -11,7 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
@@ -21,7 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import br.unicamp.ft.si600.eventos.entity.AuthSession;
 import br.unicamp.ft.si600.eventos.entity.Project;
@@ -41,6 +42,7 @@ import br.unicamp.ft.si600.eventos.service.AuthService;
  * US-01: login, perfis de acesso e logout. Roda com os cabeçalhos antigos DESLIGADOS
  * (app.security.legacy-headers=false), como em produção.
  */
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {"storage.b2.enabled=false", "app.security.legacy-headers=false"})
 @Import({TestStorageConfig.class, TestEmailConfig.class})

@@ -58,7 +58,11 @@ jobs:
           
           echo "=== Running Backend Tests ==="
           cd backend
-          ./mvnw clean test >> ../tests.log 2>&1
+          PAYMENT_TEST_PASSWORD=eventos_pass ./mvnw clean test \
+            -Dpayment.test.jdbc-url=jdbc:postgresql://localhost:5432/eventos_db \
+            -Dpayment.test.username=eventos_user \
+            -Dpayment.test.confirm-data-wipe=true \
+            >> ../tests.log 2>&1
           BACKEND_STATUS=$?
           cd ..
           

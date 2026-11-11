@@ -1,0 +1,20 @@
+# Copie para .envpagamentos na raiz. Não use aspas; formato Java properties.
+# Preencha a credencial da aplicação de TESTE no Mercado Pago. Nunca use token de produção.
+MP_ENABLED=true
+MP_ACCESS_TOKEN=COLOCAR_CREDENCIAL_DE_TESTE
+MP_BASE_URL=https://api.mercadopago.com
+PAYMENT_DEV_ENABLED=true
+PAYMENT_DEV_USERNAME=desenvolvedor
+# Defina uma senha local com pelo menos 12 caracteres, sem dois-pontos no usuário.
+PAYMENT_DEV_PASSWORD=
+PAYMENT_DEV_ORIGIN=http://localhost:5173
+# Segredo estável com pelo menos 32 caracteres; não troque após criar cobranças.
+PAYMENT_FINGERPRINT_SECRET=
+SPRING_PROFILES_ACTIVE=dev
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/eventos_db
+SPRING_DATASOURCE_USERNAME=eventos_user
+SPRING_DATASOURCE_PASSWORD=eventos_pass
+
+# Segredo oficial do painel Mercado Pago; não é o access token.
+PAYMENT_WEBHOOK_ENABLED=false
+PAYMENT_WEBHOOK_SECRET=
