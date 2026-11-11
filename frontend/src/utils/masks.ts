@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { trimEdges } from './text';
 import type { AreaEstande, AreaPricingMode, FeeType } from '../types';
 
 /**
@@ -32,14 +33,14 @@ export const feeFormSchema = z
   .object({
     name: z
       .string()
-      .transform((v) => v.replace(/^[\s\x00-\x20]+|[\s\x00-\x20]+$/gu, ''))
+      .transform((v) => trimEdges(v))
       .refine((v) => v.length > 0, { message: 'Informe o nome da taxa.' }),
     description: z.string(),
     type: z.enum(['FIXA', 'POR_METRAGEM', 'VARIAVEL']),
     mode: z.enum(['VALOR_POR_M2', 'UNIDADES_POR_INTERVALO']),
     unit: z
       .string()
-      .transform((v) => v.replace(/^[\s\x00-\x20]+|[\s\x00-\x20]+$/gu, '')),
+      .transform((v) => trimEdges(v)),
     amount: z.string(),
     amountPerM2: z.string(),
     areaPerUnitM2: z.string(),

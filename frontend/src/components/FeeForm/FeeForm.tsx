@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiRequestError, createFee, updateFee } from '../../services/api';
 import { validateFeeFormWithZod } from '../../utils/masks';
+import { trimEdges } from '../../utils/text';
 import type { AreaPricingMode, Fee, FeeRequest, FeeType } from '../../types';
 import styles from './FeeForm.module.scss';
 
@@ -40,8 +41,8 @@ export function FeeForm({ fee, onSaved, onCancel }: Props) {
     event.preventDefault();
     if (saving) return;
 
-    const normalizedName = name.replace(/^[\s\x00-\x20]+|[\s\x00-\x20]+$/gu, '');
-    const normalizedUnit = unit.replace(/^[\s\x00-\x20]+|[\s\x00-\x20]+$/gu, '');
+    const normalizedName = trimEdges(name);
+    const normalizedUnit = trimEdges(unit);
 
     const invalid = validateFeeFormWithZod({
       name,

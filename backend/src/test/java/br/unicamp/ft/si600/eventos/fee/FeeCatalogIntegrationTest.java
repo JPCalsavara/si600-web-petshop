@@ -9,12 +9,14 @@ import br.unicamp.ft.si600.eventos.repository.FeeRepository;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.*;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class FeeCatalogIntegrationTest {
     @Autowired TestRestTemplate restTemplate;
@@ -33,16 +35,16 @@ class FeeCatalogIntegrationTest {
         ResponseEntity<JsonNode> response = request(HttpMethod.POST, "/fees", body, "ADMIN");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(repository.count()).isEqualTo(1);
-        String id = response.getBody().get("id").asText();
+        String id = response.getBody().get("id").asString();
         JsonNode fetched = request(HttpMethod.GET, "/fees/" + id, null, "ADMIN").getBody();
-        assertThat(fetched.get("id").asText()).isEqualTo(id);
-        assertThat(fetched.get("name").asText()).isEqualTo(response.getBody().get("name").asText());
-        assertThat(fetched.get("type").asText()).isEqualTo(response.getBody().get("type").asText());
-        if (fetched.get("areaPricingMode").asText().equals("UNIDADES_POR_INTERVALO")) {
+        assertThat(fetched.get("id").asString()).isEqualTo(id);
+        assertThat(fetched.get("name").asString()).isEqualTo(response.getBody().get("name").asString());
+        assertThat(fetched.get("type").asString()).isEqualTo(response.getBody().get("type").asString());
+        if (fetched.get("areaPricingMode").asString().equals("UNIDADES_POR_INTERVALO")) {
             assertThat(fetched.get("areaPerUnitM2").decimalValue()).isEqualByComparingTo("25");
             assertThat(fetched.get("unitAmount").decimalValue()).isEqualByComparingTo("30");
-        } else if (fetched.get("type").asText().equals("VARIAVEL")) {
-            assertThat(fetched.get("measurementUnit").asText()).isEqualTo("kVA");
+        } else if (fetched.get("type").asString().equals("VARIAVEL")) {
+            assertThat(fetched.get("measurementUnit").asString()).isEqualTo("kVA");
             assertThat(fetched.get("amount").isNull()).isTrue();
         } else {
             assertThat(fetched.get("amountPerM2").decimalValue()).isEqualByComparingTo("5.25");
@@ -51,13 +53,13 @@ class FeeCatalogIntegrationTest {
 
     @Test
     void deveListarEditarEDesativarSemExcluirOuReativar() {
-        String id = request(HttpMethod.POST, "/fees", fixed(), "ADMIN").getBody().get("id").asText();
+        String id = request(HttpMethod.POST, "/fees", fixed(), "ADMIN").getBody().get("id").asString();
         assertThat(request(HttpMethod.GET, "/fees", null, "ADMIN").getBody().size()).isEqualTo(1);
         String update = "{\"name\":\"Energia\",\"description\":\"Consumo\",\"type\":\"VARIAVEL\",\"measurementUnit\":\"kVA\"}";
         ResponseEntity<JsonNode> edited = request(HttpMethod.PUT, "/fees/" + id, update, "ADMIN");
         assertThat(edited.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(edited.getBody().get("amount").isNull()).isTrue();
-        assertThat(edited.getBody().get("description").asText()).isEqualTo("Consumo");
+        assertThat(edited.getBody().get("description").asString()).isEqualTo("Consumo");
         ResponseEntity<JsonNode> disabled = request(HttpMethod.POST, "/fees/" + id + "/deactivate", null, "ADMIN");
         assertThat(disabled.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(disabled.getBody().get("active").asBoolean()).isFalse();
@@ -107,10 +109,10 @@ class FeeCatalogIntegrationTest {
     void deveRejeitarCriacaoEEdicaoInvalidasSemGravar(String body) {
         assertProblem(request(HttpMethod.POST, "/fees", body, "ADMIN"), HttpStatus.BAD_REQUEST);
         assertThat(repository.count()).isZero();
-        String id = request(HttpMethod.POST, "/fees", fixed(), "ADMIN").getBody().get("id").asText();
+        String id = request(HttpMethod.POST, "/fees", fixed(), "ADMIN").getBody().get("id").asString();
         assertProblem(request(HttpMethod.PUT, "/fees/" + id, body, "ADMIN"), HttpStatus.BAD_REQUEST);
         JsonNode preserved = request(HttpMethod.GET, "/fees/" + id, null, "ADMIN").getBody();
-        assertThat(preserved.get("name").asText()).isEqualTo("Aluguel");
+        assertThat(preserved.get("name").asString()).isEqualTo("Aluguel");
         assertThat(preserved.get("amount").decimalValue()).isEqualByComparingTo("100.50");
         assertThat(repository.count()).isEqualTo(1);
     }
@@ -129,7 +131,7 @@ class FeeCatalogIntegrationTest {
 
     @Test
     void deveExigirAdminEmTodasAsOperacoesSemAlterarCatalogo() {
-        String id = request(HttpMethod.POST, "/fees", fixed(), "ADMIN").getBody().get("id").asText();
+        String id = request(HttpMethod.POST, "/fees", fixed(), "ADMIN").getBody().get("id").asString();
         for (String role : new String[]{null, "CLIENT"}) {
             HttpStatus status = role == null ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN;
             assertProblem(request(HttpMethod.GET, "/fees", null, role), status);
@@ -218,12 +220,12 @@ class FeeCatalogIntegrationTest {
         String body = "{\"name\":\"\\u2003 Energia \\u2003\",\"type\":\"VARIAVEL\",\"measurementUnit\":\"\\u2003 kVA \\u2003\"}";
         ResponseEntity<JsonNode> created = request(HttpMethod.POST, "/fees", body, "ADMIN");
         assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        String id = created.getBody().get("id").asText();
+        String id = created.getBody().get("id").asString();
         for (JsonNode fee : new JsonNode[]{created.getBody(),
                 request(HttpMethod.PUT, "/fees/" + id, body, "ADMIN").getBody(),
                 request(HttpMethod.GET, "/fees/" + id, null, "ADMIN").getBody()}) {
-            assertThat(fee.get("name").asText()).isEqualTo("Energia");
-            assertThat(fee.get("measurementUnit").asText()).isEqualTo("kVA");
+            assertThat(fee.get("name").asString()).isEqualTo("Energia");
+            assertThat(fee.get("measurementUnit").asString()).isEqualTo("kVA");
         }
     }
 
@@ -231,11 +233,11 @@ class FeeCatalogIntegrationTest {
         ResponseEntity<JsonNode> created = request(HttpMethod.POST, "/fees", body, "ADMIN");
         assertFields(created, fields);
         assertThat(repository.count()).isZero();
-        String id = request(HttpMethod.POST, "/fees", fixed(), "ADMIN").getBody().get("id").asText();
+        String id = request(HttpMethod.POST, "/fees", fixed(), "ADMIN").getBody().get("id").asString();
         assertFields(request(HttpMethod.PUT, "/fees/" + id, body, "ADMIN"), fields);
         JsonNode preserved = request(HttpMethod.GET, "/fees/" + id, null, "ADMIN").getBody();
-        assertThat(preserved.get("name").asText()).isEqualTo("Aluguel");
-        assertThat(preserved.get("type").asText()).isEqualTo("FIXA");
+        assertThat(preserved.get("name").asString()).isEqualTo("Aluguel");
+        assertThat(preserved.get("type").asString()).isEqualTo("FIXA");
         assertThat(preserved.get("description").isNull()).isTrue();
         assertThat(preserved.get("measurementUnit").isNull()).isTrue();
         assertThat(preserved.get("amount").decimalValue()).isEqualByComparingTo("100.50");
@@ -246,9 +248,10 @@ class FeeCatalogIntegrationTest {
         assertProblem(response, HttpStatus.BAD_REQUEST);
         JsonNode errors = response.getBody().get("invalidFields");
         assertThat(errors).isNotNull();
-        java.util.List<String> reported = new java.util.ArrayList<>();
-        errors.fieldNames().forEachRemaining(reported::add);
-        assertThat(reported).containsExactlyInAnyOrder(fields);
+        assertThat(errors.size()).isEqualTo(fields.length);
+        for (String field : fields) {
+            assertThat(errors.has(field)).as("campo %s", field).isTrue();
+        }
     }
 
     private String fixed() { return "{\"name\":\"Aluguel\",\"type\":\"FIXA\",\"amount\":100.50}"; }
@@ -269,7 +272,7 @@ class FeeCatalogIntegrationTest {
         JsonNode fee = created.getBody();
         assertThat(fee).isNotNull();
         assertThat(fee.get("active").asBoolean()).isTrue();
-        ResponseEntity<JsonNode> fetched = request(HttpMethod.GET, "/fees/" + fee.get("id").asText(), null, "ADMIN");
+        ResponseEntity<JsonNode> fetched = request(HttpMethod.GET, "/fees/" + fee.get("id").asString(), null, "ADMIN");
         assertThat(fetched.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(fetched.getBody().get("amount").decimalValue()).isEqualByComparingTo("100.50");
     }

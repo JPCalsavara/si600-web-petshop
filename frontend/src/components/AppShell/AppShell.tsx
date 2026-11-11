@@ -53,7 +53,12 @@ export function AppShell({ active, children, onNavigate, onLogout }: Props) {
 
         {/* Backdrop escuro pro mobile */}
         {isMobileMenuOpen && (
-          <div className={styles.mobileBackdrop} onClick={() => setIsMobileMenuOpen(false)}></div>
+          <button
+            type="button"
+            className={styles.mobileBackdrop}
+            aria-label="Fechar menu"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
         )}
 
         <aside className={`${styles.sidebar} ${isMobileMenuOpen ? styles.open : ''}`}>

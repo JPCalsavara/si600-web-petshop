@@ -3,8 +3,8 @@ package br.unicamp.ft.si600.eventos.config;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * O mesmo conjunto de fluxos E2E pode então ser executado apontando o Cypress para a instância prod.
  */
 @ActiveProfiles("prod")
+@AutoConfigureTestRestTemplate
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
@@ -28,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         })
 class ProductionProfileIntegrationTest {
 
-    @LocalServerPort int port;
+    @Value("${local.server.port}") int port;
     @org.springframework.beans.factory.annotation.Autowired TestRestTemplate restTemplate;
 
     @Value("${spring.jpa.hibernate.ddl-auto}") String ddlAuto;

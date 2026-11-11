@@ -4,16 +4,17 @@ import br.unicamp.ft.si600.eventos.dto.AlertTag;
 import br.unicamp.ft.si600.eventos.entity.Project;
 import br.unicamp.ft.si600.eventos.entity.ProjectStatus;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 
@@ -22,6 +23,7 @@ import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "storage.b2.enabled=false")
 @Import({TestStorageConfig.class, TestClockConfig.class})
@@ -31,7 +33,7 @@ class ProjectAlertTagIntegrationTest {
     // Baseado no TestClockConfig: Instant fixo 2026-10-20T12:00:00Z -> 2026-10-20T09:00:00-03:00
     private static final OffsetDateTime FIXED_NOW = OffsetDateTime.ofInstant(TestClockConfig.FIXED_INSTANT, ZONE);
 
-    @LocalServerPort
+    @Value("${local.server.port}")
     int port;
 
     @Autowired
@@ -96,7 +98,7 @@ class ProjectAlertTagIntegrationTest {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode array = objectMapper.readTree(response.getBody());
             assertThat(array.isArray()).isTrue();
-            assertThat(array.get(0).get("alertTag").asText()).isEqualTo(AlertTag.EM_DIA.name());
+            assertThat(array.get(0).get("alertTag").asString()).isEqualTo(AlertTag.EM_DIA.name());
         }
 
         @Test
@@ -109,7 +111,7 @@ class ProjectAlertTagIntegrationTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode array = objectMapper.readTree(response.getBody());
-            assertThat(array.get(0).get("alertTag").asText()).isEqualTo(AlertTag.PRAZO_PROXIMO.name());
+            assertThat(array.get(0).get("alertTag").asString()).isEqualTo(AlertTag.PRAZO_PROXIMO.name());
         }
 
         @Test
@@ -122,7 +124,7 @@ class ProjectAlertTagIntegrationTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode array = objectMapper.readTree(response.getBody());
-            assertThat(array.get(0).get("alertTag").asText()).isEqualTo(AlertTag.ATRASADO.name());
+            assertThat(array.get(0).get("alertTag").asString()).isEqualTo(AlertTag.ATRASADO.name());
         }
 
         @Test
@@ -135,7 +137,7 @@ class ProjectAlertTagIntegrationTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode array = objectMapper.readTree(response.getBody());
-            assertThat(array.get(0).get("alertTag").asText()).isEqualTo(AlertTag.PENDENTE.name());
+            assertThat(array.get(0).get("alertTag").asString()).isEqualTo(AlertTag.PENDENTE.name());
         }
 
         @Test
@@ -148,7 +150,7 @@ class ProjectAlertTagIntegrationTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode json = objectMapper.readTree(response.getBody());
-            assertThat(json.get("alertTag").asText()).isEqualTo(AlertTag.PRAZO_PROXIMO.name());
+            assertThat(json.get("alertTag").asString()).isEqualTo(AlertTag.PRAZO_PROXIMO.name());
         }
     }
 
@@ -167,7 +169,7 @@ class ProjectAlertTagIntegrationTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode array = objectMapper.readTree(response.getBody());
-            assertThat(array.get(0).get("alertTag").asText()).isEqualTo(AlertTag.ATRASADO.name());
+            assertThat(array.get(0).get("alertTag").asString()).isEqualTo(AlertTag.ATRASADO.name());
         }
 
         @Test
@@ -181,7 +183,7 @@ class ProjectAlertTagIntegrationTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode array = objectMapper.readTree(response.getBody());
-            assertThat(array.get(0).get("alertTag").asText()).isEqualTo(AlertTag.PRAZO_PROXIMO.name());
+            assertThat(array.get(0).get("alertTag").asString()).isEqualTo(AlertTag.PRAZO_PROXIMO.name());
         }
     }
 
@@ -200,7 +202,7 @@ class ProjectAlertTagIntegrationTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode array = objectMapper.readTree(response.getBody());
-            assertThat(array.get(0).get("alertTag").asText()).isEqualTo(AlertTag.EM_DIA.name());
+            assertThat(array.get(0).get("alertTag").asString()).isEqualTo(AlertTag.EM_DIA.name());
         }
 
         @Test
@@ -214,7 +216,7 @@ class ProjectAlertTagIntegrationTest {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode array = objectMapper.readTree(response.getBody());
-            assertThat(array.get(0).get("alertTag").asText()).isEqualTo(AlertTag.EM_DIA.name());
+            assertThat(array.get(0).get("alertTag").asString()).isEqualTo(AlertTag.EM_DIA.name());
         }
 
         @Test
@@ -234,10 +236,10 @@ class ProjectAlertTagIntegrationTest {
 
             // Localiza cada projeto
             for (JsonNode item : array) {
-                if (item.get("companyName").asText().equals("Empresa 72h")) {
-                    assertThat(item.get("alertTag").asText()).isEqualTo(AlertTag.PRAZO_PROXIMO.name());
-                } else if (item.get("companyName").asText().equals("Empresa 72h1s")) {
-                    assertThat(item.get("alertTag").asText()).isEqualTo(AlertTag.EM_DIA.name());
+                if (item.get("companyName").asString().equals("Empresa 72h")) {
+                    assertThat(item.get("alertTag").asString()).isEqualTo(AlertTag.PRAZO_PROXIMO.name());
+                } else if (item.get("companyName").asString().equals("Empresa 72h1s")) {
+                    assertThat(item.get("alertTag").asString()).isEqualTo(AlertTag.EM_DIA.name());
                 }
             }
         }
