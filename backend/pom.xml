@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.4</version>
+		<version>4.1.2</version>
 		<relativePath/>
 	</parent>
 	<groupId>br.unicamp.ft.si600</groupId>
@@ -18,10 +18,22 @@
 		<java.version>21</java.version>
 	</properties>
 
+	<dependencyManagement>
+		<dependencies>
+			<!-- O swagger-ui puxado pelo springdoc embute DOMPurify vulneravel (3.3.2 no relatorio do Dependency-Check).
+			     5.34.1 embute DOMPurify 3.4.17. Remover quando o springdoc passar a trazer versao igual ou superior. -->
+			<dependency>
+				<groupId>org.webjars</groupId>
+				<artifactId>swagger-ui</artifactId>
+				<version>5.34.1</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -40,7 +52,7 @@
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
-			<version>2.28.29</version>
+			<version>2.57.8</version>
 		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
@@ -53,6 +65,18 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<!-- Boot 4: TestRestTemplate saiu de spring-boot-test para este modulo. -->
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-resttestclient</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<!-- Boot 4: RestTemplateBuilder (exigido pelo TestRestTemplate) vive aqui e nao vem junto com o resttestclient. -->
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-restclient</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.httpcomponents.client5</groupId>
 			<artifactId>httpclient5</artifactId>
 			<scope>test</scope>
@@ -60,7 +84,7 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.2.0</version>
+			<version>3.2.0</version>
 		</dependency>
 	</dependencies>
 

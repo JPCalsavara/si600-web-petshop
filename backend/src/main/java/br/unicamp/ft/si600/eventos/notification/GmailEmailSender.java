@@ -1,7 +1,7 @@
 package br.unicamp.ft.si600.eventos.notification;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -116,7 +116,7 @@ public class GmailEmailSender implements EmailSender {
                     .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(Map.of("raw", raw))))
                     .build();
             return http.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new EmailDeliveryException("Não foi possível contatar a API do Gmail.", ex);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -144,16 +144,16 @@ public class GmailEmailSender implements EmailSender {
                         "Falha ao obter token OAuth do Google (HTTP " + response.statusCode() + ")"
                                 + oauthErrorDetail(response.body()) + ".");
             }
-            JsonNode json = mapper.readTree(response.body());
-            String token = json.path("access_token").asText("");
+            Map<?, ?> json = mapper.readValue(response.body(), Map.class);
+            String token = text(json, "access_token");
             if (token.isBlank()) {
                 throw new EmailDeliveryException("O Google não retornou access_token.");
             }
-            long expiresIn = json.path("expires_in").asLong(3600);
+            long expiresIn = number(json, "expires_in", 3600);
             accessToken = token;
             accessTokenExpiresAt = clock.instant().plusSeconds(Math.max(expiresIn - 60, 0));
             return token;
-        } catch (IOException ex) {
+        } catch (IOException | JacksonException ex) {
             throw new EmailDeliveryException("Não foi possível obter o token OAuth do Google.", ex);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -164,14 +164,34 @@ public class GmailEmailSender implements EmailSender {
     /** Acrescenta o motivo informado pelo Google (ex.: invalid_client, invalid_grant), sem expor segredos. */
     private String oauthErrorDetail(String body) {
         try {
-            JsonNode json = mapper.readTree(body);
-            String error = json.path("error").asText("");
-            String description = json.path("error_description").asText("");
+            Map<?, ?> json = mapper.readValue(body, Map.class);
+            String error = text(json, "error");
+            String description = text(json, "error_description");
             if (error.isBlank()) return "";
             return ": " + error + (description.isBlank() ? "" : " - " + description);
-        } catch (IOException | RuntimeException ex) {
+        } catch (RuntimeException ex) { // inclui JacksonException (nao verificada no Jackson 3)
             return "";
         }
+    }
+
+    private static String text(Map<?, ?> json, String key) {
+        Object value = json.get(key);
+        return value == null ? "" : value.toString();
+    }
+
+    private static long number(Map<?, ?> json, String key, long defaultValue) {
+        Object value = json.get(key);
+        if (value instanceof Number n) {
+            return n.longValue();
+        }
+        if (value != null) {
+            try {
+                return Long.parseLong(value.toString().trim());
+            } catch (NumberFormatException ignored) {
+                // cai no valor padrao
+            }
+        }
+        return defaultValue;
     }
 
     private static String enc(String value) {

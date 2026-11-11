@@ -7,8 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 
@@ -19,12 +20,13 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** US-08: aprovação/reprovação do PDF e e-mail de notificação ao cliente. */
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "storage.b2.enabled=false")
 @Import({TestStorageConfig.class, TestEmailConfig.class})
 class PdfDecisionEmailIntegrationTest {
 
-    @LocalServerPort int port;
+    @Value("${local.server.port}") int port;
     @Autowired TestRestTemplate restTemplate;
     @Autowired ProjectRepository repository;
     @Autowired CapturingEmailSender emails;
@@ -113,8 +115,8 @@ class PdfDecisionEmailIntegrationTest {
         ResponseEntity<String> rejectAfter = reject("admin-7", "ADMIN", projectId,
                 "{\"justification\":\"Tarde demais.\"}");
 
-        assertThat(second.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-        assertThat(rejectAfter.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(second.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(rejectAfter.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(emails.sent()).hasSize(1);
     }
 
@@ -126,7 +128,7 @@ class PdfDecisionEmailIntegrationTest {
 
         ResponseEntity<String> response = approve("admin-7", "ADMIN", waiting.getId());
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(emails.sent()).isEmpty();
     }
 

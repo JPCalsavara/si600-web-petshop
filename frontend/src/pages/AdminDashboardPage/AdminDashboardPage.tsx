@@ -411,7 +411,7 @@ export function AdminDashboardPage({
             data-testid="dashboard-kpi-grid"
           >
             {/* KPI 1: Total de Expositores */}
-            <article
+            <div
               className={`${styles.kpiCard} ${styles.kpiAccentBlue} ${
                 kpiFilter === 'ALL' && !hasActiveFilters ? styles.kpiCardSelected : ''
               }`}
@@ -436,10 +436,10 @@ export function AdminDashboardPage({
                 Área homologada/informada:{' '}
                 <strong>{kpiMetrics.totalAreaM2.toLocaleString('pt-BR')} m²</strong>
               </p>
-            </article>
+            </div>
 
             {/* KPI 2: Sem Acesso ao Portal */}
-            <article
+            <div
               className={`${styles.kpiCard} ${styles.kpiAccentRed} ${
                 kpiFilter === 'NEVER_ACCESSED' ? styles.kpiCardSelected : ''
               }`}
@@ -461,10 +461,10 @@ export function AdminDashboardPage({
               <p className={styles.kpiSubtitle}>
                 <strong>{kpiMetrics.accessedCount}</strong> expositor(es) já acessaram o sistema
               </p>
-            </article>
+            </div>
 
             {/* KPI 3: Plantas em Análise */}
-            <article
+            <div
               className={`${styles.kpiCard} ${styles.kpiAccentIndigo} ${
                 kpiFilter === 'PENDING_APPROVALS' ? styles.kpiCardSelected : ''
               }`}
@@ -485,10 +485,10 @@ export function AdminDashboardPage({
                 <strong>{kpiMetrics.approvedCount}</strong> aprovadas ·{' '}
                 <strong>{kpiMetrics.rejectedCount}</strong> reprovadas
               </p>
-            </article>
+            </div>
 
             {/* KPI 4: Alertas de Prazo */}
-            <article
+            <div
               className={`${styles.kpiCard} ${styles.kpiAccentAmber} ${
                 kpiFilter === 'CRITICAL_DEADLINES' ? styles.kpiCardSelected : ''
               }`}
@@ -511,10 +511,10 @@ export function AdminDashboardPage({
                 <strong>{kpiMetrics.dueSoonCount}</strong> prazo próximo ·{' '}
                 <strong>{kpiMetrics.regularDeadlinesCount}</strong> em dia
               </p>
-            </article>
+            </div>
 
             {/* KPI 5: Fila de Cotações (Taxas) */}
-            <article
+            <div
               className={`${styles.kpiCard} ${styles.kpiAccentPurple}`}
               onClick={() => onNavigateToQuotes?.()}
               data-testid="kpi-pending-quotes"
@@ -534,10 +534,10 @@ export function AdminDashboardPage({
               <p className={styles.kpiSubtitle}>
                 <strong>{kpiMetrics.financial.awaitingQuantityCount}</strong> aguardando quantidade do cliente
               </p>
-            </article>
+            </div>
 
             {/* KPI 6: Receita Estimada (Taxas) */}
-            <article
+            <div
               className={`${styles.kpiCard} ${styles.kpiAccentEmerald}`}
               onClick={() => onNavigateToQuotes?.()}
               data-testid="kpi-estimated-revenue"
@@ -557,7 +557,7 @@ export function AdminDashboardPage({
               <p className={styles.kpiSubtitle}>
                 <strong>{kpiMetrics.financial.generatedPaymentsCount}</strong> pagamento(s) gerado(s)
               </p>
-            </article>
+            </div>
           </section>
 
           {/* Barra de Organização e Filtros Rápidos */}
@@ -1150,7 +1150,7 @@ export function AdminDashboardPage({
           aria-labelledby="dashboard-modal-title"
           data-testid="dashboard-project-modal"
         >
-          <div className={styles.modalCardWide} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.modalCardWide} role="presentation" onClick={(e) => e.stopPropagation()}>
             <header className={styles.modalHeader}>
               <div>
                 <h2 id="dashboard-modal-title" className={styles.modalCompany}>

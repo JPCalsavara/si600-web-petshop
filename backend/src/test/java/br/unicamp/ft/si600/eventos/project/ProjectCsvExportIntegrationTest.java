@@ -7,16 +7,17 @@ import br.unicamp.ft.si600.eventos.repository.FeeRepository;
 import br.unicamp.ft.si600.eventos.repository.ProjectFeeRepository;
 import br.unicamp.ft.si600.eventos.repository.ProjectHistoryEventRepository;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
@@ -29,6 +30,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "storage.b2.enabled=false")
 @Import(TestStorageConfig.class)
@@ -37,7 +39,7 @@ class ProjectCsvExportIntegrationTest {
     private static final String ADMIN_ID = "admin-us17";
     private static final String CLIENT_EMAIL = "expositor-us17@exemplo.com";
 
-    @LocalServerPort
+    @Value("${local.server.port}")
     int port;
 
     @Autowired
@@ -96,7 +98,7 @@ class ProjectCsvExportIntegrationTest {
         );
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         JsonNode node = objectMapper.readTree(res.getBody());
-        return UUID.fromString(node.get("id").asText());
+        return UUID.fromString(node.get("id").asString());
     }
 
     private ResponseEntity<String> uploadPdf(UUID projectId, String clientEmail, String filename, byte[] content, String areaM2) {
@@ -195,8 +197,8 @@ class ProjectCsvExportIntegrationTest {
             JsonNode configuredFees = objectMapper.readTree(configRes.getBody());
             UUID variableProjectFeeId = null;
             for (JsonNode node : configuredFees) {
-                if ("VARIAVEL".equals(node.get("type").asText())) {
-                    variableProjectFeeId = UUID.fromString(node.get("projectFeeId").asText());
+                if ("VARIAVEL".equals(node.get("type").asString())) {
+                    variableProjectFeeId = UUID.fromString(node.get("projectFeeId").asString());
                 }
             }
             assertThat(variableProjectFeeId).isNotNull();
@@ -322,7 +324,7 @@ class ProjectCsvExportIntegrationTest {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
             JsonNode problem = objectMapper.readTree(response.getBody());
             assertThat(problem.get("status").asInt()).isEqualTo(403);
-            assertThat(problem.get("detail").asText()).contains("permissão");
+            assertThat(problem.get("detail").asString()).contains("permissão");
         }
 
         @Test

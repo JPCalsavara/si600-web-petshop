@@ -1,6 +1,7 @@
 package br.unicamp.ft.si600.eventos.notification;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * servidor HTTP local, de modo que o cliente real (HTTP, OAuth, MIME) é exercitado de ponta a ponta.
  */
 class GmailEmailSenderTest {
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonMapper.builder().build();
     private final AtomicInteger tokenCalls = new AtomicInteger();
     private final AtomicInteger sendCalls = new AtomicInteger();
     private final AtomicInteger sendStatus = new AtomicInteger(200);
@@ -49,7 +51,7 @@ class GmailEmailSenderTest {
         server.createContext("/gmail/v1/users/me/messages/send", exchange -> {
             sendCalls.incrementAndGet();
             authorizations.add(exchange.getRequestHeaders().getFirst("Authorization"));
-            rawMessages.add(mapper.readTree(exchange.getRequestBody().readAllBytes()).get("raw").asText());
+            rawMessages.add(String.valueOf(mapper.readValue(exchange.getRequestBody().readAllBytes(), Map.class).get("raw")));
             exchange.sendResponseHeaders(failNextWith401.getAndSet(false) ? 401 : sendStatus.get(), -1);
             exchange.close();
         });

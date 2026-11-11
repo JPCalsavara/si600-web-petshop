@@ -4,16 +4,17 @@ import br.unicamp.ft.si600.eventos.dto.AlertTag;
 import br.unicamp.ft.si600.eventos.entity.Project;
 import br.unicamp.ft.si600.eventos.entity.ProjectStatus;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 
@@ -23,6 +24,7 @@ import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "storage.b2.enabled=false")
 @Import({TestStorageConfig.class, TestClockConfig.class})
@@ -31,7 +33,7 @@ class AdminDashboardIntegrationTest {
     private static final ZoneId ZONE = ZoneId.of("America/Sao_Paulo");
     private static final OffsetDateTime FIXED_NOW = OffsetDateTime.ofInstant(TestClockConfig.FIXED_INSTANT, ZONE);
 
-    @LocalServerPort
+    @Value("${local.server.port}")
     int port;
 
     @Autowired
@@ -121,9 +123,9 @@ class AdminDashboardIntegrationTest {
             JsonNode alphaInactive = null;
             JsonNode betaInactive = null;
             for (JsonNode item : inactiveList) {
-                if (item.get("companyName").asText().equals("Empresa Alpha")) {
+                if (item.get("companyName").asString().equals("Empresa Alpha")) {
                     alphaInactive = item;
-                } else if (item.get("companyName").asText().equals("Empresa Beta")) {
+                } else if (item.get("companyName").asString().equals("Empresa Beta")) {
                     betaInactive = item;
                 }
             }
@@ -145,9 +147,9 @@ class AdminDashboardIntegrationTest {
             JsonNode pendingApprovals = body.get("pendingApprovals");
             assertThat(pendingApprovals.isArray()).isTrue();
             assertThat(pendingApprovals.size()).isEqualTo(1);
-            assertThat(pendingApprovals.get(0).get("companyName").asText()).isEqualTo("Empresa Beta");
-            assertThat(pendingApprovals.get(0).get("pdfOriginalFilename").asText()).isEqualTo("planta_estande.pdf");
-            assertThat(pendingApprovals.get(0).get("status").asText()).isEqualTo(ProjectStatus.PDF_EM_ANALISE.name());
+            assertThat(pendingApprovals.get(0).get("companyName").asString()).isEqualTo("Empresa Beta");
+            assertThat(pendingApprovals.get(0).get("pdfOriginalFilename").asString()).isEqualTo("planta_estande.pdf");
+            assertThat(pendingApprovals.get(0).get("status").asString()).isEqualTo(ProjectStatus.PDF_EM_ANALISE.name());
 
             // 4. Resumo Financeiro / KPIs de Taxas
             JsonNode financialSummary = body.get("financialSummary");
