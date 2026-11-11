@@ -1,3 +1,5 @@
+import { lazy, Suspense } from 'react';
+const PaymentTestPage = import.meta.env.DEV ? lazy(() => import('./pages/PaymentTestPage/PaymentTestPage')) : null;
 import { FeeCatalogPage } from './pages/FeeCatalogPage/FeeCatalogPage';
 import { useEffect, useState } from 'react';
 import './styles/global.scss';
@@ -46,6 +48,11 @@ export default function App() {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
   }, []);
 
+  // Página de teste de pagamentos (somente em dev): usa Basic Auth própria, sem depender da sessão.
+  if (PaymentTestPage && window.location.pathname === '/dev/pagamentos') {
+    return <Suspense fallback={<p>Carregando...</p>}><PaymentTestPage /></Suspense>;
+  }
+
   if (!session) {
     return <LoginPage onLoggedIn={() => setSession(getSession())} />;
   }
@@ -78,6 +85,7 @@ export default function App() {
             }}
           />
         ) :
+        adminSection === 'pagamentos' && PaymentTestPage ? <Suspense fallback={<p>Carregando...</p>}><PaymentTestPage /></Suspense> :
         adminSection === 'taxas' ? <FeeCatalogPage /> :
         adminSection === 'cotacoes' ? <QuoteFeesPage /> :
         adminSection === 'projetos' ? <AdminProjects view={projectView} setView={setProjectView} /> :

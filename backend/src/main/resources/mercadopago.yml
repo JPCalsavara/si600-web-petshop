@@ -1,0 +1,22 @@
+mercadopago:
+  enabled: ${MP_ENABLED:false}
+  base-url: ${MP_BASE_URL:https://api.mercadopago.com}
+  access-token: ${MP_ACCESS_TOKEN:}
+  connect-timeout: ${MP_CONNECT_TIMEOUT:3s}
+  read-timeout: ${MP_READ_TIMEOUT:10s}
+
+payment:
+  fingerprint-secret: ${PAYMENT_FINGERPRINT_SECRET:}
+  internal:
+    enabled: ${PAYMENT_INTERNAL_ENABLED:false}
+    token: ${PAYMENT_INTERNAL_TOKEN:}
+    integration-id: ${PAYMENT_INTERNAL_INTEGRATION_ID:}
+    allowed-obligations: ${PAYMENT_INTERNAL_ALLOWED_OBLIGATIONS:}
+  development:
+    enabled: ${PAYMENT_DEV_ENABLED:false}
+    username: ${PAYMENT_DEV_USERNAME:}
+    password: ${PAYMENT_DEV_PASSWORD:}
+    origin: ${PAYMENT_DEV_ORIGIN:http://localhost:5173}
+  webhook:
+    enabled: ${PAYMENT_WEBHOOK_ENABLED:false}
+    secret: ${PAYMENT_WEBHOOK_SECRET:}
