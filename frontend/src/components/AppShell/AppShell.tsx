@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { getSession } from '../../services/api';
 import styles from './AppShell.module.scss';
 
-type SectionName = 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas' | 'cotacoes';
+type SectionName = 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas' | 'cotacoes' | 'relatorios';
 
 interface Props {
   active: SectionName;
@@ -107,6 +107,13 @@ export function AppShell({ active, children, onNavigate, onLogout }: Props) {
                   label="Pagamentos"
                   active={active === 'pagamentos'}
                   onClick={() => handleNavigate('pagamentos')}
+                />
+              )}
+              {admin && (
+                <NavItem
+                  label="Relatório de Receita"
+                  active={active === 'relatorios'}
+                  onClick={() => handleNavigate('relatorios')}
                 />
               )}
               {admin && (
