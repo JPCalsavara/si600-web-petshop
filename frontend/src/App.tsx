@@ -11,6 +11,7 @@ import { AdminPdfPage } from './pages/AdminPdfPage/AdminPdfPage';
 import { ProjectListPage } from './pages/ProjectListPage/ProjectListPage';
 import { ProjectFormPage } from './pages/ProjectFormPage/ProjectFormPage';
 import { QuoteFeesPage } from './pages/QuoteFeesPage/QuoteFeesPage';
+import { RelatorioTaxasPage } from './pages/RelatorioTaxasPage/RelatorioTaxasPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage/AdminDashboardPage';
 
 type AdminView =
@@ -38,7 +39,7 @@ function AdminProjects({ view, setView }: { view: AdminView; setView: (v: AdminV
 
 export default function App() {
   const [session, setSession] = useState(getSession());
-  const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios'>('resumo');
+  const [adminSection, setAdminSection] = useState<'resumo' | 'projetos' | 'taxas' | 'cotacoes' | 'pagamentos' | 'usuarios' | 'relatorios'>('resumo');
   const [projectView, setProjectView] = useState<AdminView>({ name: 'lista' });
 
   // Sessão expirada em qualquer chamada da API: volta para a tela de login.
@@ -86,6 +87,7 @@ export default function App() {
           />
         ) :
         adminSection === 'pagamentos' && PaymentTestPage ? <Suspense fallback={<p>Carregando...</p>}><PaymentTestPage /></Suspense> :
+        adminSection === 'relatorios' ? <RelatorioTaxasPage /> :
         adminSection === 'taxas' ? <FeeCatalogPage /> :
         adminSection === 'cotacoes' ? <QuoteFeesPage /> :
         adminSection === 'projetos' ? <AdminProjects view={projectView} setView={setProjectView} /> :
