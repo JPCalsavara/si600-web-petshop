@@ -26,9 +26,21 @@ import java.util.stream.Collectors;
  *
  * Filtros opcionais: projetoId, dataInicio e dataFim (baseados em project.createdAt).
  * Filtro de status: lista de ProjectFeeStatus; se vazio retorna todos.
+ *
+ * Totais reais (resumo.totalGeral) contam apenas {@link #STATUS_CONTABILIZADOS}; as linhas dos demais
+ * status são informativas (valor calculado ou cotado, ainda sem pagamento).
  */
 @Service
 public class RelatorioService {
+
+    /**
+     * Status que entram nos totais reais: só o que já tem pagamento gerado ou pago (regra da issue #27).
+     * Os demais status aparecem no relatório, mas apenas como informação.
+     *
+     * TODO(US-12, issue #26): incluir ProjectFeeStatus.PAGO aqui quando a US-12 criar esse status.
+     */
+    private static final Set<ProjectFeeStatus> STATUS_CONTABILIZADOS =
+            EnumSet.of(ProjectFeeStatus.PAGAMENTO_GERADO);
 
     private final ProjectFeeRepository projectFeeRepository;
     private final ProjectRepository projectRepository;
@@ -112,7 +124,9 @@ public class RelatorioService {
         }
 
         // Calcula resumo
+        // totalGeral soma apenas os status contabilizados; DISPONIVEL e COTADA são valores ainda não cobrados.
         BigDecimal totalGeral = linhas.stream()
+                .filter(l -> STATUS_CONTABILIZADOS.contains(l.statusPagamento()))
                 .map(RelatorioLinhaResponse::totalValorCalculado)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

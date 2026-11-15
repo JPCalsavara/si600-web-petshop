@@ -28,6 +28,15 @@ export const TODOS_OS_STATUSES: StatusPagamento[] = [
   'PAGAMENTO_GERADO',
 ];
 
+// Status que entram nos totais reais (regra da issue #27: só pagamento gerado ou pago).
+// Deve acompanhar STATUS_CONTABILIZADOS em RelatorioService.java.
+// TODO(US-12, issue #26): incluir 'PAGO' aqui quando a US-12 criar esse status na taxa.
+export const STATUS_CONTABILIZADOS: StatusPagamento[] = ['PAGAMENTO_GERADO'];
+
+export function contaNosTotais(status: StatusPagamento): boolean {
+  return STATUS_CONTABILIZADOS.includes(status);
+}
+
 export interface RelatorioLinha {
   nomeTaxa: string;
   statusPagamento: StatusPagamento;

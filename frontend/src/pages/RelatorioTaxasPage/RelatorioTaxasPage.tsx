@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   buscarProjetosParaFiltro,
   buscarRelatorioTaxas,
+  contaNosTotais,
   formatarBRL,
   STATUS_LABELS,
   TODOS_OS_STATUSES,
@@ -35,12 +36,13 @@ function StatusBadge({ status }: { status: StatusPagamento }) {
 }
 
 /* --------------------------------------------------------------------------
-   Gráfico de barras horizontais — somente taxas com valor calculado > 0
+   Gráfico de barras horizontais — somente taxas contabilizadas (pagamento gerado
+   ou pago) com valor > 0
    -------------------------------------------------------------------------- */
 function GraficoReceita({ linhas }: { linhas: RelatorioLinha[] }) {
-  // Agrega por nome de taxa (soma todos os status)
+  // Agrega por nome de taxa, somando apenas os status que contam nos totais
   const porTaxa = linhas.reduce<Record<string, number>>((acc, l) => {
-    if (l.totalValorCalculado > 0) {
+    if (contaNosTotais(l.statusPagamento) && l.totalValorCalculado > 0) {
       acc[l.nomeTaxa] = (acc[l.nomeTaxa] ?? 0) + l.totalValorCalculado;
     }
     return acc;
@@ -52,7 +54,7 @@ function GraficoReceita({ linhas }: { linhas: RelatorioLinha[] }) {
   if (entradas.length === 0) {
     return (
       <p className={styles.chartEmptyState}>
-        Nenhuma taxa com valor calculado disponível para exibir o gráfico.
+        Nenhuma taxa com pagamento gerado ou pago para exibir o gráfico.
       </p>
     );
   }
@@ -94,7 +96,7 @@ function CardsResumo({ resumo }: { resumo: RelatorioResumo }) {
   return (
     <div className={styles.resumoGrid}>
       <div className={styles.resumoCard}>
-        <div className={styles.label}>Total Geral</div>
+        <div className={styles.label}>Total contabilizado (gerado/pago)</div>
         <div className={styles.valor}>{formatarBRL(resumo.totalGeral)}</div>
       </div>
       <div className={`${styles.resumoCard} ${styles.resumoCardGerado}`}>
@@ -102,11 +104,11 @@ function CardsResumo({ resumo }: { resumo: RelatorioResumo }) {
         <div className={styles.valor}>{formatarBRL(resumo.totalPagamentoGerado)}</div>
       </div>
       <div className={`${styles.resumoCard} ${styles.resumoCardDisponivel}`}>
-        <div className={styles.label}>Disponível (calculado)</div>
+        <div className={styles.label}>Disponível (não contabilizado)</div>
         <div className={styles.valor}>{formatarBRL(resumo.totalDisponivel)}</div>
       </div>
       <div className={`${styles.resumoCard} ${styles.resumoCardCotada}`}>
-        <div className={styles.label}>Cotadas</div>
+        <div className={styles.label}>Cotadas (não contabilizado)</div>
         <div className={styles.valor}>{formatarBRL(resumo.totalCotada)}</div>
       </div>
     </div>
@@ -117,8 +119,10 @@ function CardsResumo({ resumo }: { resumo: RelatorioResumo }) {
    Tabela de resultados
    -------------------------------------------------------------------------- */
 function TabelaRelatorio({ linhas }: { linhas: RelatorioLinha[] }) {
-  const totalQtd = linhas.reduce((acc, l) => acc + l.quantidadeTaxas, 0);
-  const totalValor = linhas.reduce((acc, l) => acc + l.totalValorCalculado, 0);
+  // O rodapé soma só o que conta nos totais reais (pagamento gerado ou pago).
+  const contabilizadas = linhas.filter((l) => contaNosTotais(l.statusPagamento));
+  const totalQtd = contabilizadas.reduce((acc, l) => acc + l.quantidadeTaxas, 0);
+  const totalValor = contabilizadas.reduce((acc, l) => acc + l.totalValorCalculado, 0);
 
   return (
     <div className={styles.tableWrap}>
@@ -155,7 +159,7 @@ function TabelaRelatorio({ linhas }: { linhas: RelatorioLinha[] }) {
         <tfoot>
           <tr className={styles.summaryRow}>
             <td colSpan={2} data-label="Total">
-              <strong>Total consolidado</strong>
+              <strong>Total contabilizado (gerado/pago)</strong>
             </td>
             <td data-label="Quantidade" className={styles.alignRight}>
               <strong>{totalQtd}</strong>
@@ -442,7 +446,7 @@ export function RelatorioTaxasPage() {
 
           {exibirGrafico && (
             <section className={styles.chartSection} aria-label="Gráfico de distribuição">
-              <h3>Distribuição de valor calculado por tipo de taxa</h3>
+              <h3>Distribuição do valor contabilizado (gerado/pago) por tipo de taxa</h3>
               <GraficoReceita linhas={linhas} />
             </section>
           )}
