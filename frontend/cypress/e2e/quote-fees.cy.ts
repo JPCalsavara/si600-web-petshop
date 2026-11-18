@@ -30,7 +30,7 @@ viewports.forEach((viewport) => {
           return cy.createProjectAsAdmin({
             name: projectName,
             document: `${Date.now()}9`.slice(0, 14),
-            address: 'Av. Cotações, 500',
+            address: { zipCode: '13083-852', street: 'Av. Cotações', number: '500', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
             area: 'B2C',
             email: clientEmail,
             feeIds: [variableFeeId],

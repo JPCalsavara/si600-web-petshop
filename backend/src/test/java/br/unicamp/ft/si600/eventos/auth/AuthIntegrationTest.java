@@ -47,6 +47,8 @@ import br.unicamp.ft.si600.eventos.service.AuthService;
         properties = {"storage.b2.enabled=false", "app.security.legacy-headers=false"})
 @Import({TestStorageConfig.class, TestEmailConfig.class})
 class AuthIntegrationTest {
+    private static final String ADDRESS_JSON = "\"address\":{\"zipCode\":\"13083-852\",\"street\":\"Rua X\","
+            + "\"number\":\"100\",\"complement\":null,\"neighborhood\":\"Centro\",\"city\":\"Campinas\",\"state\":\"SP\"}";
 
     private static final String PASSWORD = "senha-segura-123";
     private static final String ADMIN_EMAIL = "admin@exemplo.com";
@@ -321,7 +323,7 @@ class AuthIntegrationTest {
         // Datas relativas a hoje: com datas fixas o teste quebraria quando elas ficassem no passado.
         LocalDate pdfDeadline = LocalDate.now().plusDays(10);
         LocalDate paymentDeadline = LocalDate.now().plusDays(20);
-        return "{\"name\":\"Empresa Nova\",\"document\":\"" + document + "\",\"address\":\"Rua X, 100\","
+        return "{\"name\":\"Empresa Nova\",\"document\":\"" + document + "\"," + ADDRESS_JSON + ","
                 + "\"area\":\"B2C\",\"email\":\"" + email + "\",\"pdfDeadline\":\"" + pdfDeadline + "\","
                 + "\"paymentDeadline\":\"" + paymentDeadline + "\",\"representativeName\":null}";
     }

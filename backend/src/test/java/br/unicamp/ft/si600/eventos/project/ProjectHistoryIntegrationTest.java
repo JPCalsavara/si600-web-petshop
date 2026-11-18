@@ -93,7 +93,7 @@ class ProjectHistoryIntegrationTest {
         String body = """
                 {
                   "name": "%s",
-                  "address": "Av. das Feiras, 100",
+                  "address": {"zipCode": "13083-852", "street": "Av. das Feiras", "number": "100", "complement": null, "neighborhood": "Barão Geraldo", "city": "Campinas", "state": "SP"},
                   "document": "%s",
                   "email": "%s",
                   "area": "B2C",

@@ -15,7 +15,7 @@ viewports.forEach((viewport) => {
       cy.createProjectAsAdmin({
         name: inactiveCompany,
         document: `${Date.now()}1`.slice(0, 14),
-        address: 'Av. Dashboard, 100',
+        address: { zipCode: '13083-852', street: 'Av. Dashboard', number: '100', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
         area: 'B2C',
         email: `inativo-${suffix}@teste.com`,
         feeIds: [],
@@ -26,7 +26,7 @@ viewports.forEach((viewport) => {
       cy.createProjectAsAdmin({
         name: pendingApprovalCompany,
         document: `${Date.now()}2`.slice(0, 14),
-        address: 'Av. Dashboard, 200',
+        address: { zipCode: '13083-852', street: 'Av. Dashboard', number: '200', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
         area: 'Music Hub',
         email: pendingEmail,
         feeIds: [],

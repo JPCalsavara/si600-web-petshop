@@ -1,8 +1,10 @@
 package br.unicamp.ft.si600.eventos.service;
 
 import br.unicamp.ft.si600.eventos.dto.CreateProjectRequest;
+import br.unicamp.ft.si600.eventos.dto.ProjectAddressRequest;
 import br.unicamp.ft.si600.eventos.dto.ProjectResponse;
 import br.unicamp.ft.si600.eventos.entity.Project;
+import br.unicamp.ft.si600.eventos.entity.ProjectAddress;
 import br.unicamp.ft.si600.eventos.exception.ApiException;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
 import br.unicamp.ft.si600.eventos.repository.FeeRepository;
@@ -59,11 +61,12 @@ public class ProjectService {
             throw new ApiException(HttpStatus.FORBIDDEN, "Você não possui permissão para esta operação.");
         }
         String name = request.name().trim();
-        String address = request.address().trim();
         String email = request.email().trim().toLowerCase(Locale.ROOT);
         String document = request.document().trim();
         String digits = document.replaceAll("\\D", "");
-        if (name.isEmpty() || address.isEmpty()) {
+        ProjectAddress structuredAddress = toStructuredAddress(request.address());
+        String address = structuredAddress.toDisplayText();
+        if (name.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Preencha todos os campos obrigatórios.");
         }
         if (digits.length() != 11 && digits.length() != 14) {
@@ -82,7 +85,7 @@ public class ProjectService {
 
         // O e-mail é o login do cliente (US-01): serve de identidade (ownerId) e de usuário da conta criada abaixo.
         Project project = Project.create(email, name, document, digits, representative,
-                request.area(), address, email,
+                request.area(), address, structuredAddress, email,
                 endOfDay(request.pdfDeadline()), endOfDay(request.paymentDeadline()),
                 actor.id(), OffsetDateTime.now());
         try {
@@ -114,6 +117,12 @@ public class ProjectService {
             // Corrida entre duas criações simultâneas: a constraint unique do banco é a palavra final.
             throw new ApiException(HttpStatus.CONFLICT, DUPLICATE_MESSAGE);
         }
+    }
+
+    /** Grava o CEP só com dígitos, para o pagador do boleto e para a comparação com o texto livre. */
+    private static ProjectAddress toStructuredAddress(ProjectAddressRequest request) {
+        return new ProjectAddress(request.zipCode().replaceAll("\\D", ""), request.street(), request.number(),
+                request.complement(), request.neighborhood(), request.city(), request.state());
     }
 
     private OffsetDateTime endOfDay(LocalDate date) {

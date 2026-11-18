@@ -28,7 +28,7 @@ viewports.forEach((viewport) => {
           return cy.createProjectAsAdmin({
             name: `Empresa E2E Taxas ${Date.now()}`,
             document: `${Date.now()}0`,
-            address: 'Rua de Teste, 123',
+            address: { zipCode: '13083-852', street: 'Rua de Teste', number: '123', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
             area: 'B2C',
             email: projectEmail,
             feeIds: [feeId],
