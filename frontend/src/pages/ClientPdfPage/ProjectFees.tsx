@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getProjectFees } from '../../services/api';
+import { ApiRequestError, generateFeePayment, getFeePayment, getProjectFees } from '../../services/api';
 import { FeeQuantityInput } from '../../components/FeeQuantityInput/FeeQuantityInput';
+import { BoletoDialog, ConfirmPaymentDialog } from '../../components/FeePayment/FeePaymentDialogs';
 import { FEE_TYPE_LABELS, canGeneratePayment, feeStatusLabel } from '../../constants/feeStatus';
 import { formatDate } from '../../utils/date';
-import type { CalculatedFee, ProjectFee } from '../../types';
+import type { CalculatedFee, FeePayment, ProjectFee } from '../../types';
 import styles from './ProjectFees.module.scss';
 
 interface Props {
@@ -41,6 +42,14 @@ export function ProjectFees({ projectId }: Props) {
   const [fees, setFees] = useState<CalculatedFee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // US-11: confirmação da geração e visualização do boleto.
+  const [confirming, setConfirming] = useState<CalculatedFee | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<CalculatedFee | null>(null);
+  const [boleto, setBoleto] = useState<FeePayment | null>(null);
+  const [boletoLoading, setBoletoLoading] = useState(false);
+  const [boletoError, setBoletoError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -57,6 +66,42 @@ export function ProjectFees({ projectId }: Props) {
     setLoading(true);
     void load();
   }, [load]);
+
+  const openBoleto = useCallback(
+    async (fee: CalculatedFee) => {
+      setViewing(fee);
+      setBoleto(null);
+      setBoletoError(null);
+      setBoletoLoading(true);
+      try {
+        setBoleto(await getFeePayment(projectId, fee.projectFeeId));
+      } catch (err) {
+        setBoletoError(err instanceof Error ? err.message : 'Não foi possível obter o boleto.');
+      } finally {
+        setBoletoLoading(false);
+      }
+    },
+    [projectId],
+  );
+
+  async function confirmPayment() {
+    if (!confirming || submitting) return;
+    const fee = confirming;
+    setSubmitting(true);
+    setPayError(null);
+    try {
+      await generateFeePayment(projectId, fee.projectFeeId);
+      setConfirming(null);
+      await load();
+      void openBoleto(fee);
+    } catch (err) {
+      setPayError(err instanceof Error ? err.message : 'Não foi possível gerar o pagamento.');
+      // Conflito: o estado da taxa mudou (ex.: outro clique já gerou). Atualiza a lista.
+      if (err instanceof ApiRequestError && err.status === 409) void load();
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   if (loading) return <div>Carregando taxas...</div>;
 
@@ -93,15 +138,52 @@ export function ProjectFees({ projectId }: Props) {
                 <button
                   type="button"
                   className={styles.payButton}
-                  onClick={() => alert('A geração de boleto/PIX será implementada em breve.')}
+                  onClick={() => {
+                    setPayError(null);
+                    setConfirming(fee);
+                  }}
                 >
                   Gerar pagamento
                 </button>
+              )}
+              {fee.status === 'PAGAMENTO_GERADO' && (
+                <>
+                  <button
+                    type="button"
+                    className={styles.payButton}
+                    disabled
+                    title="O pagamento desta taxa já foi gerado."
+                  >
+                    Gerar pagamento
+                  </button>
+                  <button type="button" className={styles.secondaryButton} onClick={() => void openBoleto(fee)}>
+                    Ver boleto
+                  </button>
+                </>
               )}
             </div>
           </div>
         ))}
       </div>
+      {confirming && confirming.calculatedValue !== null && (
+        <ConfirmPaymentDialog
+          feeName={confirming.name}
+          amount={confirming.calculatedValue}
+          submitting={submitting}
+          error={payError}
+          onConfirm={() => void confirmPayment()}
+          onCancel={() => setConfirming(null)}
+        />
+      )}
+      {viewing && (
+        <BoletoDialog
+          feeName={viewing.name}
+          payment={boleto}
+          loading={boletoLoading}
+          error={boletoError}
+          onClose={() => setViewing(null)}
+        />
+      )}
     </section>
   );
 }

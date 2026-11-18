@@ -153,6 +153,17 @@ export interface CalculatedFee {
   paymentDeadline: string | null;
 }
 
+/** Pagamento de uma taxa (US-11). Os dados do boleto só vêm na consulta, não na geração. */
+export interface FeePayment {
+  projectFeeId: string;
+  amount: number;
+  status: string;
+  expiresAt: string | null;
+  ticketUrl?: string;
+  digitableLine?: string;
+  barcodeContent?: string;
+}
+
 export interface QuoteableProjectFee {
   projectId: string;
   projectName: string;

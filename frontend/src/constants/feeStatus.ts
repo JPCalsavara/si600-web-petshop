@@ -26,6 +26,16 @@ export function canGeneratePayment(status: string, value: number | null): boolea
   return (status === 'DISPONIVEL' || status === 'COTADA') && value !== null;
 }
 
+/** Só links HTTPS viram href: o boleto vem de um serviço externo e não deve abrir esquemas como javascript:. */
+export function isSafeBoletoUrl(url: string | undefined | null): url is string {
+  if (!url) return false;
+  try {
+    return new URL(url).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /** Formatação canônica de preço/configuração de uma Taxa do catálogo para todas as modalidades. */
 export function formatFeePricing(fee: Fee): string {
   if (fee.type === 'VARIAVEL') {

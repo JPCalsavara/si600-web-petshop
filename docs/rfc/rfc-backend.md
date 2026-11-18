@@ -212,6 +212,13 @@ stateDiagram-v2
      - Quando o Cliente salva a quantidade (`PUT /api/projects/{projectId}/fees/{projectFeeId}/quantity`), a entidade limpa qualquer cotação anterior (`quotedAmount = null`, `quotedBy = null`, `quotedAt = null`) e transita para `AGUARDANDO_COTACAO`.
      - Quando o Administrador informa o valor (`PUT /api/projects/{projectId}/fees/{projectFeeId}/quote`), o status transita para `COTADA` e `calculatedAmount = quotedAmount`.
      - Se `status == PAGAMENTO_GERADO`, alterações de quantidade, remoção da taxa na configuração ou nova cotação são bloqueadas com `HTTP 409 Conflict`.
+3. **Geração do Pagamento (US-11, `FeePaymentService`):**
+   - Só o `CLIENT` dono gera, com projeto `APROVADO` ou `AGUARDANDO_PAGAMENTO` e taxa em `DISPONIVEL` ou `COTADA` com valor maior que zero (variável sem cotação: `422`).
+   - Um boleto por taxa. O valor é o calculado pelo catálogo (fixa e por metragem) ou o cotado (variável). O pagador vem do projeto: `contactEmail`, `representativeName` (nome e sobrenome), CPF/CNPJ e o endereço estruturado (BUG-07). Projeto sem endereço estruturado retorna `422`.
+   - O vencimento do boleto é a data limite de pagamento do projeto, limitada ao intervalo de 3 a 30 dias aceito pelo Mercado Pago. Prazo já vencido gera boleto de 3 dias; a geração não é bloqueada.
+   - A chamada ao Mercado Pago ocorre fora de transação (exigência do `PaymentService`, TEC-02). A taxa só vira `PAGAMENTO_GERADO`, com o evento `PAGAMENTO_GERADO` no histórico, numa transação curta posterior à confirmação do provedor. Em falha ou timeout a taxa permanece no status anterior.
+   - Cada tentativa usa a obrigação `fee:<projectFeeId>:<n>` e um `requestId` derivado dela. Falha definitiva (`FALHOU`) abre a tentativa `n+1`. Resultado incerto (`INCERTO`, por timeout ou erro 5xx) nunca abre outra tentativa, porque o boleto pode ter sido emitido: a taxa fica sem geração até recuperação manual (TEC-02, `synchronize` com o `orderId`).
+   - Um boleto `GERADO` cuja taxa não foi marcada (falha entre o provedor e o banco) é reaproveitado no próximo clique, desde que o valor continue o mesmo; caso contrário `409`.
 
 ### 4.3 Tags Dinâmicas de Alerta (`AlertTag`)
 
@@ -273,6 +280,8 @@ Todas as demais rotas, exceto `GET /api/health`, exigem `Authorization: Bearer <
 | `GET` | `/api/projects/{projectId}/fees/configuration` | `ADMIN` | Lista o catálogo ativo indicando quais taxas estão associadas ao projeto e quais estão bloqueadas (`PAGAMENTO_GERADO`). |
 | `PUT` | `/api/projects/{projectId}/fees/configuration` | `ADMIN` | Sincroniza o conjunto de `feeIds` do projeto em transação única e registra `TAXAS_CONFIGURADAS`. |
 | `PUT` | `/api/projects/{projectId}/fees/{projectFeeId}/quantity` | `CLIENT` (dono) | Salva quantidade (`quantity > 0`) de taxa `VARIAVEL`, limpa cotação anterior, muda status para `AGUARDANDO_COTACAO` e registra `QUANTIDADE_INFORMADA`. |
+| `POST` | `/api/projects/{projectId}/fees/{projectFeeId}/payment` | `CLIENT` (dono) | US-11: gera o boleto da taxa, muda o status para `PAGAMENTO_GERADO` e registra `PAGAMENTO_GERADO`. `201`; `409` se já gerado ou em andamento; `422` sem valor, PDF não aprovado ou cadastro incompleto; `502` se o Mercado Pago recusar; `503` se estiver indisponível, em timeout ou com resultado incerto. |
+| `GET` | `/api/projects/{projectId}/fees/{projectFeeId}/payment` | `CLIENT` (dono) | US-11: devolve valor, status, vencimento, `ticketUrl`, `digitableLine` e `barcodeContent`, consultados no Mercado Pago a cada chamada (o boleto não é gravado). `404` se a taxa não tem pagamento gerado. |
 | `GET` | `/api/admin/quotes` | `ADMIN` | Lista fila de taxas variáveis de projetos aprovados em `AGUARDANDO_COTACAO` ou `COTADA`. |
 | `PUT` | `/api/projects/{projectId}/fees/{projectFeeId}/quote` | `ADMIN` | Registra cotação financeira (`quotedAmount > 0`), muda status para `COTADA` e registra `TAXA_COTADA`. |
 | `GET` | `/api/projects/{projectId}/history` | `CLIENT` (dono) / `ADMIN` | Retorna linha do tempo (`ProjectHistoryEventResponse`) ordenada cronologicamente. Para `CLIENT`, `actorId` é mascarado (`null`), expondo apenas `actorRole`. |

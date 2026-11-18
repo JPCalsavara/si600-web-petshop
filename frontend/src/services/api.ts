@@ -12,6 +12,7 @@ import type {
   QuoteableProjectFee,
   ProjectFeeConfiguration,
   ProjectAddressInput,
+  FeePayment,
 } from '../types';
 
 export type { QuoteableProjectFee, ProjectFeeConfiguration };
@@ -187,6 +188,22 @@ export async function createProject(body: {
     url: '/projects',
     headers: { 'Content-Type': 'application/json' },
     data: body,
+  });
+}
+
+/** US-11: gera o boleto da taxa. Em falha do Mercado Pago a taxa continua como estava. */
+export async function generateFeePayment(projectId: string, projectFeeId: string): Promise<FeePayment> {
+  return request<FeePayment>({
+    method: 'POST',
+    url: `/projects/${encodeURIComponent(projectId)}/fees/${encodeURIComponent(projectFeeId)}/payment`,
+  });
+}
+
+/** US-11: boleto/código de pagamento de uma taxa com pagamento gerado. */
+export async function getFeePayment(projectId: string, projectFeeId: string): Promise<FeePayment> {
+  return request<FeePayment>({
+    method: 'GET',
+    url: `/projects/${encodeURIComponent(projectId)}/fees/${encodeURIComponent(projectFeeId)}/payment`,
   });
 }
 
