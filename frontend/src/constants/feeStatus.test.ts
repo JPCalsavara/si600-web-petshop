@@ -3,6 +3,7 @@ import {
   canGeneratePayment,
   feeStatusLabel,
   formatFeePricing,
+  isSafeBoletoUrl,
   parseQuantity,
   parseQuoteAmount,
 } from './feeStatus';
@@ -107,6 +108,25 @@ describe('Módulo de Domínio de Taxas (US-02/US-05/US-06/US-07)', () => {
       expect(parseQuantity('10.123', 'kVA').ok).toBe(false);
       expect(parseQuoteAmount('').ok).toBe(false);
       expect(parseQuoteAmount('abc').ok).toBe(false);
+    });
+  });
+
+  describe('Link do boleto (US-11)', () => {
+    it('Caso Bom: aceita link HTTPS do Mercado Pago', () => {
+      expect(isSafeBoletoUrl('https://www.mercadopago.com.br/ticket/abc')).toBe(true);
+    });
+
+    it('Caso Ruim: rejeita esquemas que não sejam HTTPS', () => {
+      expect(isSafeBoletoUrl('http://www.mercadopago.com.br/ticket/abc')).toBe(false);
+      expect(isSafeBoletoUrl('javascript:alert(1)')).toBe(false);
+      expect(isSafeBoletoUrl('data:text/html,<script>1</script>')).toBe(false);
+    });
+
+    it('Caso Incompleto: rejeita valor vazio, ausente ou que não é URL', () => {
+      expect(isSafeBoletoUrl('')).toBe(false);
+      expect(isSafeBoletoUrl(undefined)).toBe(false);
+      expect(isSafeBoletoUrl(null)).toBe(false);
+      expect(isSafeBoletoUrl('não é url')).toBe(false);
     });
   });
 });
