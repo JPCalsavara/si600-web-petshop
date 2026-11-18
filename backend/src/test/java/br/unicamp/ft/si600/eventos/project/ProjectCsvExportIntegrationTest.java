@@ -83,7 +83,8 @@ class ProjectCsvExportIntegrationTest {
     private UUID createProjectViaHttp(String company, String document, String email, String address, String representative) throws Exception {
         String body = objectMapper.writeValueAsString(java.util.Map.of(
                 "name", company,
-                "address", address,
+                "address", java.util.Map.of("zipCode", "13083-852", "street", address, "number", "100",
+                        "neighborhood", "Centro", "city", "Campinas", "state", "SP"),
                 "document", document,
                 "email", email,
                 "area", "B2C",
@@ -434,7 +435,7 @@ class ProjectCsvExportIntegrationTest {
 
             // Campos com ';' e '"' devem vir entre aspas duplas e com aspas internas duplicadas ("")
             assertThat(csvText).contains("\"Empresa Ponto;Virgula \"\"Especial\"\" Ltda\"");
-            assertThat(csvText).contains("\"Av. A; Bloco \"\"B\"\", Sala 10\"");
+            assertThat(csvText).contains("\"Av. A; Bloco \"\"B\"\", Sala 10, 100 - Centro, Campinas/SP - CEP 13083-852\"");
             assertThat(csvText).contains("\"Roberto; \"\"Beto\"\" Dias\"");
         }
     }

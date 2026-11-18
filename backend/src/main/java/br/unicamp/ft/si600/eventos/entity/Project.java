@@ -36,8 +36,12 @@ public class Project {
 
     // Campos da US-03. Nullable no banco para não quebrar linhas anteriores (ddl-auto=update);
     // a obrigatoriedade é garantida na criação (ProjectService).
-    @Column(name = "address", length = 300)
+    // Texto livre, derivado do endereço estruturado quando o projeto é criado. Até 600 para caber os campos somados.
+    @Column(name = "address", length = 600)
     private String address;
+
+    @Embedded
+    private ProjectAddress structuredAddress;
 
     @Column(name = "contact_email", length = 254, unique = true)
     private String contactEmail;
@@ -104,9 +108,18 @@ public class Project {
                                  String representativeName, String category, String address,
                                  String contactEmail, OffsetDateTime pdfDeadline,
                                  OffsetDateTime paymentDeadline, String createdBy, OffsetDateTime createdAt) {
+        return create(ownerId, companyName, document, documentDigits, representativeName, category, address,
+                null, contactEmail, pdfDeadline, paymentDeadline, createdBy, createdAt);
+    }
+
+    public static Project create(String ownerId, String companyName, String document, String documentDigits,
+                                 String representativeName, String category, String address,
+                                 ProjectAddress structuredAddress, String contactEmail, OffsetDateTime pdfDeadline,
+                                 OffsetDateTime paymentDeadline, String createdBy, OffsetDateTime createdAt) {
         Project p = new Project(ownerId, companyName, document, representativeName, category, pdfDeadline);
         p.documentDigits = documentDigits;
         p.address = address;
+        p.structuredAddress = structuredAddress;
         p.contactEmail = contactEmail;
         p.paymentDeadline = paymentDeadline;
         p.createdBy = createdBy;
@@ -121,6 +134,8 @@ public class Project {
 
     public UUID getId() { return id; }
     public String getAddress() { return address; }
+    /** Nulo em projetos anteriores ao endereço estruturado (BUG-07). */
+    public ProjectAddress getStructuredAddress() { return structuredAddress; }
     public String getContactEmail() { return contactEmail; }
     public String getDocumentDigits() { return documentDigits; }
     public OffsetDateTime getPaymentDeadline() { return paymentDeadline; }

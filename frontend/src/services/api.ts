@@ -11,6 +11,7 @@ import type {
   ProjectHistoryEvent,
   QuoteableProjectFee,
   ProjectFeeConfiguration,
+  ProjectAddressInput,
 } from '../types';
 
 export type { QuoteableProjectFee, ProjectFeeConfiguration };
@@ -173,7 +174,7 @@ export async function logout(): Promise<void> {
 export async function createProject(body: {
   name: string;
   document: string;
-  address: string;
+  address: ProjectAddressInput;
   area: string;
   email: string;
   pdfDeadline: string;

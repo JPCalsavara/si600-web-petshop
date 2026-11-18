@@ -15,7 +15,7 @@ viewports.forEach((viewport) => {
       cy.createProjectAsAdmin({
         name: projectName,
         document: `${String(stamp).slice(-11)}000`,
-        address: 'Av. Exposições, 500',
+        address: { zipCode: '13083-852', street: 'Av. Exposições', number: '500', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
         area: 'B2C',
         email: projectEmail,
         pdfDeadline: '2050-12-31',

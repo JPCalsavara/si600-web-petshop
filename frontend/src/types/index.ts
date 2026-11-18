@@ -46,6 +46,17 @@ export interface Project {
   provisionalPassword?: string;
 }
 
+/** Endereço estruturado enviado no cadastro do projeto (BUG-07). O CEP pode vir com ou sem máscara. */
+export interface ProjectAddressInput {
+  zipCode: string;
+  street: string;
+  number: string;
+  complement: string | null;
+  neighborhood: string;
+  city: string;
+  state: string;
+}
+
 export interface InactiveExhibitor {
   projectId: string;
   companyName: string;

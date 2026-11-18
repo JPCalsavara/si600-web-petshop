@@ -24,6 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
         properties = "storage.b2.enabled=false")
 @Import(TestStorageConfig.class)
 class ProjectCreationIntegrationTest {
+    private static final String ADDRESS_JSON = "\"address\":{\"zipCode\":\"13083-852\",\"street\":\"Rua X\","
+            + "\"number\":\"100\",\"complement\":null,\"neighborhood\":\"Centro\",\"city\":\"Campinas\",\"state\":\"SP\"}";
+
 
     @Value("${local.server.port}") int port;
     @Autowired TestRestTemplate restTemplate;
@@ -144,7 +147,7 @@ class ProjectCreationIntegrationTest {
     }
 
     private String body(String name, String doc, String email, String pdf, String payment) {
-        return "{\"name\":\"" + name + "\",\"document\":\"" + doc + "\",\"address\":\"Rua X, 100\","
+        return "{\"name\":\"" + name + "\",\"document\":\"" + doc + "\"," + ADDRESS_JSON + ","
                 + "\"area\":\"B2C\",\"email\":\"" + email + "\",\"pdfDeadline\":\"" + pdf
                 + "\",\"paymentDeadline\":\"" + payment + "\",\"representativeName\":null}";
     }

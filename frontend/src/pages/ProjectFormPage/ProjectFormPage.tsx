@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiRequestError, createProject, listFees } from '../../services/api';
-import { maskCpfCnpj, projectFormSchema } from '../../utils/masks';
+import { UF_OPTIONS, maskCep, maskCpfCnpj, projectFormSchema } from '../../utils/masks';
 import type { AreaEstande } from '../../types';
 import styles from './ProjectFormPage.module.scss';
 
@@ -17,7 +17,13 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
   const [document, setDocument] = useState('');
   const [email, setEmail] = useState('');
   const [area, setArea] = useState<AreaEstande>('B2C');
-  const [address, setAddress] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [complement, setComplement] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [uf, setUf] = useState('');
   const [pdfDeadline, setPdfDeadline] = useState('');
   const [paymentDeadline, setPaymentDeadline] = useState('');
   const [feeIds, setFeeIds] = useState<string[]>([]);
@@ -45,7 +51,13 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
         name,
         document,
         email,
-        address,
+        zipCode,
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state: uf,
         area,
         pdfDeadline,
         paymentDeadline,
@@ -59,7 +71,15 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
       const created = await createProject({
         name,
         document,
-        address,
+        address: {
+          zipCode: zipCode.replace(/\D/g, ''),
+          street: street.trim(),
+          number: number.trim(),
+          complement: complement.trim() || null,
+          neighborhood: neighborhood.trim(),
+          city: city.trim(),
+          state: uf,
+        },
         area,
         email,
         pdfDeadline,
@@ -192,13 +212,68 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
           />
         </label>
         <label className={styles.row}>
-          <span>Endereço *</span>
+          <span>CEP *</span>
           <input
             required
-            placeholder="Rua, número, cidade - UF"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            inputMode="numeric"
+            maxLength={9}
+            placeholder="00000-000"
+            value={zipCode}
+            onChange={(e) => setZipCode(maskCep(e.target.value))}
           />
+        </label>
+        <label className={styles.row}>
+          <span>Logradouro *</span>
+          <input
+            required
+            placeholder="Ex.: Av. Brasil"
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>Número *</span>
+          <input
+            required
+            placeholder="Ex.: 100"
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>Complemento</span>
+          <input
+            placeholder="Ex.: Sala 3 (opcional)"
+            value={complement}
+            onChange={(e) => setComplement(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>Bairro *</span>
+          <input
+            required
+            value={neighborhood}
+            onChange={(e) => setNeighborhood(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>Cidade *</span>
+          <input
+            required
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>UF *</span>
+          <select required value={uf} onChange={(e) => setUf(e.target.value)}>
+            <option value="">Selecione</option>
+            {UF_OPTIONS.map((sigla) => (
+              <option key={sigla} value={sigla}>
+                {sigla}
+              </option>
+            ))}
+          </select>
         </label>
         <label className={styles.row}>
           <span>Área do estande *</span>
