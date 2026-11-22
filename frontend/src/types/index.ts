@@ -219,3 +219,16 @@ export interface ProjectHistoryEvent {
   description: string;
   createdAt: string;
 }
+
+/** US-14: pedido "Esqueci a senha" aguardando o Admin. */
+export interface PasswordResetRequestItem {
+  id: string;
+  email: string;
+  requestedAt: string;
+}
+
+/** US-14: a senha temporária só existe nesta resposta. */
+export interface TemporaryPassword {
+  email: string;
+  temporaryPassword: string;
+}

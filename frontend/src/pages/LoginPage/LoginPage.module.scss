@@ -10,3 +10,5 @@
 .hint { margin: 0; color: $color-text-muted; font-size: $font-size-sm; }
 .alert { padding: $sp-3; border-radius: $radius-md; background: $color-danger-bg; border: 1px solid $color-danger-border; color: $color-danger; font-size: $font-size-sm; }
 .submit { @include figma-pill-button; margin-top: $sp-2; }
+.success { padding: $sp-3; border-radius: $radius-md; background: $color-success-bg; border: 1px solid $color-success-border; color: #276749; font-size: $font-size-sm; }
+.link { background: none; border: 0; padding: 0; color: $color-primary-light; font: inherit; font-size: $font-size-sm; text-decoration: underline; cursor: pointer; align-self: center; }

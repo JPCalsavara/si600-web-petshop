@@ -11,6 +11,8 @@ import type {
   ProjectHistoryEvent,
   QuoteableProjectFee,
   ProjectFeeConfiguration,
+  PasswordResetRequestItem,
+  TemporaryPassword,
   ProjectAddressInput,
   FeePayment,
 } from '../types';
@@ -170,6 +172,31 @@ export async function logout(): Promise<void> {
   } finally {
     clearSession();
   }
+}
+
+/** US-14: troca a senha do usuário logado. Senha atual errada volta como 422 (não desloga o usuário). */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await request<void>({ method: 'POST', url: '/auth/change-password', data: { currentPassword, newPassword } });
+}
+
+/** US-14: "Esqueci a senha" (sem login). A resposta é a mesma exista a conta ou não. */
+export async function requestPasswordReset(email: string): Promise<string> {
+  const response = await request<{ message: string }>({
+    method: 'POST',
+    url: '/auth/forgot-password',
+    data: { email },
+  });
+  return response.message;
+}
+
+/** US-14 (Admin): pedidos de recuperação aguardando atendimento. */
+export async function listPasswordResets(): Promise<PasswordResetRequestItem[]> {
+  return request<PasswordResetRequestItem[]>({ method: 'GET', url: '/admin/password-resets' });
+}
+
+/** US-14 (Admin): gera a senha temporária do pedido. Ela só aparece nesta resposta. */
+export async function resolvePasswordReset(id: string): Promise<TemporaryPassword> {
+  return request<TemporaryPassword>({ method: 'POST', url: `/admin/password-resets/${id}/resolve` });
 }
 
 export async function createProject(body: {

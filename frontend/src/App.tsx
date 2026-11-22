@@ -13,6 +13,7 @@ import { ProjectFormPage } from './pages/ProjectFormPage/ProjectFormPage';
 import { QuoteFeesPage } from './pages/QuoteFeesPage/QuoteFeesPage';
 import { RelatorioTaxasPage } from './pages/RelatorioTaxasPage/RelatorioTaxasPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage/AdminDashboardPage';
+import { PasswordResetsPage } from './pages/PasswordResetsPage/PasswordResetsPage';
 
 type AdminView =
   | { name: 'lista' }
@@ -91,6 +92,7 @@ export default function App() {
         adminSection === 'taxas' ? <FeeCatalogPage /> :
         adminSection === 'cotacoes' ? <QuoteFeesPage /> :
         adminSection === 'projetos' ? <AdminProjects view={projectView} setView={setProjectView} /> :
+        adminSection === 'usuarios' ? <PasswordResetsPage /> :
         <div style={{ padding: '4rem', textAlign: 'center', color: '#666' }}>
           <h2>Em breve</h2>
           <p>A seção de {adminSection} ainda não foi implementada.</p>
