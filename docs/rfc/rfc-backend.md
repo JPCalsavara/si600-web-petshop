@@ -79,6 +79,7 @@ erDiagram
     PROJECTS ||--o{ PROJECT_HISTORY_EVENTS : "registra trilha de auditoria (1:N)"
     PROJECTS ||--o{ DEADLINE_NOTIFICATIONS : "controla idempotencia de alertas (1:N)"
     USER_ACCOUNTS ||--o{ AUTH_SESSIONS : "abre sessões de login (1:N)"
+    USER_ACCOUNTS ||--o{ PASSWORD_RESET_REQUESTS : "solicita recuperação de acesso (1:N)"
 
     PROJECTS {
         uuid id PK "Identificador único do projeto"
@@ -167,6 +168,16 @@ erDiagram
         uuid user_id "Conta dona da sessão (idx_auth_sessions_user_id)"
         timestamptz expires_at "Expiração da sessão (8 horas após o login)"
     }
+
+    PASSWORD_RESET_REQUESTS {
+        uuid id PK "Identificador do pedido"
+        uuid user_id "Conta que pediu a recuperação"
+        varchar(254) email "E-mail da conta no momento do pedido"
+        varchar(20) status "PENDENTE | ATENDIDO (idx_password_reset_status)"
+        timestamptz requested_at "Data/hora do pedido"
+        timestamptz resolved_at "Data/hora em que o Admin gerou a senha temporária"
+        varchar(254) resolved_by "Admin que atendeu o pedido"
+    }
 ```
 
 ---
@@ -183,6 +194,7 @@ Detalhes e fluxos completos em [US-01 - Login e Perfis de Acesso](US-01-login-e-
 - **Limpeza de sessões expiradas:** feita por `SessionCleanupScheduler` (`@Scheduled`, `fixedDelay` de 1 hora, desligável por `app.auth.session-cleanup.enabled=false`) com uma única exclusão em massa. O `login` **não** limpa sessões, para que logins simultâneos não disputem lock na tabela `auth_sessions`.
 - **Cabeçalhos legados:** `X-Authenticated-User-*` só funcionam com `app.security.legacy-headers=true`, usado nos testes antigos. `ActorFilter` lança erro na subida se a flag estiver ligada com o profile `prod`, porque esses cabeçalhos podem ser forjados por qualquer cliente.
 - **Mensagens:** credenciais erradas e e-mail inexistente recebem a mesma resposta `401` ("E-mail ou senha inválidos."), sem revelar se a conta existe.
+- **Troca e recuperação de senha (US-14):** a troca exige a senha atual e aplica `PasswordPolicy` (8 a 200 caracteres, com letra e número, diferente da atual); encerra as demais sessões do usuário. "Esqueci a senha" grava um pedido `PENDENTE` em `password_reset_requests` (no máximo um por usuário, garantido por índice único parcial no PostgreSQL) e responde sempre `202`, exista a conta ou não. O Admin atende pelo painel: `AuthService.resolvePasswordReset` gera uma senha temporária aleatória, encerra todas as sessões do usuário e a devolve uma única vez ao Admin (nada é enviado por e-mail). A tabela é criada em produção por `db/password-reset-migration.sql`.
 
 ### 4.1 Ciclo de Vida do Projeto (`ProjectStatus`)
 
@@ -245,8 +257,12 @@ Todos os controllers respondem sob o context-path `/api` (`server.servlet.contex
 | `POST` | `/api/auth/login` | Público | Recebe `{ email, password }` e devolve `{ token, email, role, projectId }` (`projectId` só para `CLIENT`). `400` (ProblemDetail com `invalidFields`) para corpo vazio, campos nulos/em branco ou acima do limite (e-mail 254, senha 200); `401` para credenciais inválidas. |
 | `POST` | `/api/auth/logout` | Autenticado | Revoga a sessão do token informado (`204`). |
 | `GET` | `/api/auth/me` | Autenticado | Devolve o ator da sessão atual; `401` se o token for inválido ou estiver expirado. |
+| `POST` | `/api/auth/change-password` | Autenticado | US-14. Recebe `{ currentPassword, newPassword }` e responde `204`. Nova senha: 8 a 200 caracteres, com letra e número, diferente da atual (`400` com `invalidFields.newPassword`). Senha atual errada responde `422` (e não `401`, que o frontend trata como sessão expirada). Encerra as demais sessões do usuário e mantém a atual. |
+| `POST` | `/api/auth/forgot-password` | Público | US-14. Recebe `{ email }` e responde sempre `202` com a mesma mensagem, exista a conta ou não (não revela e-mails cadastrados). Registra um pedido pendente por usuário para o painel do Admin. `400` para corpo vazio ou e-mail acima de 254. |
+| `GET` | `/api/admin/password-resets` | Admin | US-14. Lista os pedidos de recuperação pendentes (`id`, `email`, `requestedAt`). |
+| `POST` | `/api/admin/password-resets/{id}/resolve` | Admin | US-14. Gera a senha temporária, encerra as sessões do usuário, marca o pedido como atendido e devolve `{ email, temporaryPassword }` uma única vez (nada é enviado por e-mail). `404` se o pedido não existe e `409` se já foi atendido. |
 
-Todas as demais rotas, exceto `GET /api/health`, exigem `Authorization: Bearer <token>`.
+Todas as demais rotas, exceto `GET /api/health`, exigem `Authorization: Bearer <token>`. A lista do que o filtro não autentica fica em `PublicPaths` (TEC-10): `/health`, `/auth/login`, `/auth/forgot-password`, o preflight `OPTIONS` e as rotas de pagamento com autenticação própria.
 
 ### 5.1 Saúde e Catálogo de Taxas (`HealthController`, `FeeController`)
 
@@ -294,5 +310,5 @@ Todas as demais rotas, exceto `GET /api/health`, exigem `Authorization: Bearer <
 Todas as suítes em `backend/src/test/java/br/unicamp/ft/si600/eventos/` executam com `@SpringBootTest` + `@AutoConfigureMockMvc` contra banco relacional real e os adaptadores determinísticos de teste (`InMemoryObjectStorage`, `RecordingEmailSender`, `MutableClock`), cobrindo obrigatoriamente a matriz tripartite:
 - **Casos Bons (Happy Path):** Criação, listagem, cálculo aritmético exato, persistência no banco, eventos de histórico e envio de e-mails/objetos S3.
 - **Casos Ruins (Sad Path):** Violação de propriedade (`403`), projeto/taxa inexistente (`404`), conflito de estado ou unicidade (`409`), prazos invertidos (`422`) com garantia de rollback transacional.
-- **Autenticação (US-01):** `AuthIntegrationTest` (em `src/test/java/.../auth/`, para ser executado pelo Surefire) cobre login/logout, isolamento `ADMIN` x `CLIENT`, `401` sem token, senha provisória (e-mail e resposta), limpeza de sessões e `400` padronizado em `/auth/login`. Os demais testes rodam com `app.security.legacy-headers=true` no `application.yml` de teste; o `AuthIntegrationTest` o desliga para exercitar o fluxo real.
+- **Autenticação (US-01):** `AuthIntegrationTest` (em `src/test/java/.../auth/`, para ser executado pelo Surefire) cobre login/logout, isolamento `ADMIN` x `CLIENT`, `401` sem token, senha provisória (e-mail e resposta), limpeza de sessões e `400` padronizado em `/auth/login`. **Senhas (US-14):** `PasswordIntegrationTest` cobre troca de senha, encerramento de outras sessões, "Esqueci a senha" sem revelar e-mails, atendimento pelo Admin (senha temporária, `403`/`404`/`409`) e `400` padronizado. Os demais testes rodam com `app.security.legacy-headers=true` no `application.yml` de teste; o `AuthIntegrationTest` o desliga para exercitar o fluxo real.
 - **Casos Incompletos (Malformed / Boundary):** Payloads nulos, listas vazias, números negativos/zero, arquivos falsos sem assinatura `%PDF-` ou acima de 10 MB (`400`/`413`) retornando matriz `errors` na estrutura RFC 7807 sem jamais produzir `500 Internal Server Error`.

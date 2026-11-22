@@ -43,6 +43,11 @@ public class UserAccount {
         this.createdAt = OffsetDateTime.now();
     }
 
+    /** US-14: troca de senha (pelo próprio usuário ou por redefinição do Admin). Recebe sempre o hash. */
+    public void changePasswordHash(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
+
     public UUID getId() { return id; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }

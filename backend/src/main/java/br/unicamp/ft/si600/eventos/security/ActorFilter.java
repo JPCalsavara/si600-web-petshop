@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import br.unicamp.ft.si600.eventos.payment.http.PaymentHttpPaths;
 import br.unicamp.ft.si600.eventos.service.AuthService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -59,8 +58,7 @@ public class ActorFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getServletPath();
-        if (PaymentHttpPaths.protectedPath(path)
-                || "OPTIONS".equalsIgnoreCase(request.getMethod()) || "/health".equals(path) || "/auth/login".equals(path)) {
+        if (PublicPaths.isPublic(request.getMethod(), path)) {
             filterChain.doFilter(request, response);
             return;
         }
