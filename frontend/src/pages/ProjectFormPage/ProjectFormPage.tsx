@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { ApiRequestError, createProject, listFees } from '../../services/api';
+import { ApiRequestError, createProject } from '../../services/api';
 import { maskCpfCnpj, projectFormSchema } from '../../utils/masks';
 import type { AreaEstande } from '../../types';
 import styles from './ProjectFormPage.module.scss';
@@ -20,21 +20,8 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
   const [address, setAddress] = useState('');
   const [pdfDeadline, setPdfDeadline] = useState('');
   const [paymentDeadline, setPaymentDeadline] = useState('');
-  const [feeIds, setFeeIds] = useState<string[]>([]);
-  const [fees, setFees] = useState<Array<{ id: string; name: string; type: string }>>([]);
   const [error, setError] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<{ login: string } | null>(null);
-
-  useEffect(() => {
-    listFees()
-      .then((items) => setFees(items.filter((fee) => fee.active)))
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : 'Não foi possível carregar as taxas.'),
-      );
-  }, []);
-
-  const toggleFee = (id: string) =>
-    setFeeIds((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]));
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -63,7 +50,7 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
         email,
         pdfDeadline,
         paymentDeadline,
-        feeIds,
+        feeIds: [],
       });
       setCredentials({ login: created.contactEmail });
       onCreated?.();
@@ -208,23 +195,6 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
             onChange={(e) => setPaymentDeadline(e.target.value)}
           />
         </label>
-
-        <fieldset className={styles.fees}>
-          <legend>Taxas do projeto</legend>
-          <div className={styles.feeGrid}>
-            {fees.map((fee) => (
-              <label key={fee.id} className={styles.fee}>
-                <input
-                  type="checkbox"
-                  checked={feeIds.includes(fee.id)}
-                  onChange={() => toggleFee(fee.id)}
-                />
-                {fee.name}
-                {fee.type === 'FIXA' && <em> (fixa)</em>}
-              </label>
-            ))}
-          </div>
-        </fieldset>
       </section>
 
       <div className={styles.actions}>

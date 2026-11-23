@@ -19,9 +19,10 @@ viewports.forEach((viewport) => {
       cy.contains('button', 'Projetos').click({ force: true });
     });
 
-    it('1. Caso Bom: cria um projeto pela UI, encontra na listagem e consulta o histórico', () => {
+    it('1. Caso Bom: cria um projeto pela UI sem escolha de taxas, encontra na listagem e consulta o histórico', () => {
       cy.get('[data-testid="btn-add-project"]').should('be.visible').click();
       cy.contains('h1', 'Novo Projeto').should('be.visible');
+      cy.contains('legend', 'Taxas do projeto').should('not.exist');
 
       cy.contains('span', 'Nome / Razão social *').parent().find('input').type(company);
       cy.contains('span', 'CPF / CNPJ *').parent().find('input').type(cnpjDigits);
