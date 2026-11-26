@@ -183,6 +183,7 @@ export function ProjectFeesConfigPage({ projectId, projectName, onBack }: Projec
                       className={`${styles.feeCard} ${isSelected ? styles.feeCardSelected : ''} ${
                         isFeeLocked ? styles.cardDisabled : ''
                       }`}
+                      role="presentation" /* o checkbox interno e o controle acessivel; o clique no card e so conveniencia de mouse */
                       onClick={() => toggleFee(fee.id)}
                     >
                       <div className={styles.checkboxWrap}>

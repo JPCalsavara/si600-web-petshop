@@ -42,6 +42,19 @@ export interface Project {
   contactEmail: string;
   paymentDeadline: string | null;
   alertTag?: AlertTag;
+  /** Só vem na resposta da criação do projeto (POST /projects). */
+  provisionalPassword?: string;
+}
+
+/** Endereço estruturado enviado no cadastro do projeto (BUG-07). O CEP pode vir com ou sem máscara. */
+export interface ProjectAddressInput {
+  zipCode: string;
+  street: string;
+  number: string;
+  complement: string | null;
+  neighborhood: string;
+  city: string;
+  state: string;
 }
 
 export interface InactiveExhibitor {
@@ -140,6 +153,17 @@ export interface CalculatedFee {
   paymentDeadline: string | null;
 }
 
+/** Pagamento de uma taxa (US-11). Os dados do boleto só vêm na consulta, não na geração. */
+export interface FeePayment {
+  projectFeeId: string;
+  amount: number;
+  status: string;
+  expiresAt: string | null;
+  ticketUrl?: string;
+  digitableLine?: string;
+  barcodeContent?: string;
+}
+
 export interface QuoteableProjectFee {
   projectId: string;
   projectName: string;
@@ -194,4 +218,17 @@ export interface ProjectHistoryEvent {
   actorRole: 'ADMIN' | 'CLIENT' | string;
   description: string;
   createdAt: string;
+}
+
+/** US-14: pedido "Esqueci a senha" aguardando o Admin. */
+export interface PasswordResetRequestItem {
+  id: string;
+  email: string;
+  requestedAt: string;
+}
+
+/** US-14: a senha temporária só existe nesta resposta. */
+export interface TemporaryPassword {
+  email: string;
+  temporaryPassword: string;
 }

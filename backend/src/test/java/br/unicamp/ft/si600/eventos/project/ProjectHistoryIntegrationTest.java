@@ -9,16 +9,17 @@ import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
 import br.unicamp.ft.si600.eventos.security.Actor;
 import br.unicamp.ft.si600.eventos.security.ActorRole;
 import br.unicamp.ft.si600.eventos.service.ProjectHistoryService;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
@@ -31,6 +32,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "storage.b2.enabled=false")
 @Import(TestStorageConfig.class)
@@ -39,7 +41,7 @@ class ProjectHistoryIntegrationTest {
     private static final String ADMIN_ID = "admin-us16";
     private static final String CLIENT_EMAIL = "expositor-us16@exemplo.com";
 
-    @LocalServerPort
+    @Value("${local.server.port}")
     int port;
 
     @Autowired
@@ -91,7 +93,7 @@ class ProjectHistoryIntegrationTest {
         String body = """
                 {
                   "name": "%s",
-                  "address": "Av. das Feiras, 100",
+                  "address": {"zipCode": "13083-852", "street": "Av. das Feiras", "number": "100", "complement": null, "neighborhood": "Barão Geraldo", "city": "Campinas", "state": "SP"},
                   "document": "%s",
                   "email": "%s",
                   "area": "B2C",
@@ -107,7 +109,7 @@ class ProjectHistoryIntegrationTest {
         );
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         JsonNode node = objectMapper.readTree(res.getBody());
-        return UUID.fromString(node.get("id").asText());
+        return UUID.fromString(node.get("id").asString());
     }
 
     private ResponseEntity<String> uploadPdf(UUID projectId, String clientEmail, String filename, byte[] content, String areaM2) {
@@ -183,7 +185,7 @@ class ProjectHistoryIntegrationTest {
                     String.class
             );
             assertThat(configRes.getStatusCode()).isEqualTo(HttpStatus.OK);
-            UUID projectFeeId = UUID.fromString(objectMapper.readTree(configRes.getBody()).get(0).get("projectFeeId").asText());
+            UUID projectFeeId = UUID.fromString(objectMapper.readTree(configRes.getBody()).get(0).get("projectFeeId").asString());
 
             // 7. Cliente informa quantidade da taxa variavel -> QUANTIDADE_INFORMADA
             ResponseEntity<String> qtyRes = restTemplate.exchange(
@@ -215,38 +217,38 @@ class ProjectHistoryIntegrationTest {
             assertThat(clientEvents.isArray()).isTrue();
             assertThat(clientEvents).hasSize(8);
 
-            assertThat(clientEvents.get(0).get("eventType").asText()).isEqualTo("PROJETO_CRIADO");
-            assertThat(clientEvents.get(0).get("actorId").asText()).isEqualTo(ADMIN_ID);
-            assertThat(clientEvents.get(0).get("actorRole").asText()).isEqualTo("ADMIN");
-            assertThat(clientEvents.get(0).get("description").asText()).contains("Expositora Alpha Ltda");
-            assertThat(clientEvents.get(0).get("createdAt").asText()).isNotBlank();
+            assertThat(clientEvents.get(0).get("eventType").asString()).isEqualTo("PROJETO_CRIADO");
+            assertThat(clientEvents.get(0).get("actorId").asString()).isEqualTo(ADMIN_ID);
+            assertThat(clientEvents.get(0).get("actorRole").asString()).isEqualTo("ADMIN");
+            assertThat(clientEvents.get(0).get("description").asString()).contains("Expositora Alpha Ltda");
+            assertThat(clientEvents.get(0).get("createdAt").asString()).isNotBlank();
 
-            assertThat(clientEvents.get(1).get("eventType").asText()).isEqualTo("PDF_ENVIADO");
-            assertThat(clientEvents.get(1).get("actorId").asText()).isEqualTo(CLIENT_EMAIL);
-            assertThat(clientEvents.get(1).get("actorRole").asText()).isEqualTo("CLIENT");
-            assertThat(clientEvents.get(1).get("description").asText()).contains("planta-v1.pdf");
+            assertThat(clientEvents.get(1).get("eventType").asString()).isEqualTo("PDF_ENVIADO");
+            assertThat(clientEvents.get(1).get("actorId").asString()).isEqualTo(CLIENT_EMAIL);
+            assertThat(clientEvents.get(1).get("actorRole").asString()).isEqualTo("CLIENT");
+            assertThat(clientEvents.get(1).get("description").asString()).contains("planta-v1.pdf");
 
-            assertThat(clientEvents.get(2).get("eventType").asText()).isEqualTo("PDF_REPROVADO");
-            assertThat(clientEvents.get(2).get("actorId").asText()).isEqualTo(ADMIN_ID);
-            assertThat(clientEvents.get(2).get("description").asText()).contains("Recuo frontal fora da norma.");
+            assertThat(clientEvents.get(2).get("eventType").asString()).isEqualTo("PDF_REPROVADO");
+            assertThat(clientEvents.get(2).get("actorId").asString()).isEqualTo(ADMIN_ID);
+            assertThat(clientEvents.get(2).get("description").asString()).contains("Recuo frontal fora da norma.");
 
-            assertThat(clientEvents.get(3).get("eventType").asText()).isEqualTo("PDF_ENVIADO");
-            assertThat(clientEvents.get(3).get("description").asText()).contains("planta-v2.pdf");
+            assertThat(clientEvents.get(3).get("eventType").asString()).isEqualTo("PDF_ENVIADO");
+            assertThat(clientEvents.get(3).get("description").asString()).contains("planta-v2.pdf");
 
-            assertThat(clientEvents.get(4).get("eventType").asText()).isEqualTo("PDF_APROVADO");
-            assertThat(clientEvents.get(4).get("actorId").asText()).isEqualTo(ADMIN_ID);
-            assertThat(clientEvents.get(4).get("description").asText()).contains("40.00");
+            assertThat(clientEvents.get(4).get("eventType").asString()).isEqualTo("PDF_APROVADO");
+            assertThat(clientEvents.get(4).get("actorId").asString()).isEqualTo(ADMIN_ID);
+            assertThat(clientEvents.get(4).get("description").asString()).contains("40.00");
 
-            assertThat(clientEvents.get(5).get("eventType").asText()).isEqualTo("TAXAS_CONFIGURADAS");
-            assertThat(clientEvents.get(5).get("actorId").asText()).isEqualTo(ADMIN_ID);
+            assertThat(clientEvents.get(5).get("eventType").asString()).isEqualTo("TAXAS_CONFIGURADAS");
+            assertThat(clientEvents.get(5).get("actorId").asString()).isEqualTo(ADMIN_ID);
 
-            assertThat(clientEvents.get(6).get("eventType").asText()).isEqualTo("QUANTIDADE_INFORMADA");
-            assertThat(clientEvents.get(6).get("actorId").asText()).isEqualTo(CLIENT_EMAIL);
-            assertThat(clientEvents.get(6).get("description").asText()).contains("Energia Elétrica").contains("15.50");
+            assertThat(clientEvents.get(6).get("eventType").asString()).isEqualTo("QUANTIDADE_INFORMADA");
+            assertThat(clientEvents.get(6).get("actorId").asString()).isEqualTo(CLIENT_EMAIL);
+            assertThat(clientEvents.get(6).get("description").asString()).contains("Energia Elétrica").contains("15.50");
 
-            assertThat(clientEvents.get(7).get("eventType").asText()).isEqualTo("TAXA_COTADA");
-            assertThat(clientEvents.get(7).get("actorId").asText()).isEqualTo(ADMIN_ID);
-            assertThat(clientEvents.get(7).get("description").asText()).contains("Energia Elétrica").contains("775.00");
+            assertThat(clientEvents.get(7).get("eventType").asString()).isEqualTo("TAXA_COTADA");
+            assertThat(clientEvents.get(7).get("actorId").asString()).isEqualTo(ADMIN_ID);
+            assertThat(clientEvents.get(7).get("description").asString()).contains("Energia Elétrica").contains("775.00");
 
             // Consulta pelo Administrador retorna exatamente a mesma linha do tempo
             ResponseEntity<String> adminHistoryRes = restTemplate.exchange(
@@ -282,10 +284,10 @@ class ProjectHistoryIntegrationTest {
             assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode events = objectMapper.readTree(res.getBody());
             assertThat(events).hasSize(4);
-            assertThat(events.get(0).get("eventType").asText()).isEqualTo("PROJETO_CRIADO");
-            assertThat(events.get(1).get("eventType").asText()).isEqualTo("PAGAMENTO_GERADO");
-            assertThat(events.get(2).get("eventType").asText()).isEqualTo("PAGAMENTO_CANCELADO");
-            assertThat(events.get(3).get("eventType").asText()).isEqualTo("PAGAMENTO_CONFIRMADO");
+            assertThat(events.get(0).get("eventType").asString()).isEqualTo("PROJETO_CRIADO");
+            assertThat(events.get(1).get("eventType").asString()).isEqualTo("PAGAMENTO_GERADO");
+            assertThat(events.get(2).get("eventType").asString()).isEqualTo("PAGAMENTO_CANCELADO");
+            assertThat(events.get(3).get("eventType").asString()).isEqualTo("PAGAMENTO_CONFIRMADO");
         }
     }
 
@@ -354,7 +356,7 @@ class ProjectHistoryIntegrationTest {
                     new HttpEntity<>("{\"approvedAreaM2\": 25.00}", headers(ADMIN_ID, "ADMIN")),
                     String.class
             );
-            assertThat(badApprove.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            assertThat(badApprove.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
 
             // Historico deve conter apenas o evento inicial PROJETO_CRIADO
             ResponseEntity<String> historyRes = restTemplate.exchange(
@@ -366,7 +368,7 @@ class ProjectHistoryIntegrationTest {
             assertThat(historyRes.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode events = objectMapper.readTree(historyRes.getBody());
             assertThat(events).hasSize(1);
-            assertThat(events.get(0).get("eventType").asText()).isEqualTo("PROJETO_CRIADO");
+            assertThat(events.get(0).get("eventType").asString()).isEqualTo("PROJETO_CRIADO");
         }
     }
 

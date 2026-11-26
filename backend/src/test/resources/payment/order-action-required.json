@@ -1,0 +1,38 @@
+{
+  "action": "order.action_required",
+  "api_version": "v1",
+  "application_id": "1284793489773148",
+  "data": {
+    "currency_id": "BRL",
+    "external_reference": "8b8aa82d-cf52-4af5-970b-6967f600ddf8",
+    "id": "ORDTST01M6YDSZ3XMX43XBTZZKGQYZM2",
+    "status": "action_required",
+    "status_detail": "waiting_payment",
+    "total_amount": "70.00",
+    "total_paid_amount": "0.00",
+    "transactions": {
+      "payments": [
+        {
+          "amount": "70.00",
+          "id": "PAY01M6YDSZ4DP00TEBAFTAJWRZV8",
+          "payment_method": {
+            "id": "boleto",
+            "installments": 0,
+            "type": "ticket"
+          },
+          "reference": {
+            "id": "000ho2py8o"
+          },
+          "status": "action_required",
+          "status_detail": "waiting_payment"
+        }
+      ]
+    },
+    "type": "online",
+    "version": 1
+  },
+  "date_created": "2026-11-08T20:32:43.034901123Z",
+  "live_mode": false,
+  "type": "order",
+  "user_id": "3815332534"
+}

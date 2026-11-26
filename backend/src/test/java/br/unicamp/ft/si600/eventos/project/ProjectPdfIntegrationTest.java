@@ -9,8 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
@@ -23,12 +24,13 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "storage.b2.enabled=false")
 @Import(TestStorageConfig.class)
 class ProjectPdfIntegrationTest {
 
-    @LocalServerPort
+    @Value("${local.server.port}")
     int port;
 
     @Autowired
@@ -176,7 +178,9 @@ class ProjectPdfIntegrationTest {
 
     @Test
     void deveTruncarNomeDeArquivoMuitoLongo() {
-        String longName = "a".repeat(400) + ".pdf";
+        // Acima de 255 para exercitar o truncamento, mas abaixo do limite de 512 bytes que o Tomcat impoe
+        // aos cabecalhos de cada parte multipart (um nome de 400+ caracteres resulta em 413 antes de chegar ao servico).
+        String longName = "a".repeat(300) + ".pdf";
         HttpEntity<MultiValueMap<String, Object>> request = multipartRequest("client-1", "CLIENT", longName,
                 "%PDF-1.7 fake pdf".getBytes(), "application/pdf");
 

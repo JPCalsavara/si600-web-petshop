@@ -12,106 +12,68 @@ viewports.forEach((viewport) => {
       projectName = `Empresa Cotacao ${suffix}`;
       variableFeeName = `Energia Trifasica ${suffix}`;
       const clientEmail = `cotacao-${suffix}@teste.com`;
+      let clientToken = '';
 
-      cy.request({
+      cy.adminRequest({
         method: 'POST',
         url: `${Cypress.expose('API_BASE_URL')}/fees`,
-        headers: {
-          'X-Authenticated-User-Role': 'ADMIN',
-          'X-Authenticated-User-Id': 'admin-1',
-        },
         body: {
           name: variableFeeName,
           description: 'Taxa variável para cotação E2E',
           type: 'VARIAVEL',
           measurementUnit: 'kVA',
         },
-      }).then((feeRes) => {
-        variableFeeId = feeRes.body.id;
+      })
+        .then((feeRes) => {
+          variableFeeId = feeRes.body.id;
 
-        return cy.request({
-          method: 'POST',
-          url: `${Cypress.expose('API_BASE_URL')}/projects`,
-          headers: {
-            'X-Authenticated-User-Role': 'ADMIN',
-            'X-Authenticated-User-Id': 'admin-1',
-          },
-          body: {
+          return cy.createProjectAsAdmin({
             name: projectName,
             document: `${Date.now()}9`.slice(0, 14),
-            address: 'Av. Cotações, 500',
+            address: { zipCode: '13083-852', street: 'Av. Cotações', number: '500', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
             area: 'B2C',
             email: clientEmail,
             feeIds: [variableFeeId],
             pdfDeadline: '2050-12-31',
             paymentDeadline: '2050-12-31',
-          },
-        });
-      }).then((projRes) => {
-        projectId = projRes.body.id;
-
-        const formData = new FormData();
-        formData.append('areaM2', '40.0');
-        const blob = new Blob(['%PDF-1.7 E2E Quote'], { type: 'application/pdf' });
-        formData.append('file', blob, 'planta_cotacao.pdf');
-
-        cy.visit('/');
-        return cy.window().then((win) => {
-          return new Cypress.Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `${Cypress.expose('API_BASE_URL')}/projects/${projectId}/pdf`);
-            xhr.setRequestHeader('X-Authenticated-User-Role', 'CLIENT');
-            xhr.setRequestHeader('X-Authenticated-User-Id', clientEmail);
-            xhr.onload = () => {
-              if (xhr.status >= 200 && xhr.status < 300) resolve(xhr);
-              else reject(new Error(`Upload falhou: HTTP ${xhr.status}`));
-            };
-            xhr.onerror = () => reject(new Error('Erro de rede no upload do PDF'));
-            xhr.send(formData);
+          });
+        })
+        .then((project) => {
+          projectId = project.id;
+          return cy.apiLogin(project.email, project.provisionalPassword);
+        })
+        .then((client) => {
+          clientToken = client.token;
+          return cy.uploadPdfAs(client, projectId, '40.0', 'planta_cotacao.pdf', '%PDF-1.7 E2E Quote');
+        })
+        .then(() => {
+          return cy.adminRequest({
+            method: 'POST',
+            url: `${Cypress.expose('API_BASE_URL')}/projects/admin/${projectId}/approve`,
+            body: { approvedAreaM2: 40.0 },
+          });
+        })
+        .then(() => {
+          return cy.request({
+            method: 'GET',
+            url: `${Cypress.expose('API_BASE_URL')}/projects/${projectId}/fees`,
+            headers: { Authorization: `Bearer ${clientToken}` },
+          });
+        })
+        .then((feesRes) => {
+          const pf = feesRes.body.find((f: { feeId: string }) => f.feeId === variableFeeId);
+          return cy.request({
+            method: 'PUT',
+            url: `${Cypress.expose('API_BASE_URL')}/projects/${projectId}/fees/${pf.projectFeeId}/quantity`,
+            headers: { Authorization: `Bearer ${clientToken}` },
+            body: { quantity: 15 },
           });
         });
-      }).then(() => {
-        return cy.request({
-          method: 'POST',
-          url: `${Cypress.expose('API_BASE_URL')}/projects/admin/${projectId}/approve`,
-          headers: {
-            'X-Authenticated-User-Role': 'ADMIN',
-            'X-Authenticated-User-Id': 'admin-1',
-          },
-          body: { approvedAreaM2: 40.0 },
-        });
-      }).then(() => {
-        return cy.request({
-          method: 'GET',
-          url: `${Cypress.expose('API_BASE_URL')}/projects/${projectId}/fees`,
-          headers: {
-            'X-Authenticated-User-Role': 'CLIENT',
-            'X-Authenticated-User-Id': clientEmail,
-          },
-        });
-      }).then((feesRes) => {
-        const pf = feesRes.body.find((f: { feeId: string }) => f.feeId === variableFeeId);
-        return cy.request({
-          method: 'PUT',
-          url: `${Cypress.expose('API_BASE_URL')}/projects/${projectId}/fees/${pf.projectFeeId}/quantity`,
-          headers: {
-            'X-Authenticated-User-Role': 'CLIENT',
-            'X-Authenticated-User-Id': clientEmail,
-          },
-          body: { quantity: 15 },
-        });
-      });
     });
 
     beforeEach(() => {
       cy.viewport(viewport);
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
-          win.localStorage.setItem('MOCK_ACTOR_ID', 'admin-1');
-          win.localStorage.removeItem('MOCK_PROJECT_ID');
-        },
-      });
+      cy.adminLogin().then((admin) => cy.visitAs(admin));
     });
 
     it('1. Caso Incompleto / Ruim: bloqueia cotação com valor zero ou inválido na tela de Cotações', () => {

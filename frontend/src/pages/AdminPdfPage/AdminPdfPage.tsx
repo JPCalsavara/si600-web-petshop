@@ -8,6 +8,7 @@ import {
 import { STATUS_LABELS, STATUS_ORDER } from '../../constants/projectStatus';
 import { usePaginatedList } from '../../components/Pagination/Pagination';
 import { formatDateTime } from '../../utils/date';
+import { ProjectFeesConfigPage } from '../ProjectFeesConfigPage/ProjectFeesConfigPage';
 import type { Project, ProjectStatus } from '../../types';
 import styles from './AdminPdfPage.module.scss';
 
@@ -22,6 +23,7 @@ export function AdminPdfPage({ onBack }: Props) {
   const [filter, setFilter] = useState<ProjectStatus | ''>('PDF_EM_ANALISE');
   const [projectSearch, setProjectSearch] = useState('');
   const [selected, setSelected] = useState<Project | null>(null);
+  const [feeConfigProject, setFeeConfigProject] = useState<Project | null>(null);
   const [justification, setJustification] = useState('');
   const [approvedAreas, setApprovedAreas] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export function AdminPdfPage({ onBack }: Props) {
     }
     try {
       setError(null);
-      await approveProject(project.id, area);
+      const approved = await approveProject(project.id, area);
       setApprovedAreas((prev) => {
         const next = { ...prev };
         delete next[project.id];
@@ -106,6 +108,7 @@ export function AdminPdfPage({ onBack }: Props) {
       });
       await load();
       setSelected(null);
+      setFeeConfigProject(approved);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível aprovar o PDF.');
     }
@@ -373,6 +376,21 @@ export function AdminPdfPage({ onBack }: Props) {
                 Confirmar reprovação
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {feeConfigProject && (
+        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" data-testid="project-fees-modal">
+          <div className={styles.modalWide}>
+            <ProjectFeesConfigPage
+              projectId={feeConfigProject.id}
+              projectName={feeConfigProject.companyName || 'Projeto'}
+              onBack={() => {
+                setFeeConfigProject(null);
+                void load();
+              }}
+            />
           </div>
         </div>
       )}

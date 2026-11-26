@@ -1,5 +1,6 @@
 package br.unicamp.ft.si600.eventos.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,8 +17,7 @@ public record CreateProjectRequest(
         @Size(max = 200, message = "O nome deve ter no máximo 200 caracteres") String name,
         @NotBlank(message = "O CPF/CNPJ é obrigatório")
         @Size(max = 30, message = "CPF/CNPJ muito longo") String document,
-        @NotBlank(message = "O endereço é obrigatório")
-        @Size(max = 300, message = "O endereço deve ter no máximo 300 caracteres") String address,
+        @Valid @NotNull(message = "O endereço é obrigatório") ProjectAddressRequest address,
         @NotBlank(message = "A área do estande é obrigatória")
         @Pattern(regexp = "B2C|Music Hub|Music Sport|Internacional",
                 message = "Área inválida. Use B2C, Music Hub, Music Sport ou Internacional") String area,

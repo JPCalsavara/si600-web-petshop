@@ -10,6 +10,8 @@ venv/
 # Environment and secrets
 .env
 .env.local
+.env.mp-e2e
+.mp-e2e/
 *.key
 *.pem
 
@@ -41,3 +43,9 @@ target/
 *.war
 .next/
 out/
+
+# Configuração privada do ambiente de pagamentos
+.envpagamentos
+
+# Backup local privado preexistente
+.ENV.save

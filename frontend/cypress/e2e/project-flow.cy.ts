@@ -9,13 +9,7 @@ viewports.forEach((viewport) => {
 
     beforeEach(() => {
       cy.viewport(viewport);
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
-          win.localStorage.setItem('MOCK_ACTOR_ID', 'admin-1');
-          win.localStorage.removeItem('MOCK_PROJECT_ID');
-        },
-      });
+      cy.adminLogin().then((admin) => cy.visitAs(admin));
       cy.contains('button', 'Projetos').click({ force: true });
     });
 
@@ -27,13 +21,20 @@ viewports.forEach((viewport) => {
       cy.contains('span', 'Nome / Razão social *').parent().find('input').type(company);
       cy.contains('span', 'CPF / CNPJ *').parent().find('input').type(cnpjDigits);
       cy.contains('span', 'E-mail (login) *').parent().find('input').type(email);
-      cy.contains('span', 'Endereço *').parent().find('input').type('Rua TEC-06, 100');
+      cy.contains('span', 'CEP *').parent().find('input').type('13083852');
+      cy.contains('span', 'Logradouro *').parent().find('input').type('Rua TEC-06');
+      cy.contains('span', 'Número *').parent().find('input').type('100');
+      cy.contains('span', 'Bairro *').parent().find('input').type('Centro');
+      cy.contains('span', 'Cidade *').parent().find('input').type('Campinas');
+      cy.contains('span', 'UF *').parent().find('select').select('SP');
       cy.contains('span', 'Limite envio do PDF *').parent().find('input').type('2050-12-31');
       cy.contains('span', 'Limite de pagamento *').parent().find('input').type('2050-12-31');
 
       cy.contains('button', 'Salvar').click();
       cy.contains('p', 'Projeto criado com sucesso.').should('be.visible');
       cy.contains('strong', email).should('be.visible');
+      // US-01: o Admin vê a senha provisória uma única vez para repassá-la ao Cliente.
+      cy.get('[data-testid="provisional-password"]').should('be.visible').invoke('text').should('have.length.at.least', 8);
 
       cy.contains('button', 'Voltar à lista').click();
       cy.get('[data-testid="input-filter-project"]', { timeout: 10000 })
@@ -56,7 +57,12 @@ viewports.forEach((viewport) => {
       cy.contains('span', 'Nome / Razão social *').parent().find('input').type(`${company} Duplicado`);
       cy.contains('span', 'CPF / CNPJ *').parent().find('input').type(cnpjDigits);
       cy.contains('span', 'E-mail (login) *').parent().find('input').type(email);
-      cy.contains('span', 'Endereço *').parent().find('input').type('Rua TEC-06, 100');
+      cy.contains('span', 'CEP *').parent().find('input').type('13083852');
+      cy.contains('span', 'Logradouro *').parent().find('input').type('Rua TEC-06');
+      cy.contains('span', 'Número *').parent().find('input').type('100');
+      cy.contains('span', 'Bairro *').parent().find('input').type('Centro');
+      cy.contains('span', 'Cidade *').parent().find('input').type('Campinas');
+      cy.contains('span', 'UF *').parent().find('select').select('SP');
       cy.contains('span', 'Limite envio do PDF *').parent().find('input').type('2050-12-31');
       cy.contains('span', 'Limite de pagamento *').parent().find('input').type('2050-12-31');
 
@@ -70,7 +76,12 @@ viewports.forEach((viewport) => {
       cy.contains('span', 'Nome / Razão social *').parent().find('input').type('Empresa Incompleta');
       cy.contains('span', 'CPF / CNPJ *').parent().find('input').type('12345');
       cy.contains('span', 'E-mail (login) *').parent().find('input').type(`incompleto-${suffix}@teste.com`);
-      cy.contains('span', 'Endereço *').parent().find('input').type('Rua Borda, 10');
+      cy.contains('span', 'CEP *').parent().find('input').type('13083852');
+      cy.contains('span', 'Logradouro *').parent().find('input').type('Rua Borda');
+      cy.contains('span', 'Número *').parent().find('input').type('10');
+      cy.contains('span', 'Bairro *').parent().find('input').type('Centro');
+      cy.contains('span', 'Cidade *').parent().find('input').type('Campinas');
+      cy.contains('span', 'UF *').parent().find('select').select('SP');
       cy.contains('span', 'Limite envio do PDF *').parent().find('input').type('2050-12-31');
       cy.contains('span', 'Limite de pagamento *').parent().find('input').type('2050-12-31');
 

@@ -1,10 +1,28 @@
-import { describe, expect, it } from 'vitest';
-import { ApiRequestError, createFee, deactivateFee, getFee, listFees, updateFee } from './api';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { ApiRequestError, createFee, deactivateFee, getFee, listFees, login, updateFee } from './api';
 import type { FeeRequest } from '../types';
 
-// Integração real: execute com VITE_API_URL apontando para o backend e VITE_USER_ROLE=ADMIN.
-const configured = Boolean(import.meta.env.VITE_API_URL) && import.meta.env.VITE_USER_ROLE === 'ADMIN';
+// Integração real: execute com VITE_API_URL apontando para o backend e com as credenciais do Admin semeado
+// (VITE_ADMIN_EMAIL e VITE_ADMIN_PASSWORD). O login (US-01) é feito de verdade antes dos testes.
+const adminEmail = import.meta.env.VITE_ADMIN_EMAIL as string | undefined;
+const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD as string | undefined;
+const configured = Boolean(import.meta.env.VITE_API_URL) && Boolean(adminEmail) && Boolean(adminPassword);
 describe.skipIf(!configured)('US-02 — cliente HTTP integrado ao backend real', () => {
+  beforeAll(async () => {
+    // Ambiente Node não tem localStorage: um armazenamento simples em memória guarda a sessão do login.
+    const store = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+    } as Storage);
+    await login(adminEmail as string, adminPassword as string);
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+  });
+
   const bodies: FeeRequest[] = [
     { name: 'Integração fixa', description: 'Valor único', type: 'FIXA', amount: 12.50 },
     { name: 'Integração m²', description: 'Por metragem', type: 'POR_METRAGEM', areaPricingMode: 'VALOR_POR_M2', amountPerM2: 5.25 },

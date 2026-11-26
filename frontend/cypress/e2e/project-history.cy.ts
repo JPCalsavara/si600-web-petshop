@@ -5,32 +5,30 @@ viewports.forEach((viewport) => {
     let projectId = '';
     let projectEmail = '';
     let projectName = '';
+    let clientSession: Cypress.E2ESession;
 
     before(() => {
       const stamp = Date.now();
       projectEmail = `us16-${stamp}@teste.com`;
       projectName = `Empresa US16 ${stamp}`;
 
-      cy.request({
-        method: 'POST',
-        url: `${Cypress.expose('API_BASE_URL')}/projects`,
-        headers: {
-          'X-Authenticated-User-Role': 'ADMIN',
-          'X-Authenticated-User-Id': 'admin-us16',
-        },
-        body: {
-          name: projectName,
-          document: `${String(stamp).slice(-11)}000`,
-          address: 'Av. Exposições, 500',
-          area: 'B2C',
-          email: projectEmail,
-          pdfDeadline: '2050-12-31',
-          paymentDeadline: '2050-12-31',
-          feeIds: [],
-        },
-      }).then((resp) => {
-        projectId = resp.body.id;
-      });
+      cy.createProjectAsAdmin({
+        name: projectName,
+        document: `${String(stamp).slice(-11)}000`,
+        address: { zipCode: '13083-852', street: 'Av. Exposições', number: '500', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
+        area: 'B2C',
+        email: projectEmail,
+        pdfDeadline: '2050-12-31',
+        paymentDeadline: '2050-12-31',
+        feeIds: [],
+      })
+        .then((project) => {
+          projectId = project.id;
+          return cy.apiLogin(project.email, project.provisionalPassword);
+        })
+        .then((client) => {
+          clientSession = client;
+        });
     });
 
     beforeEach(() => {
@@ -38,13 +36,7 @@ viewports.forEach((viewport) => {
     });
 
     it('Cliente envia PDF e visualiza a linha do tempo somente leitura na aba Histórico', () => {
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'CLIENT');
-          win.localStorage.setItem('MOCK_ACTOR_ID', projectEmail);
-          win.localStorage.setItem('MOCK_PROJECT_ID', projectId);
-        },
-      });
+      cy.visitAs(clientSession);
 
       cy.get('input[type="number"]').clear().type('45');
       cy.get('input[type="file"]').selectFile('cypress/fixtures/dummy.pdf');
@@ -69,13 +61,7 @@ viewports.forEach((viewport) => {
     it('Administrador consulta o histórico completo do projeto e exporta os dados em CSV (US-16 e US-17)', () => {
       cy.intercept('GET', `**/api/projects/${projectId}/export/csv`).as('exportCsv');
 
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
-          win.localStorage.setItem('MOCK_ACTOR_ID', 'admin-us16');
-          win.localStorage.removeItem('MOCK_PROJECT_ID');
-        },
-      });
+      cy.adminLogin().then((admin) => cy.visitAs(admin));
 
       cy.contains('button', 'Projetos').click({ force: true });
 

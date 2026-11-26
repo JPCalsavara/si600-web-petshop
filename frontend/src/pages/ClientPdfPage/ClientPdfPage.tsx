@@ -205,7 +205,7 @@ export function ClientPdfPage({ projectId }: Props) {
                 </label>
               </div>
 
-              <button className={styles.primaryButton} disabled={sending}>
+              <button type="submit" className={styles.primaryButton} disabled={sending}>
                 {sending ? 'Enviando...' : 'Enviar PDF para análise'}
               </button>
             </form>

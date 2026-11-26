@@ -1,17 +1,20 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { getCurrentActorRole } from '../../services/api';
+import { getSession } from '../../services/api';
+import { ChangePasswordModal } from '../ChangePasswordModal/ChangePasswordModal';
 import styles from './AppShell.module.scss';
 
-type SectionName = 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas' | 'cotacoes';
+type SectionName = 'resumo' | 'projetos' | 'pagamentos' | 'usuarios' | 'taxas' | 'cotacoes' | 'relatorios';
 
 interface Props {
   active: SectionName;
   children: ReactNode;
+  onLogout?: () => void;
   onNavigate?: (section: SectionName) => void;
 }
 
-export function AppShell({ active, children, onNavigate }: Props) {
+export function AppShell({ active, children, onNavigate, onLogout }: Props) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('THEME_MODE') === 'dark';
@@ -26,10 +29,10 @@ export function AppShell({ active, children, onNavigate }: Props) {
     }
   }, [darkMode]);
 
-  const role = getCurrentActorRole();
-  const admin = role === 'ADMIN';
-  const name = admin ? 'Rosângela' : 'Fabiana S. T.';
-  const handle = admin ? '@adminRosângela' : '@User94';
+  const session = getSession();
+  const admin = session?.role === 'ADMIN';
+  const name = admin ? 'Administrador' : 'Cliente';
+  const handle = session?.email ?? '';
 
   const handleNavigate = (section: SectionName) => {
     if (onNavigate) onNavigate(section);
@@ -52,7 +55,12 @@ export function AppShell({ active, children, onNavigate }: Props) {
 
         {/* Backdrop escuro pro mobile */}
         {isMobileMenuOpen && (
-          <div className={styles.mobileBackdrop} onClick={() => setIsMobileMenuOpen(false)}></div>
+          <button
+            type="button"
+            className={styles.mobileBackdrop}
+            aria-label="Fechar menu"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
         )}
 
         <aside className={`${styles.sidebar} ${isMobileMenuOpen ? styles.open : ''}`}>
@@ -69,6 +77,16 @@ export function AppShell({ active, children, onNavigate }: Props) {
                 <span>{handle}</span>
               </div>
             </div>
+            <button
+              type="button"
+              className={styles.changePassword}
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setShowChangePassword(true);
+              }}
+            >
+              Alterar senha
+            </button>
             <nav>
               {admin && (
                 <NavItem
@@ -105,6 +123,13 @@ export function AppShell({ active, children, onNavigate }: Props) {
               )}
               {admin && (
                 <NavItem
+                  label="Relatório de Receita"
+                  active={active === 'relatorios'}
+                  onClick={() => handleNavigate('relatorios')}
+                />
+              )}
+              {admin && (
+                <NavItem
                   label="Usuários"
                   active={active === 'usuarios'}
                   onClick={() => handleNavigate('usuarios')}
@@ -130,7 +155,7 @@ export function AppShell({ active, children, onNavigate }: Props) {
               </span>
             </button>
 
-            <button className={styles.logout} type="button">
+            <button className={styles.logout} type="button" onClick={onLogout}>
               ↪ <span>Sair</span>
             </button>
           </div>
@@ -144,6 +169,7 @@ export function AppShell({ active, children, onNavigate }: Props) {
           <main className={styles.content}>{children}</main>
         </section>
       </div>
+      {showChangePassword && <ChangePasswordModal onClose={() => setShowChangePassword(false)} />}
     </div>
   );
 }

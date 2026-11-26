@@ -5,31 +5,30 @@ viewports.forEach((viewport) => {
     let projectId = '';
     let projectEmail = '';
     let projectName = '';
+    let clientSession: Cypress.E2ESession;
 
     before(() => {
       projectEmail = `e2e-${Date.now()}@teste.com`;
       projectName = `Empresa E2E ${Date.now()}`;
       // 1. Acessa como Admin e cria o projeto via API para isolar o teste do UI de criação
-      cy.request({
-        method: 'POST',
-        url: `${Cypress.expose('API_BASE_URL')}/projects`,
-        headers: {
-          'X-Authenticated-User-Role': 'ADMIN',
-          'X-Authenticated-User-Id': 'admin-1',
-        },
-        body: {
-          name: projectName,
-          document: `${Date.now()}0`, // 14 dígitos
-          address: 'Rua de Teste, 123',
-          area: 'B2C',
-          email: projectEmail,
-          pdfDeadline: '2050-12-31',
-          paymentDeadline: '2050-12-31',
-          feeIds: [],
-        }
-      }).then((resp) => {
-        projectId = resp.body.id;
-      });
+      cy.createProjectAsAdmin({
+        name: projectName,
+        document: `${Date.now()}0`, // 14 dígitos
+        address: { zipCode: '13083-852', street: 'Rua de Teste', number: '123', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
+        area: 'B2C',
+        email: projectEmail,
+        pdfDeadline: '2050-12-31',
+        paymentDeadline: '2050-12-31',
+        feeIds: [],
+      })
+        .then((project) => {
+          projectId = project.id;
+          // 2. O Cliente entra com a senha provisória devolvida na criação
+          return cy.apiLogin(project.email, project.provisionalPassword);
+        })
+        .then((client) => {
+          clientSession = client;
+        });
     });
 
     beforeEach(() => {
@@ -37,22 +36,11 @@ viewports.forEach((viewport) => {
     });
 
     const loginAsClient = () => {
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'CLIENT');
-          win.localStorage.setItem('MOCK_ACTOR_ID', projectEmail);
-          win.localStorage.setItem('MOCK_PROJECT_ID', projectId);
-        }
-      });
+      cy.visitAs(clientSession);
     };
 
     const loginAsAdmin = () => {
-      cy.visit('/', {
-        onBeforeLoad(win) {
-          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
-          win.localStorage.setItem('MOCK_PROJECT_ID', '');
-        }
-      });
+      cy.adminLogin().then((admin) => cy.visitAs(admin));
     };
 
     it('Sad Path 1: Envio sem arquivo', () => {
@@ -127,6 +115,150 @@ viewports.forEach((viewport) => {
       
       // Deve sumir da lista (pois o filtro default é 'PDF_EM_ANALISE')
       cy.contains('tr', projectName).should('not.exist');
+    });
+  });
+
+  describe(`BUG-02 - Aprovação de PDF abre configuração/cotação de taxas do catálogo (${viewport})`, () => {
+    let approveProjectId = '';
+    let approveProjectEmail = '';
+    let approveProjectName = '';
+    let predefinedFeeName = '';
+    let extraFeeName = '';
+
+    before(() => {
+      const ts = Date.now();
+      approveProjectEmail = `e2e-bug02-${ts}@teste.com`;
+      approveProjectName = `Empresa BUG02 ${ts}`;
+      predefinedFeeName = `AAA Taxa Predefinida ${ts}`;
+      extraFeeName = `AAA Taxa Aprovacao ${ts}`;
+
+      // Cria duas taxas fixas com prefixo AAA para aparecerem na primeira página do catálogo
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.expose('API_BASE_URL')}/fees`,
+        headers: {
+          'X-Authenticated-User-Role': 'ADMIN',
+          'X-Authenticated-User-Id': 'admin-1',
+        },
+        body: {
+          name: predefinedFeeName,
+          type: 'FIXA',
+          amount: 150.0,
+        },
+      }).then((fee1Resp) => {
+        const predefinedFeeId = fee1Resp.body.id;
+
+        return cy.request({
+          method: 'POST',
+          url: `${Cypress.expose('API_BASE_URL')}/fees`,
+          headers: {
+            'X-Authenticated-User-Role': 'ADMIN',
+            'X-Authenticated-User-Id': 'admin-1',
+          },
+          body: {
+            name: extraFeeName,
+            type: 'FIXA',
+            amount: 250.0,
+          },
+        }).then(() => {
+          return cy.request({
+            method: 'POST',
+            url: `${Cypress.expose('API_BASE_URL')}/projects`,
+            headers: {
+              'X-Authenticated-User-Role': 'ADMIN',
+              'X-Authenticated-User-Id': 'admin-1',
+            },
+            body: {
+              name: approveProjectName,
+              document: `${ts}1`,
+              address: 'Rua BUG-02, 456',
+              area: 'B2C',
+              email: approveProjectEmail,
+              pdfDeadline: '2050-12-31',
+              paymentDeadline: '2050-12-31',
+              feeIds: [predefinedFeeId],
+            },
+          });
+        });
+      }).then((projResp) => {
+        approveProjectId = projResp.body.id;
+      });
+    });
+
+    beforeEach(() => {
+      cy.viewport(viewport);
+    });
+
+    it('Sad Path: Aprovar sem informar metragem válida não abre configuração de taxas', () => {
+      cy.visit('/', {
+        onBeforeLoad(win) {
+          win.localStorage.setItem('MOCK_ROLE', 'CLIENT');
+          win.localStorage.setItem('MOCK_ACTOR_ID', approveProjectEmail);
+          win.localStorage.setItem('MOCK_PROJECT_ID', approveProjectId);
+        },
+      });
+      cy.get('input[type="number"]').clear().type('45');
+      cy.get('input[type="file"]').selectFile('cypress/fixtures/dummy.pdf');
+      cy.contains('button', 'Enviar PDF para análise').click();
+      cy.contains(/PDF EM AN[AÁ]LISE/i, { timeout: 10000 }).should('be.visible');
+
+      cy.visit('/', {
+        onBeforeLoad(win) {
+          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
+          win.localStorage.setItem('MOCK_PROJECT_ID', '');
+        },
+      });
+      cy.contains('button', 'Análise de PDFs').click();
+      cy.contains('tr', approveProjectName).within(() => {
+        cy.contains('button', 'Aprovar').click();
+      });
+
+      cy.contains('[role="alert"]', /Informe a metragem aprovada/i).should('be.visible');
+      cy.get('[data-testid="project-fees-modal"]').should('not.exist');
+    });
+
+    it('Happy Path: Aprovar PDF abre modal de taxas, vincula nova taxa e exibe lista consolidada ao cliente', () => {
+      cy.visit('/', {
+        onBeforeLoad(win) {
+          win.localStorage.setItem('MOCK_ROLE', 'ADMIN');
+          win.localStorage.setItem('MOCK_PROJECT_ID', '');
+        },
+      });
+      cy.contains('button', 'Análise de PDFs').click();
+
+      cy.contains('tr', approveProjectName).within(() => {
+        cy.get('input[type="number"]').clear().type('45');
+        cy.contains('button', 'Aprovar').click();
+      });
+
+      // Direciona automaticamente para o modal de configuração de taxas com o catálogo
+      cy.get('[data-testid="project-fees-modal"]', { timeout: 10000 }).should('be.visible');
+      cy.get('[data-testid="project-fees-config-page"]').should('be.visible');
+
+      // Taxa pré-definida já aparece vinculada e marcada; seleciona a nova taxa do catálogo
+      cy.contains(predefinedFeeName).should('be.visible');
+      cy.contains(extraFeeName).should('be.visible').click();
+
+      cy.contains('button', 'Salvar configuração').first().click();
+      cy.contains('[role="status"]', /Configuração de taxas salva com sucesso/i).should('be.visible');
+
+      cy.get('[data-testid="project-fees-modal"]').within(() => {
+        cy.contains('Taxas Atualmente Vinculadas ao Projeto (2)').should('be.visible');
+        cy.get('button[aria-label="Cancelar"]').click();
+      });
+      cy.get('[data-testid="project-fees-modal"]').should('not.exist');
+
+      // Cliente visualiza a lista consolidada (pré-definida + vinculada na aprovação)
+      cy.visit('/', {
+        onBeforeLoad(win) {
+          win.localStorage.setItem('MOCK_ROLE', 'CLIENT');
+          win.localStorage.setItem('MOCK_ACTOR_ID', approveProjectEmail);
+          win.localStorage.setItem('MOCK_PROJECT_ID', approveProjectId);
+        },
+      });
+      cy.contains('Taxas e Pagamentos', { timeout: 10000 }).should('be.visible');
+      cy.contains(predefinedFeeName).should('be.visible');
+      cy.contains(extraFeeName).should('be.visible');
     });
   });
 });

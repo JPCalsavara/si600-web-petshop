@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { trimEdges } from './text';
 import type { AreaEstande, AreaPricingMode, FeeType } from '../types';
 
 /**
@@ -32,14 +33,14 @@ export const feeFormSchema = z
   .object({
     name: z
       .string()
-      .transform((v) => v.replace(/^[\s\x00-\x20]+|[\s\x00-\x20]+$/gu, ''))
+      .transform((v) => trimEdges(v))
       .refine((v) => v.length > 0, { message: 'Informe o nome da taxa.' }),
     description: z.string(),
     type: z.enum(['FIXA', 'POR_METRAGEM', 'VARIAVEL']),
     mode: z.enum(['VALOR_POR_M2', 'UNIDADES_POR_INTERVALO']),
     unit: z
       .string()
-      .transform((v) => v.replace(/^[\s\x00-\x20]+|[\s\x00-\x20]+$/gu, '')),
+      .transform((v) => trimEdges(v)),
     amount: z.string(),
     amountPerM2: z.string(),
     areaPerUnitM2: z.string(),
@@ -113,6 +114,18 @@ export function validateFeeFormWithZod(input: FeeFormInput): Record<string, stri
   return errors;
 }
 
+/** Unidades federativas aceitas no endereço do cliente (BUG-07). */
+export const UF_OPTIONS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB',
+  'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+] as const;
+
+/** Aplica máscara de CEP (00000-000) e limita a 8 dígitos. */
+export function maskCep(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+}
+
 export const projectFormSchema = z
   .object({
     name: z.string().trim().min(1, 'Informe o nome ou razão social.'),
@@ -123,7 +136,17 @@ export const projectFormSchema = z
         return digits.length === 11 || digits.length === 14;
       }, 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.'),
     email: z.string().trim().email('Informe um e-mail válido.'),
-    address: z.string().trim().min(1, 'Informe o endereço do expositor.'),
+    zipCode: z
+      .string()
+      .refine((v) => v.replace(/\D/g, '').length === 8, 'Informe um CEP com 8 dígitos.'),
+    street: z.string().trim().min(1, 'Informe o logradouro.'),
+    number: z.string().trim().min(1, 'Informe o número do endereço.'),
+    complement: z.string().trim(),
+    neighborhood: z.string().trim().min(1, 'Informe o bairro.'),
+    city: z.string().trim().min(1, 'Informe a cidade.'),
+    state: z
+      .string()
+      .refine((v) => (UF_OPTIONS as readonly string[]).includes(v), 'Informe a UF do endereço.'),
     area: z.custom<AreaEstande>(),
     pdfDeadline: z.string().min(1, 'Informe a data limite de envio do PDF.'),
     paymentDeadline: z.string().min(1, 'Informe a data limite de pagamento.'),

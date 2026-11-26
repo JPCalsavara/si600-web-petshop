@@ -1,0 +1,13 @@
+@use '../../styles/figma' as *;
+.page { max-width: 1100px; margin: auto; padding: 24px; h1 { @include figma-title; } }
+.panel { @include figma-panel; margin: 20px 0; padding: 24px; min-width: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 20px 0; }
+.page label { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.page input { border: 1px solid #aaa; border-radius: 8px; padding: 10px; font: inherit; min-width: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; button, a { @include figma-pill-button; } button:disabled { opacity: .5; cursor: default; } }
+.page dd { margin: 4px 0 14px; overflow-wrap: anywhere; }
+.page dt { font-weight: 600; }
+.error { color: #962727; background: #fff0f0; padding: 16px; }
+.message { padding: 16px; background: #edf7ed; }
+
+.tableWrap { overflow-x: auto; table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; overflow-wrap: anywhere; } }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { ApiRequestError, createProject } from '../../services/api';
-import { maskCpfCnpj, projectFormSchema } from '../../utils/masks';
+import { UF_OPTIONS, maskCep, maskCpfCnpj, projectFormSchema } from '../../utils/masks';
 import type { AreaEstande } from '../../types';
 import styles from './ProjectFormPage.module.scss';
 
@@ -17,11 +17,18 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
   const [document, setDocument] = useState('');
   const [email, setEmail] = useState('');
   const [area, setArea] = useState<AreaEstande>('B2C');
-  const [address, setAddress] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [complement, setComplement] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [uf, setUf] = useState('');
   const [pdfDeadline, setPdfDeadline] = useState('');
   const [paymentDeadline, setPaymentDeadline] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [credentials, setCredentials] = useState<{ login: string } | null>(null);
+  const [credentials, setCredentials] = useState<{ login: string; password?: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -31,7 +38,13 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
         name,
         document,
         email,
-        address,
+        zipCode,
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state: uf,
         area,
         pdfDeadline,
         paymentDeadline,
@@ -45,14 +58,22 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
       const created = await createProject({
         name,
         document,
-        address,
+        address: {
+          zipCode: zipCode.replace(/\D/g, ''),
+          street: street.trim(),
+          number: number.trim(),
+          complement: complement.trim() || null,
+          neighborhood: neighborhood.trim(),
+          city: city.trim(),
+          state: uf,
+        },
         area,
         email,
         pdfDeadline,
         paymentDeadline,
         feeIds: [],
       });
-      setCredentials({ login: created.contactEmail });
+      setCredentials({ login: created.contactEmail, password: created.provisionalPassword });
       onCreated?.();
     } catch (err) {
       setError(
@@ -63,6 +84,16 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
     }
   }
 
+  async function copyCredentials(c: { login: string; password?: string }) {
+    try {
+      await navigator.clipboard.writeText(`Usuário: ${c.login}\nSenha: ${c.password ?? ''}`);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  // Tela "Novo Usuário" do Figma: mostra usuário e senha para o Admin repassar.
   if (credentials) {
     return (
       <div className={styles.page}>
@@ -86,9 +117,24 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
             <span>Usuário</span>
             <strong>{credentials.login}</strong>
           </div>
-          <p className={styles.hint}>
-            A criação de senha/autenticação não faz parte do contrato atual do backend.
-          </p>
+          {credentials.password ? (
+            <>
+              <div className={styles.row}>
+                <span>Senha provisória</span>
+                <strong data-testid="provisional-password">{credentials.password}</strong>
+              </div>
+              <div>
+                <button type="button" className={styles.copyButton} onClick={() => copyCredentials(credentials)}>
+                  {copied ? 'Copiado!' : 'Copiar usuário e senha'}
+                </button>
+              </div>
+              <p className={styles.hint}>
+                Esta senha só aparece agora. Se o envio de e-mail estiver ativo, o cliente também a recebe por e-mail.
+              </p>
+            </>
+          ) : (
+            <p className={styles.hint}>Este e-mail já possuía acesso; a senha existente foi mantida.</p>
+          )}
         </section>
         <div className={styles.actions}>
           <button type="button" className={styles.save} onClick={onDone}>
@@ -153,13 +199,68 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
           />
         </label>
         <label className={styles.row}>
-          <span>Endereço *</span>
+          <span>CEP *</span>
           <input
             required
-            placeholder="Rua, número, cidade - UF"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            inputMode="numeric"
+            maxLength={9}
+            placeholder="00000-000"
+            value={zipCode}
+            onChange={(e) => setZipCode(maskCep(e.target.value))}
           />
+        </label>
+        <label className={styles.row}>
+          <span>Logradouro *</span>
+          <input
+            required
+            placeholder="Ex.: Av. Brasil"
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>Número *</span>
+          <input
+            required
+            placeholder="Ex.: 100"
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>Complemento</span>
+          <input
+            placeholder="Ex.: Sala 3 (opcional)"
+            value={complement}
+            onChange={(e) => setComplement(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>Bairro *</span>
+          <input
+            required
+            value={neighborhood}
+            onChange={(e) => setNeighborhood(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>Cidade *</span>
+          <input
+            required
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+          />
+        </label>
+        <label className={styles.row}>
+          <span>UF *</span>
+          <select required value={uf} onChange={(e) => setUf(e.target.value)}>
+            <option value="">Selecione</option>
+            {UF_OPTIONS.map((sigla) => (
+              <option key={sigla} value={sigla}>
+                {sigla}
+              </option>
+            ))}
+          </select>
         </label>
         <label className={styles.row}>
           <span>Área do estande *</span>

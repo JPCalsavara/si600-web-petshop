@@ -4,7 +4,7 @@ import br.unicamp.ft.si600.eventos.entity.*;
 import br.unicamp.ft.si600.eventos.repository.FeeRepository;
 import br.unicamp.ft.si600.eventos.repository.ProjectFeeRepository;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -24,6 +25,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** US-06: Cliente informa e altera a quantidade das taxas variáveis. */
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ProjectFeeQuantityIntegrationTest {
     private static final String CLIENT = "client-us06";
@@ -65,9 +67,9 @@ class ProjectFeeQuantityIntegrationTest {
         ResponseEntity<JsonNode> response = putQuantity(project.getId(), energy.getId(), "{\"quantity\":12.5}", CLIENT, "CLIENT");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("status").asText()).isEqualTo("AGUARDANDO_COTACAO");
+        assertThat(response.getBody().get("status").asString()).isEqualTo("AGUARDANDO_COTACAO");
         assertThat(response.getBody().get("quantity").decimalValue()).isEqualByComparingTo("12.5");
-        assertThat(response.getBody().get("measurementUnit").asText()).isEqualTo("kVA");
+        assertThat(response.getBody().get("measurementUnit").asString()).isEqualTo("kVA");
         ProjectFee saved = projectFees.findById(energy.getId()).orElseThrow();
         assertThat(saved.getQuantity()).isEqualByComparingTo("12.50");
         assertThat(saved.getStatus()).isEqualTo(ProjectFeeStatus.AGUARDANDO_COTACAO);
@@ -94,7 +96,7 @@ class ProjectFeeQuantityIntegrationTest {
         ResponseEntity<JsonNode> response = putQuantity(project.getId(), energy.getId(), "{\"quantity\":15}", CLIENT, "CLIENT");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("status").asText()).isEqualTo("AGUARDANDO_COTACAO");
+        assertThat(response.getBody().get("status").asString()).isEqualTo("AGUARDANDO_COTACAO");
         assertThat(projectFees.findById(energy.getId()).orElseThrow().getQuantity()).isEqualByComparingTo("15");
     }
 
@@ -120,7 +122,7 @@ class ProjectFeeQuantityIntegrationTest {
         jdbc.update("update projects set status = ? where id = ?", status.name(), project.getId());
 
         assertProblem(putQuantity(project.getId(), energy.getId(), "{\"quantity\":5}", CLIENT, "CLIENT"),
-                HttpStatus.UNPROCESSABLE_ENTITY);
+                HttpStatus.UNPROCESSABLE_CONTENT);
         ProjectFee saved = projectFees.findById(energy.getId()).orElseThrow();
         assertThat(saved.getQuantity()).isNull();
         assertThat(saved.getStatus()).isEqualTo(ProjectFeeStatus.AGUARDANDO_QUANTIDADE);
@@ -130,7 +132,7 @@ class ProjectFeeQuantityIntegrationTest {
     void deveRejeitarQuantidadeEmTaxaNaoVariavel() {
         ResponseEntity<JsonNode> response = putQuantity(project.getId(), rent.getId(), "{\"quantity\":3}", CLIENT, "CLIENT");
 
-        assertProblem(response, HttpStatus.UNPROCESSABLE_ENTITY);
+        assertProblem(response, HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(projectFees.findById(rent.getId()).orElseThrow().getQuantity()).isNull();
     }
 

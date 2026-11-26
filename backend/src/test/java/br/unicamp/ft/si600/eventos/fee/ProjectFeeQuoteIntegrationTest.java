@@ -4,13 +4,14 @@ import br.unicamp.ft.si600.eventos.entity.*;
 import br.unicamp.ft.si600.eventos.repository.FeeRepository;
 import br.unicamp.ft.si600.eventos.repository.ProjectFeeRepository;
 import br.unicamp.ft.si600.eventos.repository.ProjectRepository;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -21,6 +22,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** US-07: cotação das taxas pelo Admin e visualização do valor pelo Cliente (US-05). */
+@AutoConfigureTestRestTemplate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ProjectFeeQuoteIntegrationTest {
     private static final String CLIENT = "client-us07";
@@ -71,13 +73,13 @@ class ProjectFeeQuoteIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().size()).isEqualTo(1);
         JsonNode item = response.getBody().get(0);
-        assertThat(item.get("projectFeeId").asText()).isEqualTo(energy.getId().toString());
-        assertThat(item.get("projectName").asText()).isEqualTo(project.getCompanyName());
-        assertThat(item.get("clientEmail").asText()).isEqualTo(project.getContactEmail());
-        assertThat(item.get("feeName").asText()).isEqualTo("Energia");
+        assertThat(item.get("projectFeeId").asString()).isEqualTo(energy.getId().toString());
+        assertThat(item.get("projectName").asString()).isEqualTo(project.getCompanyName());
+        assertThat(item.get("clientEmail").asString()).isEqualTo(project.getContactEmail());
+        assertThat(item.get("feeName").asString()).isEqualTo("Energia");
         assertThat(item.get("quantity").decimalValue()).isEqualByComparingTo("12.5");
-        assertThat(item.get("measurementUnit").asText()).isEqualTo("kVA");
-        assertThat(item.get("status").asText()).isEqualTo("AGUARDANDO_COTACAO");
+        assertThat(item.get("measurementUnit").asString()).isEqualTo("kVA");
+        assertThat(item.get("status").asString()).isEqualTo("AGUARDANDO_COTACAO");
     }
 
     @Test
@@ -95,13 +97,13 @@ class ProjectFeeQuoteIntegrationTest {
         ResponseEntity<JsonNode> quote = send(HttpMethod.PUT, quoteUrl(energy), "{\"amount\":250.50}", ADMIN, "ADMIN");
 
         assertThat(quote.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(quote.getBody().get("status").asText()).isEqualTo("COTADA");
+        assertThat(quote.getBody().get("status").asString()).isEqualTo("COTADA");
         assertThat(quote.getBody().get("quotedAmount").decimalValue()).isEqualByComparingTo("250.50");
-        assertThat(quote.getBody().get("quotedBy").asText()).isEqualTo(ADMIN);
-        assertThat(quote.getBody().get("quotedAt").asText()).isNotBlank();
+        assertThat(quote.getBody().get("quotedBy").asString()).isEqualTo(ADMIN);
+        assertThat(quote.getBody().get("quotedAt").asString()).isNotBlank();
 
         JsonNode line = feeLine(energy.getId());
-        assertThat(line.get("status").asText()).isEqualTo("COTADA");
+        assertThat(line.get("status").asString()).isEqualTo("COTADA");
         assertThat(line.get("calculatedValue").decimalValue()).isEqualByComparingTo("250.50");
         assertThat(line.get("quantity").decimalValue()).isEqualByComparingTo("10");
         assertThat(line.get("quantityEditable").asBoolean()).isTrue();
@@ -130,7 +132,7 @@ class ProjectFeeQuoteIntegrationTest {
         send(HttpMethod.PUT, quantityUrl(energy), "{\"quantity\":15}", CLIENT, "CLIENT");
 
         JsonNode line = feeLine(energy.getId());
-        assertThat(line.get("status").asText()).isEqualTo("AGUARDANDO_COTACAO");
+        assertThat(line.get("status").asString()).isEqualTo("AGUARDANDO_COTACAO");
         assertThat(line.get("calculatedValue").isNull()).isTrue();
         assertThat(line.get("quantity").decimalValue()).isEqualByComparingTo("15");
         ProjectFee saved = projectFees.findById(energy.getId()).orElseThrow();
@@ -145,9 +147,9 @@ class ProjectFeeQuoteIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().size()).isEqualTo(4);
         JsonNode rentLine = feeLine(rent.getId());
-        assertThat(rentLine.get("projectFeeId").asText()).isEqualTo(rent.getId().toString());
-        assertThat(rentLine.get("feeId").asText()).isEqualTo(rent.getFee().getId().toString());
-        assertThat(rentLine.get("status").asText()).isEqualTo("DISPONIVEL");
+        assertThat(rentLine.get("projectFeeId").asString()).isEqualTo(rent.getId().toString());
+        assertThat(rentLine.get("feeId").asString()).isEqualTo(rent.getFee().getId().toString());
+        assertThat(rentLine.get("status").asString()).isEqualTo("DISPONIVEL");
         assertThat(rentLine.get("calculatedValue").decimalValue()).isEqualByComparingTo("500.00"); // 50 m² x R$ 10
         assertThat(rentLine.get("quantityEditable").asBoolean()).isFalse();
         // Extintor: 1 unidade a cada 25 m² em estande de 50 m² = 2 unidades.
@@ -157,10 +159,10 @@ class ProjectFeeQuoteIntegrationTest {
         assertThat(feeLine(tfe.getId()).get("calculatedValue").decimalValue()).isEqualByComparingTo("100.00");
         // Variável ainda sem quantidade: campo editável e sem valor.
         JsonNode energyLine = feeLine(energy.getId());
-        assertThat(energyLine.get("status").asText()).isEqualTo("AGUARDANDO_QUANTIDADE");
+        assertThat(energyLine.get("status").asString()).isEqualTo("AGUARDANDO_QUANTIDADE");
         assertThat(energyLine.get("calculatedValue").isNull()).isTrue();
         assertThat(energyLine.get("quantityEditable").asBoolean()).isTrue();
-        assertThat(energyLine.get("measurementUnit").asText()).isEqualTo("kVA");
+        assertThat(energyLine.get("measurementUnit").asString()).isEqualTo("kVA");
         assertThat(energyLine.get("paymentDeadline").isNull()).isFalse();
     }
 
@@ -168,7 +170,7 @@ class ProjectFeeQuoteIntegrationTest {
     void linhaGravadaComoAguardandoCotacaoParaTaxaFixaAparecoComoDisponivel() {
         jdbc.update("update project_fees set status = 'AGUARDANDO_COTACAO' where id = ?", tfe.getId());
 
-        assertThat(feeLine(tfe.getId()).get("status").asText()).isEqualTo("DISPONIVEL");
+        assertThat(feeLine(tfe.getId()).get("status").asString()).isEqualTo("DISPONIVEL");
     }
 
     // ---- Casos ruins ----
@@ -177,14 +179,14 @@ class ProjectFeeQuoteIntegrationTest {
     void naoDeveCotarTaxaComValorCalculado() {
         ResponseEntity<JsonNode> response = send(HttpMethod.PUT, quoteUrl(rent), "{\"amount\":999}", ADMIN, "ADMIN");
 
-        assertProblem(response, HttpStatus.UNPROCESSABLE_ENTITY);
+        assertProblem(response, HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(projectFees.findById(rent.getId()).orElseThrow().getQuotedAmount()).isNull();
     }
 
     @Test
     void naoDeveCotarSemQuantidadeInformada() {
         assertProblem(send(HttpMethod.PUT, quoteUrl(energy), "{\"amount\":100}", ADMIN, "ADMIN"),
-                HttpStatus.UNPROCESSABLE_ENTITY);
+                HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @Test
@@ -213,7 +215,7 @@ class ProjectFeeQuoteIntegrationTest {
         jdbc.update("update projects set status = 'REPROVADO' where id = ?", project.getId());
 
         assertProblem(send(HttpMethod.PUT, quoteUrl(energy), "{\"amount\":250}", ADMIN, "ADMIN"),
-                HttpStatus.UNPROCESSABLE_ENTITY);
+                HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(send(HttpMethod.GET, "/admin/quotes", null, ADMIN, "ADMIN").getBody().size()).isZero();
     }
 
@@ -222,7 +224,7 @@ class ProjectFeeQuoteIntegrationTest {
         jdbc.update("update projects set status = 'PDF_EM_ANALISE' where id = ?", project.getId());
 
         assertProblem(send(HttpMethod.GET, "/projects/" + project.getId() + "/fees", null, CLIENT, "CLIENT"),
-                HttpStatus.UNPROCESSABLE_ENTITY);
+                HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @Test
@@ -268,7 +270,7 @@ class ProjectFeeQuoteIntegrationTest {
         ResponseEntity<JsonNode> response = send(HttpMethod.GET, "/projects/" + project.getId() + "/fees", null, CLIENT, "CLIENT");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         for (JsonNode node : response.getBody()) {
-            if (node.get("projectFeeId").asText().equals(projectFeeId.toString())) return node;
+            if (node.get("projectFeeId").asString().equals(projectFeeId.toString())) return node;
         }
         throw new AssertionError("Taxa não encontrada na lista do cliente: " + projectFeeId);
     }

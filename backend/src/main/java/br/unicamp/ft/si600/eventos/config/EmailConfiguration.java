@@ -5,11 +5,11 @@ import br.unicamp.ft.si600.eventos.notification.EmailSender;
 import br.unicamp.ft.si600.eventos.notification.GmailEmailSender;
 import br.unicamp.ft.si600.eventos.notification.GmailProperties;
 import br.unicamp.ft.si600.eventos.notification.LoggingEmailSender;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableConfigurationProperties(GmailProperties.class)
