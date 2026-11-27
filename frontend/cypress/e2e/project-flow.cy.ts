@@ -26,6 +26,7 @@ viewports.forEach((viewport) => {
       cy.contains('span', 'Bairro *').parent().find('input').type('Centro');
       cy.contains('span', 'Cidade *').parent().find('input').type('Campinas');
       cy.contains('span', 'UF *').parent().find('select').select('SP');
+      cy.contains('span', 'Metragem do estande (m²) *').parent().find('input').type('42.5');
       cy.contains('span', 'Limite envio do PDF *').parent().find('input').type('2050-12-31');
       cy.contains('span', 'Limite de pagamento *').parent().find('input').type('2050-12-31');
 
@@ -62,6 +63,7 @@ viewports.forEach((viewport) => {
       cy.contains('span', 'Bairro *').parent().find('input').type('Centro');
       cy.contains('span', 'Cidade *').parent().find('input').type('Campinas');
       cy.contains('span', 'UF *').parent().find('select').select('SP');
+      cy.contains('span', 'Metragem do estande (m²) *').parent().find('input').type('42.5');
       cy.contains('span', 'Limite envio do PDF *').parent().find('input').type('2050-12-31');
       cy.contains('span', 'Limite de pagamento *').parent().find('input').type('2050-12-31');
 
@@ -81,6 +83,7 @@ viewports.forEach((viewport) => {
       cy.contains('span', 'Bairro *').parent().find('input').type('Centro');
       cy.contains('span', 'Cidade *').parent().find('input').type('Campinas');
       cy.contains('span', 'UF *').parent().find('select').select('SP');
+      cy.contains('span', 'Metragem do estande (m²) *').parent().find('input').type('42.5');
       cy.contains('span', 'Limite envio do PDF *').parent().find('input').type('2050-12-31');
       cy.contains('span', 'Limite de pagamento *').parent().find('input').type('2050-12-31');
 

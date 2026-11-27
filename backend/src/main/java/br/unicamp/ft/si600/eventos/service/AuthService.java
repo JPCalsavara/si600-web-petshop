@@ -31,6 +31,7 @@ import br.unicamp.ft.si600.eventos.dto.TemporaryPasswordResponse;
 import br.unicamp.ft.si600.eventos.entity.AuthSession;
 import br.unicamp.ft.si600.eventos.entity.PasswordResetRequest;
 import br.unicamp.ft.si600.eventos.entity.PasswordResetStatus;
+import br.unicamp.ft.si600.eventos.entity.Project;
 import br.unicamp.ft.si600.eventos.entity.UserAccount;
 import br.unicamp.ft.si600.eventos.exception.ApiException;
 import br.unicamp.ft.si600.eventos.exception.FieldValidationException;
@@ -91,8 +92,18 @@ public class AuthService {
         // para que logins simultâneos não disputem lock na tabela auth_sessions.
         String token = randomToken();
         sessions.save(new AuthSession(sha256(token), user.getId(), OffsetDateTime.now().plus(SESSION_TTL)));
-        return new LoginResponse(token, user.getEmail(), user.getRole().name(),
-                projectIdFor(user.getEmail(), user.getRole()));
+
+        // BUG-01: o primeiro login do cliente conta como primeiro acesso ao projeto. Sem isso, quem logou mas
+        // ainda não abriu a página do projeto continua com lastAccessAt nulo e aparece como "Nunca Acessou".
+        // A entidade é gerenciada nesta transação: a alteração é gravada no commit.
+        String projectId = null;
+        if (user.getRole() == ActorRole.CLIENT) {
+            Optional<Project> project = projects.findFirstByOwnerId(user.getEmail());
+            project.filter(p -> p.getLastAccessAt() == null).ifPresent(p -> p.recordAccess(OffsetDateTime.now()));
+            projectId = project.map(p -> p.getId().toString()).orElse(null);
+        }
+
+        return new LoginResponse(token, user.getEmail(), user.getRole().name(), projectId);
     }
 
     /**

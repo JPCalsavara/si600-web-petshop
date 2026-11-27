@@ -90,7 +90,8 @@ class ProjectCsvExportIntegrationTest {
                 "area", "B2C",
                 "pdfDeadline", "2026-12-10",
                 "paymentDeadline", "2026-12-20",
-                "representativeName", representative
+                "representativeName", representative,
+                "boothAreaM2", new BigDecimal("35.00")
         ));
         ResponseEntity<String> res = restTemplate.postForEntity(
                 url("/projects"),
@@ -102,7 +103,7 @@ class ProjectCsvExportIntegrationTest {
         return UUID.fromString(node.get("id").asString());
     }
 
-    private ResponseEntity<String> uploadPdf(UUID projectId, String clientEmail, String filename, byte[] content, String areaM2) {
+    private ResponseEntity<String> uploadPdf(UUID projectId, String clientEmail, String filename, byte[] content) {
         MultiValueMap<String, Object> multipart = new LinkedMultiValueMap<>();
         HttpHeaders fileHeaders = new HttpHeaders();
         fileHeaders.setContentType(MediaType.APPLICATION_PDF);
@@ -113,10 +114,6 @@ class ProjectCsvExportIntegrationTest {
             }
         };
         multipart.add("file", new HttpEntity<>(resource, fileHeaders));
-
-        HttpHeaders textHeaders = new HttpHeaders();
-        textHeaders.setContentType(MediaType.TEXT_PLAIN);
-        multipart.add("areaM2", new HttpEntity<>(areaM2, textHeaders));
 
         HttpHeaders reqHeaders = new HttpHeaders();
         reqHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -172,13 +169,13 @@ class ProjectCsvExportIntegrationTest {
 
             // Cliente envia PDF
             byte[] pdfBytes = "%PDF-1.4 planta estande".getBytes(StandardCharsets.UTF_8);
-            assertThat(uploadPdf(projectId, CLIENT_EMAIL, "planta-alfa.pdf", pdfBytes, "30.00").getStatusCode())
+            assertThat(uploadPdf(projectId, CLIENT_EMAIL, "planta-alfa.pdf", pdfBytes).getStatusCode())
                     .isEqualTo(HttpStatus.OK);
 
-            // Admin aprova PDF com 35.00 m2
+            // Admin aprova o PDF; a metragem (35.00 m2) foi definida por ele na criacao do projeto
             ResponseEntity<String> approveRes = restTemplate.postForEntity(
                     url("/projects/admin/" + projectId + "/approve"),
-                    new HttpEntity<>("{\"approvedAreaM2\": 35.00}", headers(ADMIN_ID, "ADMIN")),
+                    new HttpEntity<>(headers(ADMIN_ID, "ADMIN")),
                     String.class
             );
             assertThat(approveRes.getStatusCode()).isEqualTo(HttpStatus.OK);
