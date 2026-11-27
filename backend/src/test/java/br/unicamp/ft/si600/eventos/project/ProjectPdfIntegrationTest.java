@@ -47,12 +47,14 @@ class ProjectPdfIntegrationTest {
     @BeforeEach
     void setUp() {
         repository.deleteAll();
-        Project project = repository.save(new Project(
-                "client-1", "Empresa Exemplo Ltda.", "54.018.395/0001-89",
-                "Joãozinho Exemplo da Silva", "Categoria 4",
-                OffsetDateTime.now().plusDays(10)
-        ));
-        projectId = project.getId();
+        // A metragem é definida pelo Admin na criação do projeto (BUG-04).
+        Project project = Project.create(
+                "client-1", "Empresa Exemplo Ltda.", "54.018.395/0001-89", "54018395000189",
+                "Joãozinho Exemplo da Silva", "Categoria 4", "Rua X, 100", "client-1@exemplo.com",
+                OffsetDateTime.now().plusDays(10), OffsetDateTime.now().plusDays(20),
+                "admin-1", OffsetDateTime.now());
+        project.defineBoothArea(new BigDecimal("42.50"));
+        projectId = repository.save(project).getId();
     }
 
     @Test
@@ -86,12 +88,10 @@ class ProjectPdfIntegrationTest {
     @Test
     void deveAprovarPdfERegistrarAuditoria() {
         submitValidPdf();
-        HttpHeaders headers = actorHeaders("admin-7", "ADMIN");
-        headers.setContentType(MediaType.APPLICATION_JSON);
 
         ResponseEntity<String> response = restTemplate.postForEntity(
                 url("/projects/admin/" + projectId + "/approve"),
-                new HttpEntity<>("{\"approvedAreaM2\": 42.50}", headers), String.class);
+                new HttpEntity<>(actorHeaders("admin-7", "ADMIN")), String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         Project saved = repository.findById(projectId).orElseThrow();
@@ -226,21 +226,26 @@ class ProjectPdfIntegrationTest {
     }
 
     @Test
-    void uploadPdfDevePersistirAreaInformadaNoMultipart() {
+    void uploadPdfDeveManterAMetragemDefinidaNaCriacao() {
         submitValidPdf();
         assertThat(repository.findById(projectId).orElseThrow().getBoothAreaM2())
                 .isEqualByComparingTo("42.50");
     }
 
     @Test
-    void uploadPdfDeveExigirAreaM2() {
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", resource("%PDF-1.7 fake pdf".getBytes(), "planta.pdf"));
-        HttpHeaders headers = actorHeaders("client-1", "CLIENT");
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+    void uploadPdfDeveIgnorarMetragemEnviadaPeloCliente() {
+        HttpEntity<MultiValueMap<String, Object>> request = multipartRequest("client-1", "CLIENT", "planta.pdf",
+                "%PDF-1.7 fake pdf".getBytes(), "application/pdf");
+        HttpHeaders areaHeaders = new HttpHeaders();
+        areaHeaders.setContentType(MediaType.TEXT_PLAIN);
+        request.getBody().add("areaM2", new HttpEntity<>("999.00", areaHeaders));
+
         ResponseEntity<String> response = restTemplate.postForEntity(
-                url("/projects/" + projectId + "/pdf"), new HttpEntity<>(body, headers), String.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+                url("/projects/" + projectId + "/pdf"), request, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(repository.findById(projectId).orElseThrow().getBoothAreaM2())
+                .isEqualByComparingTo("42.50");
     }
 
     private void submitValidPdf() {
@@ -257,10 +262,6 @@ class ProjectPdfIntegrationTest {
         HttpHeaders fileHeaders = new HttpHeaders();
         fileHeaders.setContentType(MediaType.parseMediaType(contentType));
         body.add("file", new HttpEntity<>(resource(bytes, filename), fileHeaders));
-
-        HttpHeaders areaHeaders = new HttpHeaders();
-        areaHeaders.setContentType(MediaType.TEXT_PLAIN);
-        body.add("areaM2", new HttpEntity<>("42.50", areaHeaders));
 
         HttpHeaders headers = actorHeaders(id, role);
         return new HttpEntity<>(body, headers);

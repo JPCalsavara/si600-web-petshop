@@ -266,14 +266,12 @@ export function AdminDashboardPage({
     return true;
   }
 
-  // 1. Grupo: Nunca acessou / Inativos
-  const neverAccessedItems: InactiveExhibitor[] = (data?.inactiveExhibitors || []).filter((item) =>
-    matchesCommonFilters(
-      item.projectId,
-      item.companyName,
-      item.representativeName,
-      item.contactEmail
-    )
+  // 1. Grupo: Nunca acessou (BUG-01). O backend devolve todos os projetos em inactiveExhibitors;
+  // só entram na coluna os que ainda não têm nenhum acesso registrado.
+  const neverAccessedItems: InactiveExhibitor[] = (data?.inactiveExhibitors || []).filter(
+    (item) =>
+      item.neverAccessed &&
+      matchesCommonFilters(item.projectId, item.companyName, item.representativeName, item.contactEmail)
   );
   const totalNeverAccessedPages = Math.max(1, Math.ceil(neverAccessedItems.length / PAGE_SIZE));
   const effectivePageNeverAccessed = Math.min(pageNeverAccessed, totalNeverAccessedPages);
@@ -666,7 +664,7 @@ export function AdminDashboardPage({
                 </span>
               </div>
               <p className={styles.columnDescription}>
-                Expositores cadastrados sem acesso recente ou que nunca entraram no portal.
+                Expositores cadastrados que ainda não acessaram o portal.
               </p>
 
               <div className={styles.kanbanCardsList}>
@@ -699,20 +697,12 @@ export function AdminDashboardPage({
                               )}
                             </div>
                           </div>
-                          {item.neverAccessed ? (
-                            <span
-                              className={styles.badgeNeverAccessed}
-                              data-testid="badge-never-accessed"
-                            >
-                              Nunca acessou
-                            </span>
-                          ) : (
-                            <span className={styles.badgeDaysAgo} data-testid="badge-days-ago">
-                              {item.daysSinceLastAccess === 0
-                                ? 'Hoje'
-                                : `${item.daysSinceLastAccess} dia(s) atrás`}
-                            </span>
-                          )}
+                          <span
+                            className={styles.badgeNeverAccessed}
+                            data-testid="badge-never-accessed"
+                          >
+                            Nunca acessou
+                          </span>
                         </div>
 
                         <div className={styles.cardBody}>

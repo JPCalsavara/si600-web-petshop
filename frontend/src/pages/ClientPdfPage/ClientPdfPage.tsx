@@ -25,7 +25,6 @@ function formatBytes(value: number | null) {
 
 export function ClientPdfPage({ projectId }: Props) {
   const [project, setProject] = useState<Project | null>(null);
-  const [area, setArea] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -60,12 +59,7 @@ export function ClientPdfPage({ projectId }: Props) {
     setError(null);
     setSuccess(null);
 
-    const areaValue = Number(area);
     const fileError = validateFile(file);
-    if (!areaValue || areaValue <= 0) {
-      setError('Informe a metragem oficial do estande em m².');
-      return;
-    }
     if (fileError) {
       setError(fileError);
       return;
@@ -73,11 +67,10 @@ export function ClientPdfPage({ projectId }: Props) {
 
     try {
       setSending(true);
-      const updated = await submitProjectPdf(projectId, areaValue, file!);
+      const updated = await submitProjectPdf(projectId, file!);
       setProject(updated);
       setSuccess('PDF enviado com sucesso e encaminhado para análise.');
       setFile(null);
-      setArea('');
       setFileInputKey((key) => key + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível enviar o PDF.');
@@ -162,7 +155,7 @@ export function ClientPdfPage({ projectId }: Props) {
             <div className={styles.summaryGrid}>
               <div><span>Prazo limite do PDF</span><strong>{formatDate(project.pdfDeadline)}</strong></div>
               <div><span>Prazo limite de pagamento</span><strong>{project.paymentDeadline ? formatDate(project.paymentDeadline) : '-'}</strong></div>
-              <div><span>Metragem informada</span><strong>{project.boothAreaM2 ? `${project.boothAreaM2} m²` : 'Não informada'}</strong></div>
+              <div><span>Metragem do estande</span><strong>{project.boothAreaM2 ? `${project.boothAreaM2} m²` : 'Não definida'}</strong></div>
               <div><span>Arquivo atual</span><strong>{project.pdfOriginalFilename || 'Nenhum arquivo'}</strong></div>
               <div><span>Tamanho</span><strong>{formatBytes(project.pdfSizeBytes)}</strong></div>
             </div>
@@ -177,19 +170,21 @@ export function ClientPdfPage({ projectId }: Props) {
           {canSubmit && (
             <form className={styles.card} onSubmit={handleSubmit} noValidate>
               <h2>{project.status === 'REPROVADO' ? 'Reenviar planta do estande' : 'Enviar planta do estande'}</h2>
-              <div className={styles.formGrid}>
-                <label>
-                  Metragem oficial do estande (m²) *
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={area}
-                    onChange={(event) => setArea(event.target.value)}
-                    placeholder="Ex.: 42,50"
-                  />
-                </label>
 
+              {project.boothAreaM2 ? (
+                <div className={styles.summaryGrid}>
+                  <div>
+                    <span>Metragem do estande</span>
+                    <strong>{project.boothAreaM2} m²</strong>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.info}>
+                  A metragem do estande ainda não foi definida pelo administrador.
+                </div>
+              )}
+
+              <div className={styles.formGrid}>
                 <label>
                   Planta do estande (PDF, máximo 10 MB) *
                   <input

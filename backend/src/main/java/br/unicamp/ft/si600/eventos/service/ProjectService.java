@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -88,6 +89,7 @@ public class ProjectService {
                 request.area(), address, structuredAddress, email,
                 endOfDay(request.pdfDeadline()), endOfDay(request.paymentDeadline()),
                 actor.id(), OffsetDateTime.now());
+        project.defineBoothArea(request.boothAreaM2().setScale(2, RoundingMode.HALF_UP));
         try {
             Project saved = repository.saveAndFlush(project);
             List<UUID> feeIds = request.feeIds() == null ? List.of() : request.feeIds();

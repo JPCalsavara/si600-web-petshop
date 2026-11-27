@@ -31,6 +31,7 @@ viewports.forEach((viewport) => {
             address: { zipCode: '13083-852', street: 'Rua de Teste', number: '123', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
             area: 'B2C',
             email: projectEmail,
+            boothAreaM2: 50,
             feeIds: [feeId],
             pdfDeadline: '2050-12-31',
             paymentDeadline: '2050-12-31',
@@ -44,14 +45,13 @@ viewports.forEach((viewport) => {
         .then((client) => {
           clientSession = client;
           // 4. Envia o PDF como o Cliente
-          return cy.uploadPdfAs(client, projectId, '50.0', 'planta.pdf', '%PDF-1.7 E2E');
+          return cy.uploadPdfAs(client, projectId, 'planta.pdf', '%PDF-1.7 E2E');
         })
         .then(() => {
           // 5. Aprova o PDF como admin
           return cy.adminRequest({
             method: 'POST',
             url: `${Cypress.expose('API_BASE_URL')}/projects/admin/${projectId}/approve`,
-            body: { approvedAreaM2: 50.0 },
           });
         });
     });

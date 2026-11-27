@@ -99,7 +99,8 @@ class ProjectHistoryIntegrationTest {
                   "area": "B2C",
                   "pdfDeadline": "2026-12-10",
                   "paymentDeadline": "2026-12-20",
-                  "representativeName": "Representante Legal"
+                  "representativeName": "Representante Legal",
+                  "boothAreaM2": 40.00
                 }
                 """.formatted(company, document, email);
         ResponseEntity<String> res = restTemplate.postForEntity(
@@ -112,7 +113,7 @@ class ProjectHistoryIntegrationTest {
         return UUID.fromString(node.get("id").asString());
     }
 
-    private ResponseEntity<String> uploadPdf(UUID projectId, String clientEmail, String filename, byte[] content, String areaM2) {
+    private ResponseEntity<String> uploadPdf(UUID projectId, String clientEmail, String filename, byte[] content) {
         MultiValueMap<String, Object> multipart = new LinkedMultiValueMap<>();
         HttpHeaders fileHeaders = new HttpHeaders();
         fileHeaders.setContentType(MediaType.APPLICATION_PDF);
@@ -123,10 +124,6 @@ class ProjectHistoryIntegrationTest {
             }
         };
         multipart.add("file", new HttpEntity<>(resource, fileHeaders));
-
-        HttpHeaders areaHeaders = new HttpHeaders();
-        areaHeaders.setContentType(MediaType.TEXT_PLAIN);
-        multipart.add("areaM2", new HttpEntity<>(areaM2, areaHeaders));
 
         HttpHeaders reqHeaders = new HttpHeaders();
         reqHeaders.set("X-Authenticated-User-Id", clientEmail);
@@ -151,7 +148,7 @@ class ProjectHistoryIntegrationTest {
 
             // 2. Cliente envia o PDF inicial -> PDF_ENVIADO
             ResponseEntity<String> pdfRes1 = uploadPdf(projectId, CLIENT_EMAIL, "planta-v1.pdf",
-                    "%PDF-1.7 planta inicial".getBytes(), "36.00");
+                    "%PDF-1.7 planta inicial".getBytes());
             assertThat(pdfRes1.getStatusCode()).isEqualTo(HttpStatus.OK);
 
             // 3. Admin reprova o PDF -> PDF_REPROVADO
@@ -164,13 +161,13 @@ class ProjectHistoryIntegrationTest {
 
             // 4. Cliente reenvia o PDF corrigido -> PDF_ENVIADO
             ResponseEntity<String> pdfRes2 = uploadPdf(projectId, CLIENT_EMAIL, "planta-v2.pdf",
-                    "%PDF-1.7 planta corrigida".getBytes(), "40.00");
+                    "%PDF-1.7 planta corrigida".getBytes());
             assertThat(pdfRes2.getStatusCode()).isEqualTo(HttpStatus.OK);
 
             // 5. Admin aprova o PDF -> PDF_APROVADO
             ResponseEntity<String> approveRes = restTemplate.postForEntity(
                     url("/projects/admin/" + projectId + "/approve"),
-                    new HttpEntity<>("{\"approvedAreaM2\": 40.00}", headers(ADMIN_ID, "ADMIN")),
+                    new HttpEntity<>(headers(ADMIN_ID, "ADMIN")),
                     String.class
             );
             assertThat(approveRes.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -347,13 +344,13 @@ class ProjectHistoryIntegrationTest {
 
             // Tentativa invalida de upload (conteudo nao e PDF)
             ResponseEntity<String> badPdf = uploadPdf(projectId, CLIENT_EMAIL, "falso.pdf",
-                    "conteudo invalido".getBytes(), "25.00");
+                    "conteudo invalido".getBytes());
             assertThat(badPdf.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 
             // Tentativa invalida de aprovar sem estar em analise
             ResponseEntity<String> badApprove = restTemplate.postForEntity(
                     url("/projects/admin/" + projectId + "/approve"),
-                    new HttpEntity<>("{\"approvedAreaM2\": 25.00}", headers(ADMIN_ID, "ADMIN")),
+                    new HttpEntity<>(headers(ADMIN_ID, "ADMIN")),
                     String.class
             );
             assertThat(badApprove.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);

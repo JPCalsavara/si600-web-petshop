@@ -127,6 +127,11 @@ public class Project {
         return p;
     }
 
+    /** BUG-04: metragem do estande, definida pelo Admin na criação do projeto. */
+    public void defineBoothArea(BigDecimal boothAreaM2) {
+        this.boothAreaM2 = boothAreaM2;
+    }
+
     public void updateDeadlines(OffsetDateTime pdfDeadline, OffsetDateTime paymentDeadline) {
         this.pdfDeadline = pdfDeadline;
         this.paymentDeadline = paymentDeadline;

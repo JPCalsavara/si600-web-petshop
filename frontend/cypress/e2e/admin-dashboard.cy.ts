@@ -29,6 +29,7 @@ viewports.forEach((viewport) => {
         address: { zipCode: '13083-852', street: 'Av. Dashboard', number: '200', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
         area: 'Music Hub',
         email: pendingEmail,
+        boothAreaM2: 75.5,
         feeIds: [],
         pdfDeadline: '2050-12-31',
         paymentDeadline: '2050-12-31',
@@ -39,7 +40,7 @@ viewports.forEach((viewport) => {
           return cy.apiLogin(project.email, project.provisionalPassword);
         })
         .then((client) => {
-          return cy.uploadPdfAs(client, approvalProjectId, '75.5', 'planta_dashboard.pdf', '%PDF-1.7 E2E Dashboard');
+          return cy.uploadPdfAs(client, approvalProjectId, 'planta_dashboard.pdf', '%PDF-1.7 E2E Dashboard');
         });
     });
 
@@ -68,6 +69,8 @@ viewports.forEach((viewport) => {
 
       cy.get('[data-testid="dashboard-search-input"]').clear().type(pendingApprovalCompany);
       cy.contains(pendingApprovalCompany).should('be.visible');
+      // BUG-01: o cliente deste projeto já fez login, então ele não fica na coluna "Nunca Acessou".
+      cy.get(`[data-testid="row-inactive-${approvalProjectId}"]`).should('not.exist');
       cy.get(`[data-testid="shortcut-review-pdf-${approvalProjectId}"]`).should('be.visible').click();
       cy.contains('Análise de Plantas (PDF)').should('be.visible');
     });

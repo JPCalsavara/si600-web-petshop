@@ -33,6 +33,7 @@ viewports.forEach((viewport) => {
             address: { zipCode: '13083-852', street: 'Av. Cotações', number: '500', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
             area: 'B2C',
             email: clientEmail,
+            boothAreaM2: 40,
             feeIds: [variableFeeId],
             pdfDeadline: '2050-12-31',
             paymentDeadline: '2050-12-31',
@@ -44,13 +45,12 @@ viewports.forEach((viewport) => {
         })
         .then((client) => {
           clientToken = client.token;
-          return cy.uploadPdfAs(client, projectId, '40.0', 'planta_cotacao.pdf', '%PDF-1.7 E2E Quote');
+          return cy.uploadPdfAs(client, projectId, 'planta_cotacao.pdf', '%PDF-1.7 E2E Quote');
         })
         .then(() => {
           return cy.adminRequest({
             method: 'POST',
             url: `${Cypress.expose('API_BASE_URL')}/projects/admin/${projectId}/approve`,
-            body: { approvedAreaM2: 40.0 },
           });
         })
         .then(() => {

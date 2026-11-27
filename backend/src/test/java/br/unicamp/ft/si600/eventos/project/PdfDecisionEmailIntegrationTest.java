@@ -50,7 +50,7 @@ class PdfDecisionEmailIntegrationTest {
         CapturingEmailSender.Sent mail = emails.sent().get(0);
         assertThat(mail.to()).isEqualTo("cliente@exemplo.com");
         assertThat(mail.subject()).contains("aprovado", "Empresa Exemplo Ltda.");
-        assertThat(mail.body()).contains("50.00");
+        assertThat(mail.body()).contains("42.50");
     }
 
     @Test
@@ -144,15 +144,8 @@ class PdfDecisionEmailIntegrationTest {
     }
 
     private ResponseEntity<String> approve(String actorId, String role, UUID id) {
-        HttpHeaders headers = headers(actorId, role);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String body = """
-            {
-                "approvedAreaM2": 50.00
-            }
-            """;
         return restTemplate.postForEntity(url("/projects/admin/" + id + "/approve"),
-                new HttpEntity<>(body, headers), String.class);
+                new HttpEntity<>(headers(actorId, role)), String.class);
     }
 
     private ResponseEntity<String> reject(String actorId, String role, UUID id, String json) {

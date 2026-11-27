@@ -2,6 +2,7 @@ package br.unicamp.ft.si600.eventos.auth;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -105,6 +106,28 @@ class AuthIntegrationTest {
         assertThat(mapper.readTree(response.getBody()).get("role").asText()).isEqualTo("CLIENT");
         assertThat(mapper.readTree(response.getBody()).get("projectId").asText())
                 .isEqualTo(clientProject.getId().toString());
+    }
+
+    @Test
+    void primeiroLoginDoClienteRegistraOPrimeiroAcessoSoDoProprioProjeto() {
+        assertThat(projects.findById(clientProject.getId()).orElseThrow().getLastAccessAt()).isNull();
+
+        assertThat(login(CLIENT_EMAIL, PASSWORD).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        assertThat(projects.findById(clientProject.getId()).orElseThrow().getLastAccessAt()).isNotNull();
+        assertThat(projects.findById(otherProject.getId()).orElseThrow().getLastAccessAt()).isNull();
+    }
+
+    @Test
+    void novoLoginNaoSobrescreveOPrimeiroAcesso() {
+        Project seeded = projects.findById(clientProject.getId()).orElseThrow();
+        seeded.recordAccess(OffsetDateTime.now().minusDays(3).truncatedTo(ChronoUnit.SECONDS));
+        OffsetDateTime firstAccess = projects.saveAndFlush(seeded).getLastAccessAt();
+
+        assertThat(login(CLIENT_EMAIL, PASSWORD).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        OffsetDateTime afterLogin = projects.findById(clientProject.getId()).orElseThrow().getLastAccessAt();
+        assertThat(afterLogin.toInstant()).isEqualTo(firstAccess.toInstant());
     }
 
     @Test
@@ -325,7 +348,7 @@ class AuthIntegrationTest {
         LocalDate paymentDeadline = LocalDate.now().plusDays(20);
         return "{\"name\":\"Empresa Nova\",\"document\":\"" + document + "\"," + ADDRESS_JSON + ","
                 + "\"area\":\"B2C\",\"email\":\"" + email + "\",\"pdfDeadline\":\"" + pdfDeadline + "\","
-                + "\"paymentDeadline\":\"" + paymentDeadline + "\",\"representativeName\":null}";
+                + "\"paymentDeadline\":\"" + paymentDeadline + "\",\"representativeName\":null,\"boothAreaM2\":42.5}";
     }
 
     private String tokenOf(String email) throws Exception {

@@ -52,6 +52,7 @@ class ProjectCreationIntegrationTest {
         assertThat(saved.getOwnerId()).isEqualTo("a@exemplo.com");
         assertThat(saved.getCreatedBy()).isEqualTo("admin-1");
         assertThat(saved.getPaymentDeadline()).isAfter(saved.getPdfDeadline());
+        assertThat(saved.getBoothAreaM2()).isEqualByComparingTo("42.50");
     }
 
     @Test
@@ -146,10 +147,25 @@ class ProjectCreationIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
+    @Test
+    void deveRejeitarMetragemAusenteZeradaOuAcimaDoLimite() {
+        String valid = body("Empresa A", "54.018.395/0001-89", "a@exemplo.com", "2026-11-10", "2026-11-20");
+        String[] invalidBodies = {
+                valid.replace(",\"boothAreaM2\":42.5", ""),
+                valid.replace("\"boothAreaM2\":42.5", "\"boothAreaM2\":0"),
+                valid.replace("\"boothAreaM2\":42.5", "\"boothAreaM2\":10000000000")
+        };
+
+        for (String invalid : invalidBodies) {
+            assertThat(post("admin-1", "ADMIN", invalid).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+        assertThat(repository.count()).isZero();
+    }
+
     private String body(String name, String doc, String email, String pdf, String payment) {
         return "{\"name\":\"" + name + "\",\"document\":\"" + doc + "\"," + ADDRESS_JSON + ","
                 + "\"area\":\"B2C\",\"email\":\"" + email + "\",\"pdfDeadline\":\"" + pdf
-                + "\",\"paymentDeadline\":\"" + payment + "\",\"representativeName\":null}";
+                + "\",\"paymentDeadline\":\"" + payment + "\",\"representativeName\":null,\"boothAreaM2\":42.5}";
     }
 
     private ResponseEntity<String> post(String id, String role, String json) {
