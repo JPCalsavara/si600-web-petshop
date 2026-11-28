@@ -25,7 +25,6 @@ export function AdminPdfPage({ onBack }: Props) {
   const [selected, setSelected] = useState<Project | null>(null);
   const [feeConfigProject, setFeeConfigProject] = useState<Project | null>(null);
   const [justification, setJustification] = useState('');
-  const [approvedAreas, setApprovedAreas] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -92,20 +91,9 @@ export function AdminPdfPage({ onBack }: Props) {
   }
 
   async function approve(project: Project) {
-    const rawArea = approvedAreas[project.id] ?? '';
-    const area = Number(rawArea);
-    if (!Number.isFinite(area) || area <= 0) {
-      setError('Informe a metragem aprovada em m².');
-      return;
-    }
     try {
       setError(null);
-      const approved = await approveProject(project.id, area);
-      setApprovedAreas((prev) => {
-        const next = { ...prev };
-        delete next[project.id];
-        return next;
-      });
+      const approved = await approveProject(project.id);
       await load();
       setSelected(null);
       setFeeConfigProject(approved);
@@ -144,7 +132,7 @@ export function AdminPdfPage({ onBack }: Props) {
         <div>
           <h1 className={styles.title}>Análise de Plantas (PDF)</h1>
           <p className={styles.subtitle}>
-            Analise os projetos com PDF em análise. Aprove a metragem oficial ou solicite ajustes.
+            Analise os projetos com PDF em análise. Aprove a planta ou solicite ajustes.
           </p>
         </div>
       </header>
@@ -267,21 +255,6 @@ export function AdminPdfPage({ onBack }: Props) {
                         )}
                         {project.status === 'PDF_EM_ANALISE' && (
                           <>
-                            <input
-                              type="number"
-                              min="0.01"
-                              step="0.01"
-                              className={styles.areaInput}
-                              placeholder="m² aprovado"
-                              aria-label={`Metragem aprovada para ${project.companyName}`}
-                              value={approvedAreas[project.id] ?? ''}
-                              onChange={(event) =>
-                                setApprovedAreas((prev) => ({
-                                  ...prev,
-                                  [project.id]: event.target.value,
-                                }))
-                              }
-                            />
                             <button
                               type="button"
                               className={styles.approve}

@@ -29,15 +29,18 @@ declare global {
       adminLogin(): Chainable<E2ESession>;
       /** cy.request autenticado como Admin (o cabeçalho Authorization é acrescentado). */
       adminRequest(options: Partial<RequestOptions>): Chainable<Response<any>>;
-      /** Cria um projeto como Admin (POST /projects) e devolve o id, o e-mail e a senha provisória. */
+      /**
+       * Cria um projeto como Admin (POST /projects) e devolve o id, o e-mail e a senha provisória.
+       * A metragem do estande é definida pelo Admin na criação (BUG-04): se `boothAreaM2` não for informado,
+       * usa 30 m².
+       */
       createProjectAsAdmin(body: Record<string, unknown>): Chainable<E2ECreatedProject>;
       /** Abre o app já logado com a sessão informada. */
       visitAs(session: E2ESession, path?: string): Chainable<AUTWindow>;
-      /** Envia o PDF da planta como o Cliente da sessão (multipart via XHR). */
+      /** Envia o PDF da planta como o Cliente da sessão (multipart via XHR). A metragem não é enviada (BUG-04). */
       uploadPdfAs(
         session: E2ESession,
         projectId: string,
-        areaM2: string,
         filename: string,
         content: string,
       ): Chainable<unknown>;
@@ -76,7 +79,7 @@ Cypress.Commands.add('adminRequest', (options) => {
 });
 
 Cypress.Commands.add('createProjectAsAdmin', (body) => {
-  return cy.adminRequest({ method: 'POST', url: `${apiBase()}/projects`, body }).then((res) => {
+  return cy.adminRequest({ method: 'POST', url: `${apiBase()}/projects`, body: { boothAreaM2: 30, ...body } }).then((res) => {
     expect(res.status, 'criação do projeto').to.eq(201);
     expect(res.body.provisionalPassword, 'senha provisória na resposta').to.be.a('string');
     const created: Cypress.E2ECreatedProject = {
@@ -96,9 +99,8 @@ Cypress.Commands.add('visitAs', (session, path = '/') => {
   });
 });
 
-Cypress.Commands.add('uploadPdfAs', (session, projectId, areaM2, filename, content) => {
+Cypress.Commands.add('uploadPdfAs', (session, projectId, filename, content) => {
   const formData = new FormData();
-  formData.append('areaM2', areaM2);
   formData.append('file', new Blob([content], { type: 'application/pdf' }), filename);
 
   // O cy.window() precisa de uma página carregada; a tela de login serve.

@@ -209,6 +209,7 @@ export async function createProject(body: {
   paymentDeadline: string;
   representativeName?: string;
   feeIds?: string[];
+  boothAreaM2?: number;
 }): Promise<Project> {
   return request<Project>({
     method: 'POST',
@@ -244,11 +245,9 @@ export async function getProjectFees(projectId: string): Promise<CalculatedFee[]
 
 export async function submitProjectPdf(
   projectId: string,
-  areaM2: number,
   file: File,
 ): Promise<Project> {
   const form = new FormData();
-  form.append('areaM2', String(areaM2));
   form.append('file', file);
   return request<Project>({
     method: 'POST',
@@ -266,12 +265,10 @@ export async function listAdminProjects(status?: ProjectStatus): Promise<Project
   return request<Project[]>({ method: 'GET', url: `/projects/admin${query}` });
 }
 
-export async function approveProject(projectId: string, approvedAreaM2: number): Promise<Project> {
+export async function approveProject(projectId: string): Promise<Project> {
   return request<Project>({
     method: 'POST',
     url: `/projects/admin/${projectId}/approve`,
-    headers: { 'Content-Type': 'application/json' },
-    data: { approvedAreaM2 },
   });
 }
 

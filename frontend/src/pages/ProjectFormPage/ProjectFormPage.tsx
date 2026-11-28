@@ -17,6 +17,7 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
   const [document, setDocument] = useState('');
   const [email, setEmail] = useState('');
   const [area, setArea] = useState<AreaEstande>('B2C');
+  const [boothAreaM2, setBoothAreaM2] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [street, setStreet] = useState('');
   const [number, setNumber] = useState('');
@@ -55,6 +56,12 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
         return;
       }
 
+      const boothArea = boothAreaM2.trim() ? parseFloat(boothAreaM2) : null;
+      if (!boothArea || boothArea <= 0) {
+        setError('Informe a metragem do estande em m².');
+        return;
+      }
+
       const created = await createProject({
         name,
         document,
@@ -72,6 +79,7 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
         pdfDeadline,
         paymentDeadline,
         feeIds: [],
+        boothAreaM2: boothArea,
       });
       setCredentials({ login: created.contactEmail, password: created.provisionalPassword });
       onCreated?.();
@@ -274,6 +282,19 @@ export function ProjectFormPage({ onDone, onCreated }: Props) {
               </option>
             ))}
           </select>
+        </label>
+        <label className={styles.row}>
+          <span>Metragem do estande (m²) *</span>
+          <input
+            required
+            type="number"
+            min="0.01"
+            step="0.01"
+            placeholder="Ex.: 42.50"
+            value={boothAreaM2}
+            onChange={(e) => setBoothAreaM2(e.target.value)}
+            data-testid="input-booth-area"
+          />
         </label>
         <label className={styles.row}>
           <span>Limite envio do PDF *</span>

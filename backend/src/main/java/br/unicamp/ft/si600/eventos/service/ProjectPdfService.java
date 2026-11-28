@@ -45,8 +45,6 @@ public class ProjectPdfService {
     public static final long MAX_PDF_SIZE = 10L * 1024 * 1024;
     private static final String PDF_CONTENT_TYPE = "application/pdf";
     private static final int MAX_FILENAME_LENGTH = 255;
-    // booth_area_m2 é NUMERIC(12,2): no máximo 10 dígitos inteiros.
-    private static final BigDecimal MAX_AREA_M2 = new BigDecimal("9999999999.99");
 
     private final ProjectRepository repository;
     private final ProjectFeeRepository projectFeeRepository;
@@ -74,10 +72,9 @@ public class ProjectPdfService {
     }
 
     @Transactional
-    public ProjectResponse submitPdf(UUID projectId, MultipartFile file, BigDecimal areaM2, Actor actor) {
+    public ProjectResponse submitPdf(UUID projectId, MultipartFile file, Actor actor) {
         requireRole(actor, ActorRole.CLIENT);
         validatePdf(file);
-        validateArea(areaM2);
 
         Project project = repository.findByIdAndOwnerId(projectId, actor.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
@@ -100,15 +97,15 @@ public class ProjectPdfService {
 
         try {
             String safeFilename = sanitizeFilename(file.getOriginalFilename());
-            BigDecimal scaledArea = areaM2.setScale(2, RoundingMode.HALF_UP);
+            // BUG-04: a metragem é definida pelo Admin na criação do projeto; o cliente não a altera.
             project.submitPdf(key, safeFilename,
-                    PDF_CONTENT_TYPE, file.getSize(), scaledArea, OffsetDateTime.now());
+                    PDF_CONTENT_TYPE, file.getSize(), project.getBoothAreaM2(), OffsetDateTime.now());
             repository.saveAndFlush(project);
             historyService.recordEvent(
                     project.getId(),
                     ProjectHistoryEventType.PDF_ENVIADO,
                     actor,
-                    "Planta do estande enviada (" + safeFilename + ", área informada: " + scaledArea + " m²)."
+                    "Planta do estande enviada (" + safeFilename + ")."
             );
         } catch (RuntimeException ex) {
             deleteQuietly(key); // o registro não aponta para o novo objeto: evita órfão
@@ -244,19 +241,24 @@ public class ProjectPdfService {
     }
 
     @Transactional
-    public ProjectResponse approve(UUID projectId, br.unicamp.ft.si600.eventos.dto.ApproveProjectRequest request, Actor actor) {
+    public ProjectResponse approve(UUID projectId, Actor actor) {
         requireRole(actor, ActorRole.ADMIN);
         Project project = repository.findById(projectId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Projeto não encontrado."));
         requireStatusForDecision(project);
-        BigDecimal scaledArea = request.approvedAreaM2().setScale(2, RoundingMode.HALF_UP);
-        project.approve(actor.id(), OffsetDateTime.now(), scaledArea);
+        // BUG-04: a metragem foi definida pelo Admin na criação; usa o valor já persistido.
+        BigDecimal area = project.getBoothAreaM2();
+        if (area == null || area.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "A metragem do estande não foi definida para este projeto.");
+        }
+        project.approve(actor.id(), OffsetDateTime.now(), area);
         Project saved = repository.save(project);
         historyService.recordEvent(
                 saved.getId(),
                 ProjectHistoryEventType.PDF_APROVADO,
                 actor,
-                "Planta do estande aprovada com metragem homologada de " + scaledArea + " m²."
+                "Planta do estande aprovada com metragem de " + area + " m²."
         );
         notifier.notifyApproved(saved);
         return toResponse(saved);
@@ -333,12 +335,6 @@ public class ProjectPdfService {
     private void requireRole(Actor actor, ActorRole role) {
         if (actor.role() != role) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Você não possui permissão para esta operação.");
-        }
-    }
-
-    private void validateArea(BigDecimal areaM2) {
-        if (areaM2 == null || areaM2.signum() <= 0 || areaM2.compareTo(MAX_AREA_M2) > 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "A área deve ser maior que zero e estar dentro do limite permitido.");
         }
     }
 
