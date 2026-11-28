@@ -15,7 +15,7 @@ viewports.forEach((viewport) => {
         .createProjectAsAdmin({
           name: `Empresa Senha ${stamp}`,
           document: `${Date.now()}${sequence}`.slice(0, 14),
-          address: 'Rua da Senha, 1',
+          address: { zipCode: '13083-852', street: 'Rua da Senha', number: '1', neighborhood: 'Centro', city: 'Campinas', state: 'SP' },
           area: 'B2C',
           email: `senha-${stamp}@teste.com`,
           feeIds: [],

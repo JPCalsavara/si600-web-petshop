@@ -38,7 +38,6 @@ viewports.forEach((viewport) => {
     it('Cliente envia PDF e visualiza a linha do tempo somente leitura na aba Histórico', () => {
       cy.visitAs(clientSession);
 
-      cy.get('input[type="number"]').clear().type('45');
       cy.get('input[type="file"]').selectFile('cypress/fixtures/dummy.pdf');
       cy.contains('button', 'Enviar PDF para análise').should('be.visible').click();
       cy.contains(/PDF enviado com sucesso/i, { timeout: 10000 }).should('be.visible');
